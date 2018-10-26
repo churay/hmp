@@ -1,5 +1,6 @@
 ## Compiled Binary Files ##
 bin/*
+build/*
 
 ## Compiled Source Files ##
 *.o
