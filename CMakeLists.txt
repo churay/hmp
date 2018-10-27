@@ -2,25 +2,35 @@ cmake_minimum_required(VERSION 3.5)
 project(hmp)
 
 ###############################################################################
+## config options #############################################################
+###############################################################################
+
+option(BUILD_DEBUG "Build all source files in debug mode" ON)
+
+###############################################################################
 ## file globbing ##############################################################
 ###############################################################################
 
-file(GLOB_RECURSE sources      src/*.cpp src/*.h)
-file(GLOB_RECURSE data         dat/*)
+set(hmp_exe_files src/hmp.cpp)
+set(hmp_lib_files src/hmplib.cpp src/hmplib.h)
+
+file(GLOB_RECURSE hmp_data_files    dat/*)
+file(GLOB_RECURSE hmp_src_files     src/*.cpp src/*.h)
+list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
 
 ###############################################################################
 ## target definitions #########################################################
 ###############################################################################
 
-# The data is just added to the executable, because in some IDEs (QtCreator) 
-# files are invisible when they are not explicitly part of the project.
-add_executable(hmp ${sources} ${data})
+set(hmp_cxx_flags    -std=c++1y -Wall -fno-exceptions)
 
-# Add compiler flags based on the type of build being performed.
-target_compile_options(hmp PUBLIC -std=c++1y -Wall -fno-exceptions)
+add_library(hmplib SHARED ${hmp_lib_files} ${hmp_src_files} ${hmp_data_files})
+target_compile_options(hmplib PUBLIC ${hmp_cxx_flags})
+target_include_directories(hmplib PUBLIC src)
 
-# This allows to include files relative to the root of the src directory with a <> pair
-target_include_directories(hmp PUBLIC src/)
+add_executable(hmp ${hmp_exe_files} ${hmp_src_files} ${hmp_data_files})
+target_compile_options(hmp PUBLIC ${hmp_cxx_flags})
+target_include_directories(hmp PUBLIC src)
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
@@ -30,13 +40,16 @@ file(COPY ${data} DESTINATION dat)
 ## dependencies ###############################################################
 ###############################################################################
 
+find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
-
 pkg_search_module(SDL2 REQUIRED sdl2)
 pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 
-include_directories(hmp ${SDL2_INCLUDE_DIRS} ${SDL2TTF_INCLUDE_DIRS})
-target_link_libraries(hmp PUBLIC ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARIES})
+include_directories(hmplib ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+target_link_libraries(hmplib PUBLIC ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
+
+include_directories(hmp ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+target_link_libraries(hmp PUBLIC ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
 ###############################################################################
 ## testing ####################################################################
@@ -79,7 +92,7 @@ target_link_libraries(hmp PUBLIC ${SDL2_LIBRARIES} ${SDL2TTF_LIBRARIES})
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS hmp DESTINATION hmp_install)
+install(TARGETS hmp hmplib DESTINATION hmp_install)
 
 # This is basically a repeat of the file copy instruction that copies the
 # resources in the build directory, but here we tell cmake that we want it

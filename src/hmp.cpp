@@ -67,7 +67,7 @@ int main() {
 
     /// Load Dynamic Shared Library ///
 
-    const char8_t* cDLLFileName = "hmplib.so";
+    const char8_t* cDLLFileName = "libhmplib.so";
     const path_t cDLLPath = llce::platform::libFindDLLPath( cDLLFileName );
     LLCE_ASSERT_ERROR( cDLLPath.exists(),
         "Failed to find library " << cDLLFileName << " in dynamic path." );
