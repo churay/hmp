@@ -58,12 +58,12 @@ int main() {
     LLCE_ASSERT_ERROR( cExePath.exists(),
         "Failed to find path to running executable." );
 
-    const path_t cProjPath( 3, cExePath.cstr(), path_t::DUP, path_t::DUP );
-    LLCE_ASSERT_ERROR( cProjPath.exists(),
+    const path_t cInstallPath( 2, cExePath.cstr(), path_t::DUP );
+    LLCE_ASSERT_ERROR( cInstallPath.exists(),
         "Failed to find path to running executable." );
 
-    const path_t cStateFilePath( 3, cProjPath.cstr(), "out", "state.dat" );
-    const path_t cInputFilePath( 3, cProjPath.cstr(), "out", "input.dat" );
+    const path_t cStateFilePath( 3, cInstallPath.cstr(), "out", "state.dat" );
+    const path_t cInputFilePath( 3, cInstallPath.cstr(), "out", "input.dat" );
 
     /// Load Dynamic Shared Library ///
 
@@ -134,7 +134,7 @@ int main() {
     /// Generate Graphics Assets ///
 
     const char8_t* cFontFileName = "dejavu_mono.ttf";
-    const path_t cFontPath( 3, cProjPath.cstr(), "dat", cFontFileName );
+    const path_t cFontPath( 3, cInstallPath.cstr(), "dat", cFontFileName );
     LLCE_ASSERT_ERROR( cFontPath.exists(),
         "Failed to locate font with file name '" << cFontFileName << "'." );
 

@@ -5,17 +5,40 @@ project(hmp)
 ## config options #############################################################
 ###############################################################################
 
-option(BUILD_DEBUG "Build all source files in debug mode" ON)
+# NOTE(JRC): Adding a debug build option is unnecessary because CMake handles
+# it with these commands:
+# -DCMAKE_BUILD_TYPE=Release, -DCMAKE_BUILD_TYPE=Debug
+# option(BUILD_DEBUG "Build all source files in debug mode" ON)
+
+# set(CMAKE_VERBOSE_MAKEFILE ON)
+
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLLCE_DEBUG")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE )
+endif()
+
+# TODO(JRC): Clean up this code that sets the RPATH for the project binary
+# so that it can find the project dynamic library.
+
+# use, i.e. don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+# when building, don't use the install RPATH already
+# (but later on when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 ###############################################################################
 ## file globbing ##############################################################
 ###############################################################################
 
-set(hmp_exe_files src/hmp.cpp)
-set(hmp_lib_files src/hmplib.cpp src/hmplib.h)
-
-file(GLOB_RECURSE hmp_data_files    dat/*)
 file(GLOB_RECURSE hmp_src_files     src/*.cpp src/*.h)
+file(GLOB         hmp_exe_files     src/hmp.cpp)
+file(GLOB         hmp_lib_files     src/hmplib.cpp src/hmplib.h)
 list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
 
 ###############################################################################
@@ -24,11 +47,14 @@ list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
 
 set(hmp_cxx_flags    -std=c++1y -Wall -fno-exceptions)
 
-add_library(hmplib SHARED ${hmp_lib_files} ${hmp_src_files} ${hmp_data_files})
+# TODO(JRC): Improve efficiency of build by sharing object archive between the
+# library file and the executable file.
+
+add_library(hmplib SHARED ${hmp_lib_files} ${hmp_src_files})
 target_compile_options(hmplib PUBLIC ${hmp_cxx_flags})
 target_include_directories(hmplib PUBLIC src)
 
-add_executable(hmp ${hmp_exe_files} ${hmp_src_files} ${hmp_data_files})
+add_executable(hmp ${hmp_exe_files} ${hmp_src_files})
 target_compile_options(hmp PUBLIC ${hmp_cxx_flags})
 target_include_directories(hmp PUBLIC src)
 
@@ -45,11 +71,14 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(SDL2 REQUIRED sdl2)
 pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 
-include_directories(hmplib ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-target_link_libraries(hmplib PUBLIC ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
+set(hmp_inc_dirs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+set(hmp_lib_dirs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
-include_directories(hmp ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-target_link_libraries(hmp PUBLIC ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
+include_directories(hmplib ${hmp_inc_dirs})
+target_link_libraries(hmplib PUBLIC ${hmp_lib_dirs})
+
+include_directories(hmp ${hmp_inc_dirs})
+target_link_libraries(hmp PUBLIC ${hmp_lib_dirs})
 
 ###############################################################################
 ## testing ####################################################################
@@ -92,12 +121,9 @@ target_link_libraries(hmp PUBLIC ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENG
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS hmp hmplib DESTINATION hmp_install)
-
-# This is basically a repeat of the file copy instruction that copies the
-# resources in the build directory, but here we tell cmake that we want it
-# in the package.
-install(DIRECTORY hmp DESTINATION hmp_install)
+install(TARGETS hmp hmplib DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 
 # Now comes everything we need, to create a package
 # there are a lot more variables you can set, and some
