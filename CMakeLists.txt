@@ -12,6 +12,7 @@ project(hmp)
 
 # set(CMAKE_VERBOSE_MAKEFILE ON)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -fno-exceptions")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLLCE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
@@ -37,26 +38,29 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ###############################################################################
 
 file(GLOB_RECURSE hmp_src_files     src/*.cpp src/*.h)
+file(GLOB_RECURSE hmp_obj_files     src/*.cpp)
 file(GLOB         hmp_exe_files     src/hmp.cpp)
 file(GLOB         hmp_lib_files     src/hmplib.cpp src/hmplib.h)
 list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
+list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files} ${hmp_lib_files})
 
 ###############################################################################
 ## target definitions #########################################################
 ###############################################################################
 
-set(hmp_cxx_flags    -std=c++1y -Wall -fno-exceptions)
+set(hmp_obj_target "hmpobj")
+set(hmp_lib_target "hmplib")
+set(hmp_exe_target "hmp")
+set(hmp_targets ${hmp_lib_target} ${hmp_exe_target})
 
-# TODO(JRC): Improve efficiency of build by sharing object archive between the
-# library file and the executable file.
+add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
+set_property(TARGET ${hmp_obj_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
+add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
+add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
-add_library(hmplib SHARED ${hmp_lib_files} ${hmp_src_files})
-target_compile_options(hmplib PUBLIC ${hmp_cxx_flags})
-target_include_directories(hmplib PUBLIC src)
-
-add_executable(hmp ${hmp_exe_files} ${hmp_src_files})
-target_compile_options(hmp PUBLIC ${hmp_cxx_flags})
-target_include_directories(hmp PUBLIC src)
+foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
+    target_include_directories(${hmp_target} PUBLIC src)
+endforeach()
 
 # This copies all resource files in the build directory.
 # We need this, because we want to work with paths relative to the executable.
@@ -71,14 +75,13 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(SDL2 REQUIRED sdl2)
 pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 
-set(hmp_inc_dirs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-set(hmp_lib_dirs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
+set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
-include_directories(hmplib ${hmp_inc_dirs})
-target_link_libraries(hmplib PUBLIC ${hmp_lib_dirs})
-
-include_directories(hmp ${hmp_inc_dirs})
-target_link_libraries(hmp PUBLIC ${hmp_lib_dirs})
+foreach(hmp_target ${hmp_targets})
+    target_include_directories(${hmp_target} PUBLIC ${hmp_dep_incs})
+    target_link_libraries(${hmp_target} PUBLIC ${hmp_dep_libs})
+endforeach()
 
 ###############################################################################
 ## testing ####################################################################
@@ -121,7 +124,7 @@ target_link_libraries(hmp PUBLIC ${hmp_lib_dirs})
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS hmp hmplib DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS ${hmp_targets} DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 
@@ -133,7 +136,7 @@ set(CPACK_PACKAGE_NAME "hmp")
 set(CPACK_PACKAGE_VERSION "0.0.a")
 
 # We don't want to split our program up into several incomplete pieces.
-set(CPACK_MONOLITHIC_INSTALL 1)
+set(CPACK_MONOLITHIC_INSTALL TRUE)
 
 # This must be last
 include(CPack)
