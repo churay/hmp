@@ -1,6 +1,7 @@
 ## Compiled Binary Files ##
 bin/*
 build/*
+hmp
 
 ## Compiled Source Files ##
 *.o
