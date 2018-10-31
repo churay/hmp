@@ -61,6 +61,7 @@ int main() {
     const path_t cInstallPath( 2, cExePath.cstr(), path_t::DUP );
     LLCE_ASSERT_ERROR( cInstallPath.exists(),
         "Failed to find path to running executable." );
+    const path_t cInstallLockPath( 2, cInstallPath.cstr(), "install.lock" );
 
     const path_t cStateFilePath( 3, cInstallPath.cstr(), "out", "state.dat" );
     const path_t cInputFilePath( 3, cInstallPath.cstr(), "out", "input.dat" );
@@ -71,7 +72,6 @@ int main() {
     const path_t cDLLPath = llce::platform::libFindDLLPath( cDLLFileName );
     LLCE_ASSERT_ERROR( cDLLPath.exists(),
         "Failed to find library " << cDLLFileName << " in dynamic path." );
-    const path_t cDLLLockPath = llce::platform::pathLockPath( cDLLPath );
 
     void* hmpLibHandle = llce::platform::dllLoadHandle( cDLLPath );
     void* updateSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "update" );
@@ -282,7 +282,13 @@ int main() {
             currDylibModTime = cDLLPath.modtime(),
             "Couldn't load library `" << cDLLFileName << "` stat data on step." );
         if( currDylibModTime != prevDylibModTime ) {
-            cDLLLockPath.wait();
+            // TODO(JRC): This isn't ideal since spinning in this way can really
+            // ramp up processing time, but it's a permissible while there aren't
+            // too many iterations per reload (there are none at time of writing).
+            while( cInstallLockPath.exists() ) {
+                LLCE_ASSERT_INFO( false, "Encountered one or more spin cycles " <<
+                    "while waiting for DLL install; consider transitioning to file locks." );
+            }
 
             llce::platform::dllUnloadHandle( hmpLibHandle, cDLLFileName );
             hmpLibHandle = llce::platform::dllLoadHandle( cDLLFileName );

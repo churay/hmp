@@ -1,13 +1,11 @@
 #!/bin/bash
 
-set -v; set -x
-
 # This script launches 'cmake' to build the project for Linux platforms.
+
+BUILD_TYPE=${1:-Debug}
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJ_PATH=$(dirname ${SCRIPT_PATH})
-
-BUILD_TYPE=${1:-Debug}
 
 pushd .
 cd ${PROJ_PATH}

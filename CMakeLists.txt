@@ -5,12 +5,11 @@ project(hmp)
 ## config options #############################################################
 ###############################################################################
 
-# NOTE(JRC): Adding a debug build option is unnecessary because CMake handles
-# it with these commands:
-# -DCMAKE_BUILD_TYPE=Release, -DCMAKE_BUILD_TYPE=Debug
-# option(BUILD_DEBUG "Build all source files in debug mode" ON)
-
 # set(CMAKE_VERBOSE_MAKEFILE ON)
+
+####################################
+## compiler options ################
+####################################
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -fno-exceptions")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLLCE_DEBUG")
@@ -20,17 +19,13 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE )
 endif()
 
-# TODO(JRC): Clean up this code that sets the RPATH for the project binary
-# so that it can find the project dynamic library.
+####################################
+## rpath options ###################
+####################################
 
-# use, i.e. don't skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-# when building, don't use the install RPATH already
-# (but later on when installing)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 ###############################################################################
@@ -39,6 +34,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 file(GLOB_RECURSE hmp_src_files     src/*.cpp src/*.h)
 file(GLOB_RECURSE hmp_obj_files     src/*.cpp)
+
 file(GLOB         hmp_exe_files     src/hmp.cpp)
 file(GLOB         hmp_lib_files     src/hmplib.cpp src/hmplib.h)
 list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
@@ -61,10 +57,6 @@ add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_tar
 foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
 endforeach()
-
-# This copies all resource files in the build directory.
-# We need this, because we want to work with paths relative to the executable.
-file(COPY ${data} DESTINATION dat)
 
 ###############################################################################
 ## dependencies ###############################################################
@@ -122,9 +114,19 @@ endforeach()
 ## packaging ##################################################################
 ###############################################################################
 
+# TODO(JRC): The solution below works when running CMake in serial because the
+# "install.lock" file will necessarily be written before any changes are made
+# to the project's install targets and be removed afterwards based on CMake's
+# install script generation rules. It isn't clear whether or not these rules
+# extend to parallel builds (though they probably do at least for Makefile outputs).
+
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS ${hmp_targets} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
+install(TARGETS ${hmp_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
+install(TARGETS ${hmp_exe_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+
 install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 
