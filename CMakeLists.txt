@@ -32,13 +32,10 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ## file globbing ##############################################################
 ###############################################################################
 
-file(GLOB_RECURSE hmp_src_files     src/*.cpp src/*.h)
-file(GLOB_RECURSE hmp_obj_files     src/*.cpp)
-
 file(GLOB         hmp_exe_files     src/hmp.cpp)
-file(GLOB         hmp_lib_files     src/hmplib.cpp src/hmplib.h)
-list(REMOVE_ITEM  hmp_src_files     ${hmp_exe_files} ${hmp_lib_files})
-list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files} ${hmp_lib_files})
+file(GLOB         hmp_obj_files     src/*.cpp src/*.h)
+list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files})
+file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
 
 ###############################################################################
 ## target definitions #########################################################
@@ -56,6 +53,7 @@ add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_tar
 
 foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
+    target_include_directories(${hmp_target} PUBLIC src/hmp)
 endforeach()
 
 ###############################################################################

@@ -18,8 +18,8 @@ cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -D
 make
 make install
 
-if [[ ! -f ${PROJ_PATH}/hmp ]]; then
-    ln -s ${PROJ_PATH}/build/install/hmp ${PROJ_PATH}/hmp
+if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then
+    ln -s ${PROJ_PATH}/build/install/hmp ${PROJ_PATH}/hmp.out
 fi
 
 popd

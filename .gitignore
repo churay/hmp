@@ -1,7 +1,6 @@
 ## Compiled Binary Files ##
-bin/*
 build/*
-hmp
+hmp.out
 
 ## Compiled Source Files ##
 *.o
