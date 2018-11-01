@@ -15,8 +15,7 @@ mkdir -p build
 cd build
 
 cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${PROJ_PATH}
-make
-make install
+make && make install
 
 if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then
     ln -s ${PROJ_PATH}/build/install/hmp.out ${PROJ_PATH}/hmp.out

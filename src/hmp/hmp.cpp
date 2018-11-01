@@ -16,8 +16,6 @@ LLCE_DYLOAD_API void update( hmp::state* pState, hmp::input* pInput ) {
         pState->box[0] += 0.1;
     }
 
-    pState->boxColor[0] = 0xFF;
-
     pState->box[0] = std::min( 1.0f - pState->box[2], std::max(-1.0f, pState->box[0]) );
     pState->box[1] = std::min( 1.0f - pState->box[3], std::max(-1.0f, pState->box[1]) );
 }
