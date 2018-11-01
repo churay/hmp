@@ -1,11 +1,11 @@
-#ifndef LLCE_SDLLIB_H
-#define LLCE_SDLLIB_H
+#ifndef HMP_LIB_H
+#define HMP_LIB_H
 
 #include <SDL2/SDL.h>
 
 #include "consts.h"
 
-namespace hmplib {
+namespace hmp {
 
 struct state {
     float32_t box[4] = { 0.0, 0.0, 0.0, 0.0 }; // x, y, w, h

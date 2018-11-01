@@ -32,7 +32,7 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ## file globbing ##############################################################
 ###############################################################################
 
-file(GLOB         hmp_exe_files     src/hmp.cpp)
+file(GLOB         hmp_exe_files     src/main.cpp)
 file(GLOB         hmp_obj_files     src/*.cpp src/*.h)
 list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files})
 file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
@@ -42,8 +42,8 @@ file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
 ###############################################################################
 
 set(hmp_obj_target "hmpobj")
-set(hmp_lib_target "hmplib")
-set(hmp_exe_target "hmp")
+set(hmp_lib_target "hmp")
+set(hmp_exe_target "hmp.out")
 set(hmp_targets ${hmp_lib_target} ${hmp_exe_target})
 
 add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
@@ -51,9 +51,9 @@ set_property(TARGET ${hmp_obj_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
+target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
 foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
-    target_include_directories(${hmp_target} PUBLIC src/hmp)
 endforeach()
 
 ###############################################################################

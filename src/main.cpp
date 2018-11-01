@@ -7,7 +7,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "hmplib.h"
+#include "hmp/hmp.h"
 
 #include "timer.h"
 #include "memory.h"
@@ -15,8 +15,8 @@
 #include "platform.h"
 #include "consts.h"
 
-typedef void (*update_f)( hmplib::state*, hmplib::input* );
-typedef void (*render_f)( const hmplib::state*, const hmplib::input* );
+typedef void (*update_f)( hmp::state*, hmp::input* );
+typedef void (*render_f)( const hmp::state*, const hmp::input* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path path_t;
 
@@ -33,9 +33,9 @@ int main() {
     const uint64_t cBufferLength = MEGABYTE_BL( 1 );
     llce::memory mem( 1, &cBufferLength, cBufferAddress );
 
-    hmplib::state* state = (hmplib::state*)mem.allocate( 0, sizeof(hmplib::state) ); {
-        hmplib::state temp;
-        memcpy( state, &temp, sizeof(hmplib::state) );
+    hmp::state* state = (hmp::state*)mem.allocate( 0, sizeof(hmp::state) ); {
+        hmp::state temp;
+        memcpy( state, &temp, sizeof(hmp::state) );
 
         state->box[2] = 0.1;
         state->box[3] = 0.1;
@@ -49,8 +49,8 @@ int main() {
 
     /// Initialize Input State ///
 
-    hmplib::input rawInput;
-    hmplib::input* input = &rawInput;
+    hmp::input rawInput;
+    hmp::input* input = &rawInput;
 
     /// Find Project Paths ///
 
@@ -68,7 +68,7 @@ int main() {
 
     /// Load Dynamic Shared Library ///
 
-    const char8_t* cDLLFileName = "libhmplib.so";
+    const char8_t* cDLLFileName = "libhmp.so";
     const path_t cDLLPath = llce::platform::libFindDLLPath( cDLLFileName );
     LLCE_ASSERT_ERROR( cDLLPath.exists(),
         "Failed to find library " << cDLLFileName << " in dynamic path." );
@@ -285,10 +285,12 @@ int main() {
             // TODO(JRC): This isn't ideal since spinning in this way can really
             // ramp up processing time, but it's a permissible while there aren't
             // too many iterations per reload (there are none at time of writing).
-            while( cInstallLockPath.exists() ) {
-                LLCE_ASSERT_INFO( false, "Encountered one or more spin cycles " <<
-                    "while waiting for DLL install; consider transitioning to file locks." );
-            }
+            uint32_t lockSpinCount = 0;
+            while( cInstallLockPath.exists() ) { lockSpinCount++; }
+
+            LLCE_ASSERT_INFO( lockSpinCount == 0,
+                "Performed " << lockSpinCount << " spin cycles " <<
+                "while waiting for DLL install; consider transitioning to file locks." );
 
             llce::platform::dllUnloadHandle( hmpLibHandle, cDLLFileName );
             hmpLibHandle = llce::platform::dllLoadHandle( cDLLFileName );

@@ -19,7 +19,7 @@ make
 make install
 
 if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then
-    ln -s ${PROJ_PATH}/build/install/hmp ${PROJ_PATH}/hmp.out
+    ln -s ${PROJ_PATH}/build/install/hmp.out ${PROJ_PATH}/hmp.out
 fi
 
 popd
