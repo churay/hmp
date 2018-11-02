@@ -2,16 +2,16 @@
 #include <ratio>
 #include <thread>
 
-#include "timer.h"
+#include "timer_t.h"
 
 namespace llce {
 
-timer::timer( float64_t pRatio, timer::type pType ) {
+timer_t::timer_t( float64_t pRatio, timer_t::type pType ) {
     LLCE_ASSERT_DEBUG( pRatio > 0.0,
         "Couldn't create timer with invalid fps/spf ratio of " << pRatio << "; "
         "this ratio value must be positive." );
 
-    SecDuration frameDuration( (pType == timer::type::spf) ? pRatio : 1.0 / pRatio );
+    SecDuration frameDuration( (pType == timer_t::type::spf) ? pRatio : 1.0 / pRatio );
     mFrameDuration = std::chrono::duration_cast<ClockDuration>( frameDuration );
 
     ClockPoint initTime = Clock::now();
@@ -21,7 +21,7 @@ timer::timer( float64_t pRatio, timer::type pType ) {
 }
 
 
-void timer::split( bool32_t pFrameWait ) {
+void timer_t::split( bool32_t pFrameWait ) {
     mPrevFrameIdx = mCurrFrameIdx;
     mCurrFrameIdx = ( mCurrFrameIdx + 1 ) % mFrameSplits.size();
     mFrameSplits[mCurrFrameIdx] = Clock::now();
@@ -35,7 +35,7 @@ void timer::split( bool32_t pFrameWait ) {
 }
 
 
-float64_t timer::ft() const {
+float64_t timer_t::ft() const {
     ClockDuration prevFrameTime = std::max(
         mFrameDuration, mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx] );
     SecDuration prevFrameSecs = std::chrono::duration_cast<SecDuration>( prevFrameTime );
@@ -43,18 +43,18 @@ float64_t timer::ft() const {
 }
 
 
-float64_t timer::tt() const {
+float64_t timer_t::tt() const {
     SecDuration totalTime = std::chrono::duration_cast<SecDuration>( Clock::now() - mTimerStart );
     return static_cast<float64_t>( totalTime.count() );
 }
 
 
-float64_t timer::fps() const {
+float64_t timer_t::fps() const {
     return 1.0 / ft();
 }
 
 
-bool32_t timer::cycled() const {
+bool32_t timer_t::cycled() const {
     ClockDuration prevSplitEpoch = mFrameSplits[mPrevFrameIdx] - mTimerStart;
     ClockDuration currSplitEpoch = mFrameSplits[mCurrFrameIdx] - mTimerStart;
 

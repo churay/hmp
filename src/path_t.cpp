@@ -8,7 +8,7 @@
 #include <elf.h>
 #include <link.h>
 
-#include "path.h"
+#include "path_t.h"
 
 namespace llce {
 

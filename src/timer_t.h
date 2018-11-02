@@ -8,7 +8,7 @@
 
 namespace llce {
 
-class timer {
+class timer_t {
     public:
 
     /// Class Attributes ///
@@ -19,7 +19,7 @@ class timer {
 
     /// Constructors ///
 
-    timer( float64_t pRatio = 60.0, type pType = type::fps );
+    timer_t( float64_t pRatio = 60.0, type pType = type::fps );
 
     /// Class Functions ///
 

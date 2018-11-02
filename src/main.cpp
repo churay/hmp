@@ -9,9 +9,9 @@
 
 #include "hmp/hmp.h"
 
-#include "timer.h"
-#include "memory.h"
-#include "path.h"
+#include "timer_t.h"
+#include "memory_t.h"
+#include "path_t.h"
 #include "platform.h"
 #include "consts.h"
 
@@ -31,7 +31,7 @@ int main() {
     bit8_t* const cBufferAddress = nullptr;
 #endif
     const uint64_t cBufferLength = MEGABYTE_BL( 1 );
-    llce::memory mem( 1, &cBufferLength, cBufferAddress );
+    llce::memory_t mem( 1, &cBufferLength, cBufferAddress );
 
     hmp::state* state = (hmp::state*)mem.allocate( 0, sizeof(hmp::state) ); {
         hmp::state temp;
@@ -206,7 +206,7 @@ int main() {
     bool32_t isRecording = false, isReplaying = false;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    llce::timer simTimer( 60, llce::timer::type::fps );
+    llce::timer_t simTimer( 60, llce::timer_t::type::fps );
 
     while( isRunning ) {
         simTimer.split();

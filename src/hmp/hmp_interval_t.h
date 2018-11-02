@@ -1,23 +1,23 @@
-#ifndef HMP_INTERVAL_H
-#define HMP_INTERVAL_H
+#ifndef HMP_INTERVAL_T_H
+#define HMP_INTERVAL_T_H
 
 #include "consts.h"
 
 namespace hmp {
 
-class interval {
+class interval_t {
     public:
 
     /// Constructors ///
 
-    interval( const float32_t pCenter = 0.0f );
-    interval( const float32_t pMin, const float32_t pMax );
+    interval_t( const float32_t pCenter = 0.0f );
+    interval_t( const float32_t pMin, const float32_t pMax );
 
     /// Class Functions ///
 
     bool32_t contains( const float32_t pValue ) const;
-    bool32_t overlaps( const interval& pOther ) const;
-    interval intersect( const interval& pOther ) const;
+    bool32_t overlaps( const interval_t& pOther ) const;
+    interval_t intersect( const interval_t& pOther ) const;
 
     bool32_t empty() const;
     bool32_t valid() const;

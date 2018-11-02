@@ -1,13 +1,13 @@
 #include "platform.h"
 
-#include "memory.h"
+#include "memory_t.h"
 
 namespace llce {
 
-memory::memory( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBlockBase ) {
-    LLCE_ASSERT_DEBUG( pBlockCount <= memory::MAX_BLOCKS,
+memory_t::memory_t( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBlockBase ) {
+    LLCE_ASSERT_DEBUG( pBlockCount <= memory_t::MAX_BLOCKS,
         "Couldn't allocate memory chunk with " << pBlockCount << " blocks; " <<
-        "block count has a maximum value of " << memory::MAX_BLOCKS << "." );
+        "block count has a maximum value of " << memory_t::MAX_BLOCKS << "." );
 
     mBlockCount = pBlockCount;
     mBufferLength = 0;
@@ -29,12 +29,12 @@ memory::memory( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBl
 }
 
 
-memory::~memory() {
+memory_t::~memory_t() {
     platform::deallocBuffer( mBuffer, mBufferLength );
 }
 
 
-bit8_t* memory::allocate( uint64_t pBufferIdx, uint64_t pAllocLength ) {
+bit8_t* memory_t::allocate( uint64_t pBufferIdx, uint64_t pAllocLength ) {
     LLCE_ASSERT_DEBUG(
         mBlockAllocs[pBufferIdx] + pAllocLength <= mBlockLengths[pBufferIdx],
         "Cannot allocate an additional " << pAllocLength << " bytes to buffer " <<
@@ -47,12 +47,12 @@ bit8_t* memory::allocate( uint64_t pBufferIdx, uint64_t pAllocLength ) {
 }
 
 
-bit8_t* memory::buffer( uint64_t pBufferIdx ) const {
+bit8_t* memory_t::buffer( uint64_t pBufferIdx ) const {
     return ( pBufferIdx < mBlockCount ) ? mBlockBuffers[pBufferIdx] : mBuffer;
 }
 
 
-uint64_t memory::length( uint64_t pBufferIdx ) const {
+uint64_t memory_t::length( uint64_t pBufferIdx ) const {
     return ( pBufferIdx < mBlockCount ) ? mBlockLengths[pBufferIdx] : mBufferLength;
 }
 

@@ -1,5 +1,5 @@
-#ifndef LLCE_PATH_H
-#define LLCE_PATH_H
+#ifndef LLCE_PATH_T_H
+#define LLCE_PATH_T_H
 
 #include "consts.h"
 

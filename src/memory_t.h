@@ -1,11 +1,11 @@
-#ifndef LLCE_MEMORY_H
-#define LLCE_MEMORY_H
+#ifndef LLCE_MEMORY_T_H
+#define LLCE_MEMORY_T_H
 
 #include "consts.h"
 
 namespace llce {
 
-class memory {
+class memory_t {
     public:
 
     /// Class Attributes ///
@@ -14,8 +14,8 @@ class memory {
 
     /// Constructors ///
 
-    memory( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBlockBase = nullptr );
-    ~memory();
+    memory_t( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBlockBase = nullptr );
+    ~memory_t();
 
     /// Class Functions ///
 
