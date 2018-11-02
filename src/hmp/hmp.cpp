@@ -1,9 +1,23 @@
+#include <cstring>
 #include <cstdlib>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
 #include "hmp.h"
+
+LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
+    pState->time = 0.0;
+
+    uint8_t playerColor[4] = { 0x00, 0xFF, 0xFF, 0xFF };
+    pState->playerBox = hmp::box_t( -0.05f, -0.05f, 0.1f, 0.1f );
+    std::memcpy( pState->playerColor, playerColor, sizeof(playerColor) );
+
+    uint8_t boundsColor[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
+    pState->boundsBox = hmp::box_t( -1.0f, -1.0f, 2.0f, 2.0f );
+    std::memcpy( pState->boundsColor, boundsColor, sizeof(boundsColor) );
+}
+
 
 LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Process Input //

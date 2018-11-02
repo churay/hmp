@@ -33,24 +33,13 @@ int main() {
 #endif
     const uint64_t cBufferLength = MEGABYTE_BL( 1 );
     llce::memory_t mem( 1, &cBufferLength, cBufferAddress );
-
-    hmp::state_t* state = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) ); {
-        // TODO(JRC): Move this to some form of initialization function in the
-        // DLL that's only called on startup or restart?
-        hmp::state_t temp;
-        memcpy( state, &temp, sizeof(hmp::state_t) );
-
-        state->playerBox = hmp::box_t( -0.05f, -0.05f, 0.1f, 0.1f );
-        state->boundsBox = hmp::box_t( -1.0f, -1.0f, 2.0f, 2.0f );
-    }
+    hmp::input_t rawInput;
 
     std::fstream recStateStream, recInputStream;
     const ioflag_t cIOModeR = std::fstream::binary | std::fstream::in;
     const ioflag_t cIOModeW = std::fstream::binary | std::fstream::out | std::fstream::trunc;
 
-    /// Initialize Input State ///
-
-    hmp::input_t rawInput;
+    hmp::state_t* state = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) );
     hmp::input_t* input = &rawInput;
 
     /// Find Project Paths ///
@@ -75,12 +64,14 @@ int main() {
         "Failed to find library " << cDLLFileName << " in dynamic path." );
 
     void* hmpLibHandle = llce::platform::dllLoadHandle( cDLLPath );
+    void* initSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "init" );
     void* updateSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "update" );
     void* renderSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "render" );
     LLCE_ASSERT_ERROR(
-        hmpLibHandle != nullptr && updateSymbol != nullptr && renderSymbol != nullptr,
+        hmpLibHandle != nullptr && initSymbol != nullptr && updateSymbol != nullptr && renderSymbol != nullptr,
         "Couldn't load library `" << cDLLFileName << "` symbols on initialize." );
 
+    update_f initFunction = (update_f)initSymbol;
     update_f updateFunction = (update_f)updateSymbol;
     render_f renderFunction = (render_f)renderSymbol;
 
@@ -209,6 +200,7 @@ int main() {
 
     llce::timer_t simTimer( 60, llce::timer_t::type::fps );
 
+    initFunction( state, input );
     while( isRunning ) {
         simTimer.split();
 

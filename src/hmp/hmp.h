@@ -10,10 +10,10 @@ namespace hmp {
 
 struct state_t {
     box_t playerBox;
-    uint8_t playerColor[4] = { 0xFF, 0x00, 0x00, 0xFF }; // r, g, b, a
+    uint8_t playerColor[4]; // r, g, b, a
     box_t boundsBox;
-    uint8_t boundsColor[4] = { 0xFF, 0xFF, 0xFF, 0xFF }; // r, g, b, a
-    float64_t time = 0.0;
+    uint8_t boundsColor[4]; // r, g, b, a
+    float64_t time;
 };
 
 
