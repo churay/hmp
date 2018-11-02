@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "hmp/hmp.h"
+#include "hmp/hmp_box_t.h"
 
 #include "timer_t.h"
 #include "memory_t.h"
@@ -15,8 +16,8 @@
 #include "platform.h"
 #include "consts.h"
 
-typedef void (*update_f)( hmp::state*, hmp::input* );
-typedef void (*render_f)( const hmp::state*, const hmp::input* );
+typedef void (*update_f)( hmp::state_t*, hmp::input_t* );
+typedef void (*render_f)( const hmp::state_t*, const hmp::input_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 
@@ -33,14 +34,14 @@ int main() {
     const uint64_t cBufferLength = MEGABYTE_BL( 1 );
     llce::memory_t mem( 1, &cBufferLength, cBufferAddress );
 
-    hmp::state* state = (hmp::state*)mem.allocate( 0, sizeof(hmp::state) ); {
-        hmp::state temp;
-        memcpy( state, &temp, sizeof(hmp::state) );
+    hmp::state_t* state = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) ); {
+        // TODO(JRC): Move this to some form of initialization function in the
+        // DLL that's only called on startup or restart?
+        hmp::state_t temp;
+        memcpy( state, &temp, sizeof(hmp::state_t) );
 
-        state->box[2] = 0.1;
-        state->box[3] = 0.1;
-        state->box[0] = 0.0 - state->box[2] / 2.0;
-        state->box[1] = 0.0 - state->box[3] / 2.0;
+        state->playerBox = hmp::box_t( -0.05f, -0.05f, 0.1f, 0.1f );
+        state->boundsBox = hmp::box_t( -1.0f, -1.0f, 2.0f, 2.0f );
     }
 
     std::fstream recStateStream, recInputStream;
@@ -49,8 +50,8 @@ int main() {
 
     /// Initialize Input State ///
 
-    hmp::input rawInput;
-    hmp::input* input = &rawInput;
+    hmp::input_t rawInput;
+    hmp::input_t* input = &rawInput;
 
     /// Find Project Paths ///
 

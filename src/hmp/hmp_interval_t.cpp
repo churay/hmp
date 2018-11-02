@@ -19,9 +19,22 @@ interval_t::interval_t( const float32_t pMin, const float32_t pMax ) {
 }
 
 
+bool32_t interval_t::operator==( const interval_t& pOther ) const {
+    // TODO(JRC): Replace with equivalent fuzzy comparison operator.
+    return mMin == pOther.mMin && mMax == pOther.mMax;
+}
+
+
 bool32_t interval_t::contains( const float32_t pValue ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin <= pValue && pValue <= mMax;
+}
+
+
+bool32_t interval_t::contains( const interval_t& pOther ) const {
+    // TODO(JRC): Replace with equivalent fuzzy comparison operator.
+    interval_t overlapInterval = (*this).intersect( pOther );
+    return overlapInterval.valid() && overlapInterval == pOther;
 }
 
 
@@ -51,19 +64,9 @@ bool32_t interval_t::valid() const {
     return !( std::isnan(mMin) || std::isnan(mMax) || std::isinf(mMin) || std::isinf(mMax) );
 }
 
-
-const float32_t& interval_t::min() const {
-    return mMin;
-}
-
-
-const float32_t& interval_t::max() const {
-    return mMax;
-}
-
 }
 
 std::ostream& operator<<( std::ostream& pOS, const hmp::interval_t& pInt ) {
-    pOS << "[ " << pInt.min() << ", " << pInt.max() << " ]";
+    pOS << "[" << pInt.mMin << ", " << pInt.mMax << "]";
     return pOS;
 }

@@ -17,10 +17,17 @@ class box_t {
 
     /// Class Functions ///
 
+    // TODO(JRC): This should really be abstracted elsewhere once the
+    // code defines some notion of an actor.
+    void update( const float32_t pDX, const float32_t pDY );
+    void render( const uint8_t* pColor = nullptr ) const;
+
     bool32_t contains( const float32_t pX, const float32_t pY ) const;
+    bool32_t contains( const box_t& pOther ) const;
     bool32_t overlaps( const box_t& pOther ) const;
 
-    private:
+    bool32_t empty() const;
+    bool32_t valid() const;
 
     /// Class Fields ///
 

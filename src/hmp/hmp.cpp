@@ -5,36 +5,30 @@
 
 #include "hmp.h"
 
-LLCE_DYLOAD_API void update( hmp::state* pState, hmp::input* pInput ) {
+LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
+    // Process Input //
+
+    float32_t dx = 0.0f, dy = 0.0f;
     if( pInput->keys[SDL_SCANCODE_W] ) {
-        pState->box[1] += 0.1;
+        dy += 0.1;
     } if( pInput->keys[SDL_SCANCODE_S] ) {
-        pState->box[1] -= 0.1;
+        dy -= 0.1;
     } if( pInput->keys[SDL_SCANCODE_A] ) {
-        pState->box[0] -= 0.1;
+        dx -= 0.1;
     } if( pInput->keys[SDL_SCANCODE_D] ) {
-        pState->box[0] += 0.1;
+        dx += 0.1;
     }
 
-    pState->box[0] = std::min( 1.0f - pState->box[2], std::max(-1.0f, pState->box[0]) );
-    pState->box[1] = std::min( 1.0f - pState->box[3], std::max(-1.0f, pState->box[1]) );
+    // Update State //
+
+    pState->playerBox.update( dx, dy );
+    if( !pState->boundsBox.contains(pState->playerBox) ) {
+        pState->playerBox.update( -dx, -dy );
+    }
 }
 
 
-LLCE_DYLOAD_API void render( const hmp::state* pState, const hmp::input* pInput ) {
-    glBegin( GL_QUADS );
-        glColor4ub( pState->backColor[0], pState->backColor[1], pState->backColor[2], pState->backColor[3] );
-        glVertex2f( -1.0f, -1.0f );
-        glVertex2f( +1.0f, -1.0f );
-        glVertex2f( +1.0f, +1.0f );
-        glVertex2f( -1.0f, +1.0f );
-    glEnd();
-
-    glBegin( GL_QUADS );
-        glColor4ub( pState->boxColor[0], pState->boxColor[1], pState->boxColor[2], pState->boxColor[3] );
-        glVertex2f( pState->box[0] + 0.0 * pState->box[2], pState->box[1] + 0.0 * pState->box[3] );
-        glVertex2f( pState->box[0] + 1.0 * pState->box[2], pState->box[1] + 0.0 * pState->box[3] );
-        glVertex2f( pState->box[0] + 1.0 * pState->box[2], pState->box[1] + 1.0 * pState->box[3] );
-        glVertex2f( pState->box[0] + 0.0 * pState->box[2], pState->box[1] + 1.0 * pState->box[3] );
-    glEnd();
+LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
+    pState->boundsBox.render( &(pState->boundsColor)[0] );
+    pState->playerBox.render( &(pState->playerColor)[0] );
 }
