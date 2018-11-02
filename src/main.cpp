@@ -18,7 +18,7 @@
 typedef void (*update_f)( hmp::state*, hmp::input* );
 typedef void (*render_f)( const hmp::state*, const hmp::input* );
 typedef std::ios_base::openmode ioflag_t;
-typedef llce::platform::path path_t;
+typedef llce::platform::path_t path_t;
 
 int main() {
     /// Initialize Application Memory/State ///

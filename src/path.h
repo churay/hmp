@@ -7,7 +7,7 @@ namespace llce {
 
 namespace platform {
 
-class path {
+class path_t {
     public:
 
     /// Class Attributes ///
@@ -22,9 +22,9 @@ class path {
 
     /// Constructors ///
 
-    path();
-    path( const char8_t* pBuffer );
-    path( const uint32_t pArgCount, ... );
+    path_t();
+    path_t( const char8_t* pBuffer );
+    path_t( const uint32_t pArgCount, ... );
 
     /// Conversions ///
 
@@ -44,9 +44,9 @@ class path {
 
     /// External Functions ///
 
-    friend path pathLockPath( const path& pBasePath );
-    friend path exeBasePath();
-    friend path libFindDLLPath( const char8_t* pLibName );
+    friend path_t pathLockPath( const path_t& pBasePath );
+    friend path_t exeBasePath();
+    friend path_t libFindDLLPath( const char8_t* pLibName );
 
     private:
 
@@ -56,9 +56,9 @@ class path {
     uint32_t mLength;
 };
 
-path pathLockPath( const path& pBasePath );
-path exeBasePath();
-path libFindDLLPath( const char8_t* pLibName );
+path_t pathLockPath( const path_t& pBasePath );
+path_t exeBasePath();
+path_t libFindDLLPath( const char8_t* pLibName );
 
 }
 
