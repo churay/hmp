@@ -1,5 +1,6 @@
 #include <sstream>
 
+#include <glm/ext/vector_float2.hpp>
 #include <SDL2/SDL_opengl.h>
 
 #include "hmp_box_t.h"
@@ -8,64 +9,66 @@ namespace hmp {
 
 /// Class Functions ///
 
-box_t::box_t(
-    const float32_t pX, const float32_t pY,
-    const float32_t pW, const float32_t pH ) :
-        mX( pX, pX + pW ), mY( pY, pY + pH ) {
+box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims ) :
+        mPos( pPos ), mDims( pDims ) {
 }
 
 
-void box_t::update( const float32_t pX, const float32_t pY ) {
-    mX.mMin += pX;
-    mX.mMax += pX;
-    mY.mMin += pY;
-    mY.mMax += pY;
+void box_t::update( const glm::vec2& pPos ) {
+    mPos += pPos;
 }
 
 
 void box_t::render( const uint8_t* pColor ) const {
     glBegin( GL_QUADS ); {
-        if( pColor != nullptr ) {
-            glColor4ub( pColor[0], pColor[1], pColor[2], pColor[3] );
-        } else {
-            glColor4ub( 0xFF, 0xFF, 0xFF, 0xFF );
-        }
-
-        glVertex2f( mX.mMin, mY.mMin );
-        glVertex2f( mX.mMax, mY.mMin );
-        glVertex2f( mX.mMax, mY.mMax );
-        glVertex2f( mX.mMin, mY.mMax );
+        glColor4ub( pColor[0], pColor[1], pColor[2], pColor[3] );
+        glVertex2f( mPos[0] + 0.0 * mDims[0], mPos[1] + 0.0 * mDims[1] );
+        glVertex2f( mPos[0] + 1.0 * mDims[0], mPos[1] + 0.0 * mDims[1] );
+        glVertex2f( mPos[0] + 1.0 * mDims[0], mPos[1] + 1.0 * mDims[1] );
+        glVertex2f( mPos[0] + 0.0 * mDims[0], mPos[1] + 1.0 * mDims[1] );
     } glEnd();
 };
 
 
-bool32_t box_t::contains( const float32_t pX, const float32_t pY ) const {
-    return mX.contains( pX ) && mY.contains( pY );
+bool32_t box_t::contains( const glm::vec2& pPos ) const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    return tx.contains( pPos[0] ) && ty.contains( pPos[1] );
 }
 
 
 bool32_t box_t::contains( const box_t& pOther ) const {
-    return mX.contains( pOther.mX ) && mY.contains( pOther.mY );
+    const interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+    return tx.contains( ox ) && ty.contains( oy );
 }
 
 
 bool32_t box_t::overlaps( const box_t& pOther ) const {
-    return mX.overlaps( pOther.mX ) && mY.overlaps( pOther.mY );
+    const interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+    return tx.overlaps( ox ) && ty.overlaps( oy );
 }
 
 
 bool32_t box_t::empty() const {
-    return mX.empty() || mY.empty();
+    const interval_t tx = xbounds(), ty = ybounds();
+    return tx.empty() || ty.empty();
 }
 
 
 bool32_t box_t::valid() const {
-    return mX.valid() && mY.valid();
+    const interval_t tx = xbounds(), ty = ybounds();
+    return tx.valid() && ty.valid();
+}
+
+
+interval_t box_t::xbounds() const {
+    return interval_t( mPos[0], mPos[0] + mDims[0] );
+}
+
+
+interval_t box_t::ybounds() const {
+    return interval_t( mPos[1], mPos[1] + mDims[1] );
 }
 
 }
-
-// std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox ) {
-//     pOS << "{X: " << pBox.mX << ", Y: " << pBox.mY << "}";
-//     return pOS;
-// }

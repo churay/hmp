@@ -1,6 +1,8 @@
 #ifndef HMP_BOX_T_H
 #define HMP_BOX_T_H
 
+#include <glm/ext/vector_float2.hpp>
+
 #include "hmp_interval_t.h"
 
 #include "consts.h"
@@ -12,26 +14,28 @@ class box_t {
 
     /// Constructors ///
 
-    box_t( const float32_t pX = 0.0f, const float32_t pY = 0.0f,
-        const float32_t pW = 1.0f, const float32_t pH = 1.0f );
+    box_t( const glm::vec2& pPos, const glm::vec2& pDims );
 
     /// Class Functions ///
 
     // TODO(JRC): This should really be abstracted elsewhere once the
     // code defines some notion of an actor.
-    void update( const float32_t pDX, const float32_t pDY );
-    void render( const uint8_t* pColor = nullptr ) const;
+    void update( const glm::vec2& pPos );
+    void render( const uint8_t* pColor ) const;
 
-    bool32_t contains( const float32_t pX, const float32_t pY ) const;
+    bool32_t contains( const glm::vec2& pPos ) const;
     bool32_t contains( const box_t& pOther ) const;
     bool32_t overlaps( const box_t& pOther ) const;
 
     bool32_t empty() const;
     bool32_t valid() const;
 
+    interval_t xbounds() const;
+    interval_t ybounds() const;
+
     /// Class Fields ///
 
-    interval_t mX, mY;
+    glm::vec2 mPos, mDims;
 };
 
 }
