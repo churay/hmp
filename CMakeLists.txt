@@ -1,11 +1,13 @@
 cmake_minimum_required(VERSION 3.5)
 project(hmp)
 
+include(ExternalProject)
+
 ###############################################################################
 ## config options #############################################################
 ###############################################################################
 
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 ####################################
 ## compiler options ################
@@ -41,6 +43,26 @@ file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
 ## target definitions #########################################################
 ###############################################################################
 
+####################################
+## extra targets ###################
+####################################
+
+ExternalProject_Add(glm
+    PREFIX ${CMAKE_BINARY_DIR}/glm_src
+    URL https://github.com/g-truc/glm/releases/download/0.9.9.3/glm-0.9.9.3.zip
+    URL_HASH MD5=d54fd62d29f690ad37683432921c3654
+    DOWNLOAD_NAME "glm.zip"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_BINARY_DIR}/glm_src/src/glm/glm ${CMAKE_BINARY_DIR}/glm/glm
+    LOG_DOWNLOAD ON)
+set(GLM_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/glm)
+
+####################################
+## project targets #################
+####################################
+
 set(hmp_obj_target "hmpobj")
 set(hmp_lib_target "hmp")
 set(hmp_exe_target "hmp.out")
@@ -65,7 +87,7 @@ find_package(PkgConfig REQUIRED)
 pkg_search_module(SDL2 REQUIRED sdl2)
 pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 
-set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
 foreach(hmp_target ${hmp_targets})
