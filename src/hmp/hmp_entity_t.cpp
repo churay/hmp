@@ -22,8 +22,8 @@ void entity_t::update( const float64_t pDT ) {
 void entity_t::render() const {
     // TODO(JRC): Set up the render matrix such that the internal render
     // function can render its contents to the space (1.0, 1.0).
-
     glPushMatrix();
+    // in the space of the entity item and going back to world space
     irender();
     glPopMatrix();
 }

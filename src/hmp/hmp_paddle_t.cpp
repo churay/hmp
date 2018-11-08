@@ -11,27 +11,31 @@ namespace hmp {
 /// Class Functions ///
 
 paddle_t::paddle_t( const box_t& pBBox ) :
-        entity_t( pBBox ), mVel( 0.0f ), mAX( 0 ), mAY( 0 ) {
+        entity_t( pBBox ), mVel( 0.0f, 0.0f ), mDX( 0 ), mDY( 0 ) {
     
 }
 
 
-void paddle_t::accelerate( const int8_t pDX, const int8_t pDY ) {
-    mAX = glm::clamp( mAX + pDX, -1, 1 );
-    mAY = glm::clamp( mAY + pDY, -1, 1 );
+void paddle_t::move( const int32_t pDX, const int32_t pDY ) {
+    mDX = glm::clamp( pDX, -1, 1 );
+    mDY = glm::clamp( pDY, -1, 1 );
 }
 
 
 void paddle_t::iupdate( const float64_t pDT ) {
-    // TODO(JRC): Implement this function.
-    // mBBox.mPos += pPos;
+    mVel.x = mDX * paddle_t::MOVE_VEL;
+    mVel.y = mDY * paddle_t::MOVE_VEL;
+
+    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
 
 
 void paddle_t::irender() const {
     glBegin( GL_QUADS ); {
-        // TODO(JRC): Add color.
-        // glColor4ub( pColor[0], pColor[1], pColor[2], pColor[3] );
+        // TODO(JRC): Add color to specification of the paddle in the
+        // constructor once a reasonable way to represent color without
+        // dealing with endianness is discovered.
+        glColor4ub( 0x68, 0x75, 0x7e, 0xFF );
         glVertex2f( 0.0f, 0.0f );
         glVertex2f( 1.0f, 0.0f );
         glVertex2f( 1.0f, 1.0f );

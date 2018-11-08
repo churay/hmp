@@ -15,8 +15,7 @@ class paddle_t : public entity_t {
 
     /// Class Attributes ///
 
-    constexpr static float32_t MAX_VEL = 1.0e-2f; // units: world / seconds
-    constexpr static float32_t MAX_ACCEL = 1.0e-3f;
+    constexpr static float32_t MOVE_VEL = 1.0e-2f; // units: world / seconds
 
     /// Constructors ///
 
@@ -24,7 +23,7 @@ class paddle_t : public entity_t {
 
     /// Class Functions ///
 
-    void accelerate( const int8_t pDX, const int8_t pDY );
+    void move( const int32_t pDX, const int32_t pDY );
 
     /// Internal Functions ///
 
@@ -38,7 +37,7 @@ class paddle_t : public entity_t {
     public:
 
     glm::vec2 mVel; // units: world / seconds
-    int8_t mAX, mAY;
+    int8_t mDX, mDY;
 };
 
 }
