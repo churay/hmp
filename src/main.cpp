@@ -1,3 +1,11 @@
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_opengl.h>
@@ -200,6 +208,17 @@ int main() {
 
     llce::timer_t simTimer( 60, llce::timer_t::type::fps );
 
+    { // TEST CODE //
+        const float32_t windowRatio = ( windowHeight + 0.0f ) / ( windowHeight + 0.0f );
+
+        glm::mat4 t1 = glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+        glm::mat4 s1 = glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+        glm::mat4 matWorldScreen = t1 * s1;
+
+        std::cout << glm::to_string(matWorldScreen) << std::endl;
+        std::cout << glm::to_string(matWorldScreen * glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)) << std::endl;
+    }
+
     initFunction( state, input );
     while( isRunning ) {
         simTimer.split();
@@ -301,15 +320,48 @@ int main() {
         glViewport( 0, 0, windowWidth, windowHeight );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-        glMatrixMode( GL_MODELVIEW );
-        glLoadIdentity();
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity();
         glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+        glMatrixMode( GL_MODELVIEW );
+        glLoadIdentity();
 
         glPushMatrix(); {
-            updateFunction( state, input );
-            renderFunction( state, input );
+            const float32_t windowRatio = ( windowHeight + 0.0f ) / ( windowHeight + 0.0f );
+
+            // translate( 1.0f, 1.0f )
+            // scale( 2.0f, 2.0f )
+
+            // glm::mat4 matWorldScreen( 1.0f );
+            // matWorldScreen *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+            // matWorldScreen *= glm::translate( glm::mat4(1.0f), glm::vec3() );
+            // glMultMatrixf();
+
+            glm::mat4 t1 = glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+            glm::mat4 s1 = glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+            glm::mat4 matWorldScreen = t1 * s1;
+            // matWorldScreen *= glm::translate( glm::mat4(1.0f), glm::vec3() );
+            // matWorldScreen *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+            glMultMatrixf( &matWorldScreen[0][0] );
+
+            // local boardscale = (window.height / window.width) * (board:getw() / board:geth())
+            // love.graphics.scale( window.width, window.height )
+            // love.graphics.translate( 0.0, 1.0 )
+            // love.graphics.scale( 1.0, -1.0 )
+
+            // love.graphics.translate( (1.0 - boardscale) / 2.0, 0.0 )
+            // love.graphics.scale( boardscale, 1.0 )
+
+            glBegin( GL_QUADS ); {
+                glColor4ub( 0x00, 0x2b, 0x36, 0xFF );
+                glVertex2f( 0.0f, 0.0f );
+                glVertex2f( 1.0f, 0.0f );
+                glVertex2f( 1.0f, 1.0f );
+                glVertex2f( 0.0f, 1.0f );
+            } glEnd();
+
+            // updateFunction( state, input );
+            // renderFunction( state, input );
         } glPopMatrix();
 
 #ifdef LLCE_DEBUG
