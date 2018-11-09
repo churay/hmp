@@ -208,17 +208,6 @@ int main() {
 
     llce::timer_t simTimer( 60, llce::timer_t::type::fps );
 
-    { // TEST CODE //
-        const float32_t windowRatio = ( windowHeight + 0.0f ) / ( windowHeight + 0.0f );
-
-        glm::mat4 t1 = glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-        glm::mat4 s1 = glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-        glm::mat4 matWorldScreen = t1 * s1;
-
-        std::cout << glm::to_string(matWorldScreen) << std::endl;
-        std::cout << glm::to_string(matWorldScreen * glm::vec4(1.0f, 1.0f, 0.0f, 1.0f)) << std::endl;
-    }
-
     initFunction( state, input );
     while( isRunning ) {
         simTimer.split();
@@ -327,30 +316,14 @@ int main() {
         glLoadIdentity();
 
         glPushMatrix(); {
-            const float32_t windowRatio = ( windowHeight + 0.0f ) / ( windowHeight + 0.0f );
+            const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
 
-            // translate( 1.0f, 1.0f )
-            // scale( 2.0f, 2.0f )
-
-            // glm::mat4 matWorldScreen( 1.0f );
-            // matWorldScreen *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            // matWorldScreen *= glm::translate( glm::mat4(1.0f), glm::vec3() );
-            // glMultMatrixf();
-
-            glm::mat4 t1 = glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-            glm::mat4 s1 = glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            glm::mat4 matWorldScreen = t1 * s1;
-            // matWorldScreen *= glm::translate( glm::mat4(1.0f), glm::vec3() );
-            // matWorldScreen *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            glMultMatrixf( &matWorldScreen[0][0] );
-
-            // local boardscale = (window.height / window.width) * (board:getw() / board:geth())
-            // love.graphics.scale( window.width, window.height )
-            // love.graphics.translate( 0.0, 1.0 )
-            // love.graphics.scale( 1.0, -1.0 )
-
-            // love.graphics.translate( (1.0 - boardscale) / 2.0, 0.0 )
-            // love.graphics.scale( boardscale, 1.0 )
+            glm::mat4 matWorldView( 1.0f );
+            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-viewRatio)/2.0f, 0.0f, 0.0f) );
+            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 0.0f) );
+            glMultMatrixf( &matWorldView[0][0] );
 
             glBegin( GL_QUADS ); {
                 glColor4ub( 0x00, 0x2b, 0x36, 0xFF );
