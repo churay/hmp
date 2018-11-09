@@ -333,8 +333,8 @@ int main() {
                 glVertex2f( 0.0f, 1.0f );
             } glEnd();
 
-            // updateFunction( state, input );
-            // renderFunction( state, input );
+            updateFunction( state, input );
+            renderFunction( state, input );
         } glPopMatrix();
 
 #ifdef LLCE_DEBUG
@@ -384,7 +384,11 @@ int main() {
         SDL_GL_SwapWindow( window );
 
         simTimer.split( true );
-        state->time += simTimer.ft();
+        // TODO(JRC): This should really be improved so that the platform code
+        // never even has to touch the library state, and rather just calls its
+        // functions.
+        state->dt = simTimer.ft();
+        state->tt += simTimer.ft();
     }
 
     /// Clean Up + Exit ///

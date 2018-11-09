@@ -3,17 +3,17 @@
 
 #include <SDL2/SDL.h>
 
+#include "hmp_paddle_t.h"
 #include "hmp_box_t.h"
 #include "consts.h"
 
 namespace hmp {
 
 struct state_t {
-    box_t playerBox;
-    uint8_t playerColor[4]; // r, g, b, a
     box_t boundsBox;
     uint8_t boundsColor[4]; // r, g, b, a
-    float64_t time;
+    paddle_t playerEnt;
+    float64_t dt, tt;
 };
 
 

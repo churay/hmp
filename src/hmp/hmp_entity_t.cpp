@@ -1,4 +1,8 @@
-#include <sstream>
+#include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #include <SDL2/SDL_opengl.h>
 
@@ -20,12 +24,13 @@ void entity_t::update( const float64_t pDT ) {
 
 
 void entity_t::render() const {
-    // TODO(JRC): Set up the render matrix such that the internal render
-    // function can render its contents to the space (1.0, 1.0).
-    glPushMatrix();
-    // in the space of the entity item and going back to world space
-    irender();
-    glPopMatrix();
+    glPushMatrix(); {
+        glm::mat4 matModelWorld( 1.0f );
+        matModelWorld *= glm::translate( glm::mat4(1.0f), glm::vec3(mBBox.mPos.x, mBBox.mPos.y, 0.0f) );
+        matModelWorld *= glm::scale( glm::mat4(1.0f), glm::vec3(mBBox.mDims.x, mBBox.mDims.y, 0.0f) );
+        glMultMatrixf( &matModelWorld[0][0] );
+        irender();
+    } glPopMatrix();
 }
 
 }

@@ -9,42 +9,56 @@
 #include "hmp.h"
 
 LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
-    pState->time = 0.0;
+    pState->dt = 0.0;
+    pState->tt = 0.0;
 
-    uint8_t playerColor[4] = { 0x00, 0xFF, 0xFF, 0xFF };
-    std::memcpy( pState->playerColor, playerColor, sizeof(playerColor) );
-    pState->playerBox = hmp::box_t( glm::vec2(-0.05f, -0.05f), glm::vec2(0.1f, 0.1f) );
-
-    uint8_t boundsColor[4] = { 0xFF, 0xFF, 0xFF, 0xFF };
+    const uint8_t boundsColor[4] = { 0x00, 0x2b, 0x36, 0xFF };
     std::memcpy( pState->boundsColor, boundsColor, sizeof(boundsColor) );
-    pState->boundsBox = hmp::box_t( glm::vec2(-1.0f, -1.0f), glm::vec2(2.0f, 2.0f) );
+    const glm::vec2 boundsPos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
+    pState->boundsBox = hmp::box_t( boundsPos, boundsDims );
+
+    const glm::vec2 playerDims( 0.1f, 0.1f );
+    const glm::vec2 playerPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * playerDims;
+    pState->playerEnt = hmp::paddle_t( hmp::box_t(playerPos, playerDims) );
 }
 
 
 LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Process Input //
 
-    glm::vec2 dp( 0.0f, 0.0f );
+    int32_t dx = 0, dy = 0;
     if( pInput->keys[SDL_SCANCODE_W] ) {
-        dp.y += 0.1f;
+        dy += 1;
     } if( pInput->keys[SDL_SCANCODE_S] ) {
-        dp.y -= 0.1f;
+        dy -= 1;
     } if( pInput->keys[SDL_SCANCODE_A] ) {
-        dp.x -= 0.1f;
+        dx += 1;
     } if( pInput->keys[SDL_SCANCODE_D] ) {
-        dp.x += 0.1f;
+        dx -= 1;
     }
+
+    pState->playerEnt.move( dx, dy );
 
     // Update State //
 
-    pState->playerBox.update( dp );
-    if( !pState->boundsBox.contains(pState->playerBox) ) {
-        pState->playerBox.update( -dp );
+    hmp::box_t prevPlayerBox = pState->playerEnt.mBBox;
+    pState->playerEnt.update( pState->dt );
+    if( !pState->boundsBox.contains(pState->playerEnt.mBBox) ) {
+        pState->playerEnt.mBBox = prevPlayerBox;
     }
 }
 
 
 LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
+    // TODO(JRC): Improve rendering mechanism for the bounding box?
     pState->boundsBox.render( &(pState->boundsColor)[0] );
-    pState->playerBox.render( &(pState->playerColor)[0] );
+    glBegin( GL_QUADS ); {
+        glColor4ub( pState->boundsColor[0], pState->boundsColor[1], pState->boundsColor[2], pState->boundsColor[3] );
+        glVertex2f( 0.0f, 0.0f );
+        glVertex2f( 1.0f, 0.0f );
+        glVertex2f( 1.0f, 1.0f );
+        glVertex2f( 0.0f, 1.0f );
+    } glEnd();
+
+    pState->playerEnt.render();
 }
