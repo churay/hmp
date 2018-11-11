@@ -21,7 +21,7 @@ class entity_t {
 
     /// Internal Functions ///
 
-    private:
+    protected:
 
     virtual void iupdate( const float64_t pDT ) = 0;
     virtual void irender() const = 0;

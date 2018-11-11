@@ -27,7 +27,7 @@ class paddle_t : public entity_t {
 
     /// Internal Functions ///
 
-    private:
+    protected:
 
     virtual void iupdate( const float64_t pDT );
     virtual void irender() const;

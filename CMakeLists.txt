@@ -73,10 +73,11 @@ set_property(TARGET ${hmp_obj_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
-target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
 foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
+    add_dependencies(${hmp_target} glm)
 endforeach()
+target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
 
 ###############################################################################
 ## dependencies ###############################################################

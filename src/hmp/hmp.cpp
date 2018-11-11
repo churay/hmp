@@ -19,7 +19,11 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     const glm::vec2 playerDims( 0.1f, 0.1f );
     const glm::vec2 playerPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * playerDims;
-    pState->playerEnt = hmp::paddle_t( hmp::box_t(playerPos, playerDims) );
+    const hmp::paddle_t playerPaddle( hmp::box_t(playerPos, playerDims) );
+    // NOTE(JRC): A memory copy needs to be performed instead of invoking the
+    // copy constructor in order to ensure that the v-table is copied to the
+    // state entity, which is initialized to 'null' by default.
+    std::memcpy( &pState->playerEnt, &playerPaddle, sizeof(hmp::paddle_t) );
 }
 
 
