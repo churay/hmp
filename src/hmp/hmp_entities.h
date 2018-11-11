@@ -10,6 +10,24 @@
 
 namespace hmp {
 
+class bounds_t : public entity_t {
+    public:
+
+    /// Constructors ///
+
+    bounds_t( const box_t& pBBox );
+
+    /// Internal Functions ///
+
+    protected:
+
+    virtual void iupdate( const float64_t pDT );
+    virtual void irender() const;
+
+    /// Class Fields ///
+};
+
+
 class paddle_t : public entity_t {
     public:
 

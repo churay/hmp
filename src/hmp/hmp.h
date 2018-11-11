@@ -3,8 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-#include "hmp_bounds_t.h"
-#include "hmp_paddle_t.h"
+#include "hmp_entities.h"
 #include "consts.h"
 
 namespace hmp {

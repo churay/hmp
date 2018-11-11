@@ -8,7 +8,7 @@
 
 #include <SDL2/SDL_opengl.h>
 
-#include "hmp_paddle_t.h"
+#include "hmp_entity_t.h"
 
 namespace hmp {
 
