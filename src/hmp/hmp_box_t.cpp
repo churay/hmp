@@ -14,20 +14,17 @@ box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims ) :
 }
 
 
-void box_t::update( const glm::vec2& pPos ) {
-    mPos += pPos;
+bool32_t box_t::embed( const box_t& pOther ) {
+    interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+
+    bool32_t success = tx.embed( ox ) && ty.embed( oy );
+    if( success ) {
+        mPos[0] = tx.mMin;
+        mPos[1] = ty.mMin;
+    }
+    return success;
 }
-
-
-void box_t::render( const uint8_t* pColor ) const {
-    glBegin( GL_QUADS ); {
-        glColor4ub( pColor[0], pColor[1], pColor[2], pColor[3] );
-        glVertex2f( mPos[0] + 0.0 * mDims[0], mPos[1] + 0.0 * mDims[1] );
-        glVertex2f( mPos[0] + 1.0 * mDims[0], mPos[1] + 0.0 * mDims[1] );
-        glVertex2f( mPos[0] + 1.0 * mDims[0], mPos[1] + 1.0 * mDims[1] );
-        glVertex2f( mPos[0] + 0.0 * mDims[0], mPos[1] + 1.0 * mDims[1] );
-    } glEnd();
-};
 
 
 bool32_t box_t::contains( const glm::vec2& pPos ) const {

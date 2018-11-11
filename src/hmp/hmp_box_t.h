@@ -18,10 +18,7 @@ class box_t {
 
     /// Class Functions ///
 
-    // TODO(JRC): This should really be abstracted elsewhere once the
-    // code defines some notion of an actor.
-    void update( const glm::vec2& pPos );
-    void render( const uint8_t* pColor ) const;
+    bool32_t embed( const box_t& pOther );
 
     bool32_t contains( const glm::vec2& pPos ) const;
     bool32_t contains( const box_t& pOther ) const;

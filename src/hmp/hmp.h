@@ -8,10 +8,13 @@
 
 namespace hmp {
 
+const static uint32_t MAX_ENTITIES = 16;
+
 struct state_t {
+    float64_t dt, tt;
+    entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
     paddle_t playerEnt;
-    float64_t dt, tt;
 };
 
 

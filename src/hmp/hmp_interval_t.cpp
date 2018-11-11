@@ -25,6 +25,19 @@ bool32_t interval_t::operator==( const interval_t& pOther ) const {
 }
 
 
+bool32_t interval_t::embed( const interval_t& pOther ) {
+    // TODO(JRC): Replace with equivalent fuzzy comparison operator.
+    bool32_t success = ( mMax - mMin ) <= ( pOther.mMax - pOther.mMin );
+    if( success ) {
+        float32_t minDelta = std::max( mMin, pOther.mMin ) - mMin;
+        float32_t maxDelta = std::min( mMax, pOther.mMax ) - mMax;
+        mMin += minDelta + maxDelta;
+        mMax += minDelta + maxDelta;
+    }
+    return success;
+}
+
+
 bool32_t interval_t::contains( const float32_t pValue ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin <= pValue && pValue <= mMax;

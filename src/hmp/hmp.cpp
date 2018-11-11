@@ -12,6 +12,13 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->dt = 0.0;
     pState->tt = 0.0;
 
+    for( uint32_t entityIdx = 0; entityIdx < hmp::MAX_ENTITIES; entityIdx++ ) {
+        pState->entities[entityIdx] = nullptr;
+    }
+
+    pState->entities[0] = &pState->boundsEnt;
+    pState->entities[1] = &pState->playerEnt;
+
     // NOTE(JRC): For the virtual types below, a memory copy needs to be performed
     // instead of invoking the copy constructor in order to ensure that the v-table
     // is copied to the state entity, which is initialized to 'null' by default.
@@ -48,15 +55,24 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     // Update State //
 
-    hmp::box_t prevPlayerBox = pState->playerEnt.mBBox;
-    pState->playerEnt.update( pState->dt );
+    for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+        pState->entities[entityIdx]->update( pState->dt );
+    }
+
+    // Resolve State(?) //
+
+    // TODO(JRC): There should be some more universal handler for collision
+    // detection/resolution.
     if( !pState->boundsEnt.mBBox.contains(pState->playerEnt.mBBox) ) {
-        pState->playerEnt.mBBox = prevPlayerBox;
+        pState->playerEnt.mBBox.embed( pState->boundsEnt.mBBox );
     }
 }
 
 
 LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
-    pState->boundsEnt.render();
-    pState->playerEnt.render();
+    // Render State //
+
+    for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+        pState->entities[entityIdx]->render();
+    }
 }
