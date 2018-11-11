@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
@@ -13,7 +15,8 @@ namespace hmp {
 /// Class Functions ///
 
 entity_t::entity_t( const box_t& pBBox ) : mBBox( pBBox ) {
-    
+    const uint32_t dColor = 0x00000000;
+    std::memcpy( &mColor[0], &dColor, sizeof(dColor) );
 }
 
 

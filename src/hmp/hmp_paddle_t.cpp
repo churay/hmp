@@ -1,3 +1,4 @@
+#include <cstring>
 #include <sstream>
 
 #include <glm/common.hpp>
@@ -10,9 +11,9 @@ namespace hmp {
 
 /// Class Functions ///
 
-paddle_t::paddle_t( const box_t& pBBox ) :
+paddle_t::paddle_t( const box_t& pBBox, const uint8_t* pColor ) :
         entity_t( pBBox ), mVel( 0.0f, 0.0f ), mDX( 0 ), mDY( 0 ) {
-    
+    std::memcpy( &mColor[0], pColor, sizeof(mColor) );
 }
 
 
@@ -32,10 +33,7 @@ void paddle_t::iupdate( const float64_t pDT ) {
 
 void paddle_t::irender() const {
     glBegin( GL_QUADS ); {
-        // TODO(JRC): Add color to specification of the paddle in the
-        // constructor once a reasonable way to represent color without
-        // dealing with endianness is discovered.
-        glColor4ub( 0x68, 0x75, 0x7e, 0xFF );
+        glColor4ubv( &mColor[0] );
         glVertex2f( 0.0f, 0.0f );
         glVertex2f( 1.0f, 0.0f );
         glVertex2f( 1.0f, 1.0f );

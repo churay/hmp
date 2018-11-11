@@ -31,6 +31,7 @@ class entity_t {
     public:
 
     box_t mBBox; // units: world
+    uint8_t mColor[4]; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds
 };
 

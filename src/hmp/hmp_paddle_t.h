@@ -15,11 +15,11 @@ class paddle_t : public entity_t {
 
     /// Class Attributes ///
 
-    constexpr static float32_t MOVE_VEL = 1.0e-2f; // units: world / seconds
+    constexpr static float32_t MOVE_VEL = 1.0e0f; // units: world / seconds
 
     /// Constructors ///
 
-    paddle_t( const box_t& pBBox );
+    paddle_t( const box_t& pBBox, const uint8_t* pColor );
 
     /// Class Functions ///
 

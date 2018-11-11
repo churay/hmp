@@ -12,18 +12,19 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->dt = 0.0;
     pState->tt = 0.0;
 
-    const uint8_t boundsColor[4] = { 0x00, 0x2b, 0x36, 0xFF };
-    std::memcpy( pState->boundsColor, boundsColor, sizeof(boundsColor) );
-    const glm::vec2 boundsPos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
-    pState->boundsBox = hmp::box_t( boundsPos, boundsDims );
+    // NOTE(JRC): For the virtual types below, a memory copy needs to be performed
+    // instead of invoking the copy constructor in order to ensure that the v-table
+    // is copied to the state entity, which is initialized to 'null' by default.
 
-    const glm::vec2 playerDims( 0.1f, 0.1f );
+    const glm::vec2 boundsPos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
+    const hmp::bounds_t boundsEnt( hmp::box_t(boundsPos, boundsDims) );
+    std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
+
+    const uint8_t playerColor[4] = { 0x80, 0x7e, 0x76, 0xFF };
+    const glm::vec2 playerDims( 0.1f, 0.2f );
     const glm::vec2 playerPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * playerDims;
-    const hmp::paddle_t playerPaddle( hmp::box_t(playerPos, playerDims) );
-    // NOTE(JRC): A memory copy needs to be performed instead of invoking the
-    // copy constructor in order to ensure that the v-table is copied to the
-    // state entity, which is initialized to 'null' by default.
-    std::memcpy( &pState->playerEnt, &playerPaddle, sizeof(hmp::paddle_t) );
+    const hmp::paddle_t playerEnt( hmp::box_t(playerPos, playerDims), &playerColor[0] );
+    std::memcpy( (void*)&pState->playerEnt, (void*)&playerEnt, sizeof(hmp::paddle_t) );
 }
 
 
@@ -36,33 +37,26 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
     } if( pInput->keys[SDL_SCANCODE_S] ) {
         dy -= 1;
     } if( pInput->keys[SDL_SCANCODE_A] ) {
-        dx += 1;
-    } if( pInput->keys[SDL_SCANCODE_D] ) {
         dx -= 1;
+    } if( pInput->keys[SDL_SCANCODE_D] ) {
+        dx += 1;
     }
 
-    pState->playerEnt.move( dx, dy );
+    // TODO(JRC): Movement along the x-axis for paddles is currently disabled;
+    // inclusion of this style of movement needs to be determined.
+    pState->playerEnt.move( 0, dy );
 
     // Update State //
 
     hmp::box_t prevPlayerBox = pState->playerEnt.mBBox;
     pState->playerEnt.update( pState->dt );
-    if( !pState->boundsBox.contains(pState->playerEnt.mBBox) ) {
+    if( !pState->boundsEnt.mBBox.contains(pState->playerEnt.mBBox) ) {
         pState->playerEnt.mBBox = prevPlayerBox;
     }
 }
 
 
 LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
-    // TODO(JRC): Improve rendering mechanism for the bounding box?
-    pState->boundsBox.render( &(pState->boundsColor)[0] );
-    glBegin( GL_QUADS ); {
-        glColor4ub( pState->boundsColor[0], pState->boundsColor[1], pState->boundsColor[2], pState->boundsColor[3] );
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
-
+    pState->boundsEnt.render();
     pState->playerEnt.render();
 }
