@@ -18,8 +18,8 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     pState->entities[0] = &pState->boundsEnt;
     pState->entities[1] = &pState->ballEnt;
-    pState->entities[1] = &pState->paddleEnts[0];
-    pState->entities[2] = &pState->paddleEnts[1];
+    pState->entities[2] = &pState->paddleEnts[0];
+    pState->entities[3] = &pState->paddleEnts[1];
 
     // NOTE(JRC): For the virtual types below, a memory copy needs to be performed
     // instead of invoking the copy constructor in order to ensure that the v-table
@@ -29,12 +29,11 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const hmp::bounds_t boundsEnt( hmp::box_t(boundsPos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
 
-    // TODO(JRC): Change 'ballEnt' to a 'hmp::ball_t' type.
     const uint8_t ballColor[4] = { 0x80, 0x7e, 0x76, 0xFF };
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
     const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
-    // const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims), &ballColor[0] );
-    // std::memcpy( (void*)&pState->ballEnt, (void*)&ballEnt, sizeof(hmp::ball_t) );
+    const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims), &ballColor[0] );
+    std::memcpy( (void*)&pState->ballEnt, (void*)&ballEnt, sizeof(hmp::ball_t) );
 
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
 

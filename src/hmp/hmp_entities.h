@@ -28,6 +28,26 @@ class bounds_t : public entity_t {
 };
 
 
+class ball_t : public entity_t {
+    public:
+
+    /// Constructors ///
+
+    ball_t( const box_t& pBBox, const uint8_t* pColor );
+
+    /// Internal Functions ///
+
+    protected:
+
+    virtual void iupdate( const float64_t pDT );
+    virtual void irender() const;
+
+    /// Class Fields ///
+
+    glm::vec2 mVel; // units: world / seconds
+};
+
+
 class paddle_t : public entity_t {
     public:
 

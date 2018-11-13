@@ -32,6 +32,29 @@ void bounds_t::irender() const {
     } glEnd();
 };
 
+/// 'hmp::ball_t' Functions ///
+
+ball_t::ball_t( const box_t& pBBox, const uint8_t* pColor ) :
+        entity_t( pBBox ), mVel( 0.0f, 0.0f ) {
+    std::memcpy( &mColor[0], pColor, sizeof(mColor) );
+}
+
+
+void ball_t::iupdate( const float64_t pDT ) {
+    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
+}
+
+
+void ball_t::irender() const {
+    glBegin( GL_QUADS ); {
+        glColor4ubv( &mColor[0] );
+        glVertex2f( 0.0f, 0.0f );
+        glVertex2f( 1.0f, 0.0f );
+        glVertex2f( 1.0f, 1.0f );
+        glVertex2f( 0.0f, 1.0f );
+    } glEnd();
+};
+
 /// 'hmp::paddle_t' Functions ///
 
 paddle_t::paddle_t( const box_t& pBBox, const uint8_t* pColor ) :
@@ -63,6 +86,5 @@ void paddle_t::irender() const {
         glVertex2f( 0.0f, 1.0f );
     } glEnd();
 };
-
 
 }
