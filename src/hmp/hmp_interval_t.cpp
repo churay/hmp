@@ -46,19 +46,18 @@ bool32_t interval_t::contains( const float32_t pValue ) const {
 
 bool32_t interval_t::contains( const interval_t& pOther ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
-    interval_t overlapInterval = (*this).intersect( pOther );
+    interval_t overlapInterval = intersect( pOther );
     return overlapInterval.valid() && overlapInterval == pOther;
 }
 
 
 bool32_t interval_t::overlaps( const interval_t& pOther ) const {
-    interval_t overlapInterval = (*this).intersect( pOther );
-    return !overlapInterval.empty();
+    return !intersect( pOther ).empty();
 }
 
 
 interval_t interval_t::intersect( const interval_t& pOther ) const {
-    if( !(*this).contains(pOther.mMin) && !(*this).contains(pOther.mMax) &&
+    if( !contains(pOther.mMin) && !contains(pOther.mMax) &&
             !pOther.contains(mMin) && !pOther.contains(mMax) ) {
         return interval_t( std::numeric_limits<float32_t>::quiet_NaN() );
     } else {
@@ -69,7 +68,7 @@ interval_t interval_t::intersect( const interval_t& pOther ) const {
 
 bool32_t interval_t::empty() const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
-    return mMin <= mMax || !(*this).valid();
+    return mMin > mMax || !valid();
 }
 
 

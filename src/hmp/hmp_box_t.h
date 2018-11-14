@@ -1,6 +1,7 @@
 #ifndef HMP_BOX_T_H
 #define HMP_BOX_T_H
 
+#include <sstream>
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_interval_t.h"
@@ -36,5 +37,7 @@ class box_t {
 };
 
 }
+
+std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox );
 
 #endif

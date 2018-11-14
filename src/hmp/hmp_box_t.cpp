@@ -69,3 +69,8 @@ interval_t box_t::ybounds() const {
 }
 
 }
+
+std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox ) {
+    pOS << "(x" << pBox.xbounds() << ", y" << pBox.ybounds() << ")";
+    return pOS;
+}

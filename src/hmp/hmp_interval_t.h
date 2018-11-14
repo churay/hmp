@@ -1,6 +1,8 @@
 #ifndef HMP_INTERVAL_T_H
 #define HMP_INTERVAL_T_H
 
+#include <sstream>
+
 #include "consts.h"
 
 namespace hmp {
@@ -35,5 +37,7 @@ class interval_t {
 };
 
 }
+
+std::ostream& operator<<( std::ostream& pOS, const hmp::interval_t& pInt );
 
 #endif
