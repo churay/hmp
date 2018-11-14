@@ -8,11 +8,15 @@
 
 namespace hmp {
 
-const static uint32_t MAX_ENTITIES = 16;
+constexpr static uint32_t MAX_ENTITIES = 16;
+constexpr static float32_t ROUND_START_TIME = 1.0f;
 
 struct state_t {
     float64_t dt, tt;
     entity_t* entities[hmp::MAX_ENTITIES];
+
+    float64_t rt;
+    bool32_t roundStarted;
 
     bounds_t boundsEnt;
     ball_t ballEnt;

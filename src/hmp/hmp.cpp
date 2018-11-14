@@ -4,13 +4,17 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
 
+#include <glm/geometric.hpp>
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp.h"
 
 LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
-    pState->dt = 0.0;
-    pState->tt = 0.0;
+    pState->dt = 0.0; // frame delta time
+    pState->tt = 0.0; // total time
+
+    pState->rt = 0.0; // round time
+    pState->roundStarted = false;
 
     for( uint32_t entityIdx = 0; entityIdx < hmp::MAX_ENTITIES; entityIdx++ ) {
         pState->entities[entityIdx] = nullptr;
@@ -85,12 +89,40 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     // Resolve State(?) //
 
+    hmp::bounds_t& boundsEnt = pState->boundsEnt;
+    hmp::ball_t& ballEnt = pState->ballEnt;
+
+    if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
+        ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
+        pState->roundStarted = true;
+    }
+
     // TODO(JRC): There should be some more universal handler for collision
     // detection/resolution.
+
+    if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
+        hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
+        hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
+        if( ballX.mMin < boundsX.mMin || ballX.mMax > boundsX.mMax ) {
+            ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
+            ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
+            pState->rt = 0.0f;
+            pState->roundStarted = false;
+        } else if( ballY.mMin < boundsY.mMin ) {
+            ballEnt.bounce( glm::vec2(0.0f, -1.0f) );
+        } else if( ballY.mMax > boundsY.mMax ) {
+            ballEnt.bounce( glm::vec2(0.0f, 1.0f) );
+        }
+
+        // ballEnt.mBBox.embed( boundsEnt.mBBox );
+    }
+
     for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
         hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
-        if( !pState->boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
-            paddleEnt.mBBox.embed( pState->boundsEnt.mBBox );
+        if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
+            ballEnt.bounce( glm::vec2(paddleIdx ? 1.0f : -1.0f, 0.0f) );
+        } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
+            paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
     }
 }

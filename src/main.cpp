@@ -388,6 +388,7 @@ int main() {
         // never even has to touch the library state, and rather just calls its
         // functions.
         state->dt = simTimer.ft();
+        state->rt += simTimer.ft();
         state->tt += simTimer.ft();
     }
 

@@ -31,9 +31,17 @@ class bounds_t : public entity_t {
 class ball_t : public entity_t {
     public:
 
+    /// Class Attributes ///
+
+    constexpr static float32_t MOVE_VEL = 5.0e-1f; // units: world / seconds
+
     /// Constructors ///
 
     ball_t( const box_t& pBBox, const uint8_t* pColor );
+
+    /// Class Functions ///
+
+    void bounce( const glm::vec2& pNormal );
 
     /// Internal Functions ///
 
@@ -43,6 +51,8 @@ class ball_t : public entity_t {
     virtual void irender() const;
 
     /// Class Fields ///
+
+    public:
 
     glm::vec2 mVel; // units: world / seconds
 };

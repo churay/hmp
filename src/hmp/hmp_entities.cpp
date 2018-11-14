@@ -2,6 +2,7 @@
 #include <sstream>
 
 #include <glm/common.hpp>
+#include <glm/geometric.hpp>
 #include <glm/ext/vector_float2.hpp>
 #include <SDL2/SDL_opengl.h>
 
@@ -37,6 +38,11 @@ void bounds_t::irender() const {
 ball_t::ball_t( const box_t& pBBox, const uint8_t* pColor ) :
         entity_t( pBBox ), mVel( 0.0f, 0.0f ) {
     std::memcpy( &mColor[0], pColor, sizeof(mColor) );
+}
+
+
+void ball_t::bounce( const glm::vec2& pNormal ) {
+    mVel = glm::reflect( mVel, pNormal );
 }
 
 
