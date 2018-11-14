@@ -8,9 +8,7 @@ BUILD_TASKS=$(lscpu | sed -r -n 's/(^CPU[(]s[)]:.*([0-9]+).*$)/\2/p')
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 PROJ_PATH=$(dirname ${SCRIPT_PATH})
 
-echo ${BUILD_CPU_DATA}
-
-pushd .
+pushd . &> /dev/null
 cd ${PROJ_PATH}
 
 # rm -rf build
@@ -24,4 +22,4 @@ if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then
     ln -s ${PROJ_PATH}/build/install/hmp.out ${PROJ_PATH}/hmp.out
 fi
 
-popd
+popd &> /dev/null
