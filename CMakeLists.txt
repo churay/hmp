@@ -25,7 +25,7 @@ endif()
 ## rpath options ###################
 ####################################
 
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_SKIP_BUILD_RPATH FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
 SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
@@ -69,15 +69,20 @@ set(hmp_exe_target "hmp.out")
 set(hmp_targets ${hmp_lib_target} ${hmp_exe_target})
 
 add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
-set_property(TARGET ${hmp_obj_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
+
+foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target})
+    set_property(TARGET ${hmp_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
+endforeach()
 
 foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
     add_dependencies(${hmp_target} glm)
 endforeach()
+
 target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
+# add_dependencies(${hmp_exe_target} ${hmp_lib_target})
 
 ###############################################################################
 ## dependencies ###############################################################
@@ -95,6 +100,7 @@ foreach(hmp_target ${hmp_targets})
     target_include_directories(${hmp_target} PUBLIC ${hmp_dep_incs})
     target_link_libraries(${hmp_target} PUBLIC ${hmp_dep_libs})
 endforeach()
+# target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
 
 ###############################################################################
 ## testing ####################################################################
