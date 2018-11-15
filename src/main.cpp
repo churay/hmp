@@ -24,7 +24,8 @@
 #include "platform.h"
 #include "consts.h"
 
-typedef void (*update_f)( hmp::state_t*, hmp::input_t* );
+typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
+typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef void (*render_f)( const hmp::state_t*, const hmp::input_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
@@ -71,17 +72,26 @@ int main() {
     LLCE_ASSERT_ERROR( cDLLPath.exists(),
         "Failed to find library " << cDLLFileName << " in dynamic path." );
 
-    void* hmpLibHandle = llce::platform::dllLoadHandle( cDLLPath );
-    void* initSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "init" );
-    void* updateSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "update" );
-    void* renderSymbol = llce::platform::dllLoadSymbol( hmpLibHandle, "render" );
-    LLCE_ASSERT_ERROR(
-        hmpLibHandle != nullptr && initSymbol != nullptr && updateSymbol != nullptr && renderSymbol != nullptr,
-        "Couldn't load library `" << cDLLFileName << "` symbols on initialize." );
+    void* dllHandle = nullptr;
+    init_f dllInit = nullptr;
+    update_f dllUpdate = nullptr;
+    render_f dllRender = nullptr;
+    const auto cDLLReload = [ &cDLLPath, &dllHandle, &dllInit, &dllUpdate, &dllRender ] () {
+        if( dllHandle != nullptr ) {
+            llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
+        }
 
-    update_f initFunction = (update_f)initSymbol;
-    update_f updateFunction = (update_f)updateSymbol;
-    render_f renderFunction = (render_f)renderSymbol;
+        dllHandle = llce::platform::dllLoadHandle( cDLLPath );
+        dllInit = (init_f)llce::platform::dllLoadSymbol( dllHandle, "init" );
+        dllUpdate = (update_f)llce::platform::dllLoadSymbol( dllHandle, "update" );
+        dllRender = (render_f)llce::platform::dllLoadSymbol( dllHandle, "render" );
+
+        return dllHandle != nullptr &&
+            dllInit != nullptr && dllUpdate != nullptr && dllRender != nullptr;
+    };
+
+    LLCE_ASSERT_ERROR( cDLLReload(),
+        "Couldn't load library `" << cDLLFileName << "` symbols on initialize." );
 
     int64_t prevDylibModTime, currDylibModTime;
     LLCE_ASSERT_ERROR(
@@ -207,8 +217,9 @@ int main() {
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
     llce::timer_t simTimer( 60, llce::timer_t::type::fps );
+    float64_t simDT = 0.0;
 
-    initFunction( state, input );
+    dllInit( state, input );
     while( isRunning ) {
         simTimer.split();
 
@@ -293,12 +304,7 @@ int main() {
                 "Performed " << lockSpinCount << " spin cycles " <<
                 "while waiting for DLL install; consider transitioning to file locks." );
 
-            llce::platform::dllUnloadHandle( hmpLibHandle, cDLLFileName );
-            hmpLibHandle = llce::platform::dllLoadHandle( cDLLFileName );
-            updateFunction = (update_f)llce::platform::dllLoadSymbol( hmpLibHandle, "update" );
-            renderFunction = (render_f)llce::platform::dllLoadSymbol( hmpLibHandle, "render" );
-            LLCE_ASSERT_ERROR(
-                hmpLibHandle != nullptr && updateFunction != nullptr && renderFunction != nullptr,
+            LLCE_ASSERT_ERROR( cDLLReload(),
                 "Couldn't load library `" << cDLLFileName << "` symbols at " <<
                 "simulation time " << simTimer.tt() << "." );
 
@@ -333,8 +339,8 @@ int main() {
                 glVertex2f( 0.0f, 1.0f );
             } glEnd();
 
-            updateFunction( state, input );
-            renderFunction( state, input );
+            dllUpdate( state, input, simDT );
+            dllRender( state, input );
         } glPopMatrix();
 
 #ifdef LLCE_DEBUG
@@ -384,12 +390,7 @@ int main() {
         SDL_GL_SwapWindow( window );
 
         simTimer.split( true );
-        // TODO(JRC): This should really be improved so that the platform code
-        // never even has to touch the library state, and rather just calls its
-        // functions.
-        state->dt = simTimer.ft();
-        state->rt += simTimer.ft();
-        state->tt += simTimer.ft();
+        simDT = simTimer.ft();
     }
 
     /// Clean Up + Exit ///

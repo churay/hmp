@@ -53,7 +53,7 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 }
 
 
-LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
+LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     // Process Input //
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
@@ -82,6 +82,10 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput ) {
     }
 
     // Update State //
+
+    pState->dt = pDT;
+    pState->rt += pDT;
+    pState->tt += pDT;
 
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
         pState->entities[entityIdx]->update( pState->dt );

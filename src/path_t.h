@@ -64,4 +64,9 @@ path_t libFindDLLPath( const char8_t* pLibName );
 
 }
 
+// NOTE(JRC): This function is unnecessary to define since the implicit
+// conversion to the 'char8_t*' type will be used when invoking a C++ output
+// operation on the 'llce::platform::path_t' type.
+// std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox );
+
 #endif
