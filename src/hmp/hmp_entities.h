@@ -22,7 +22,6 @@ class bounds_t : public entity_t {
     protected:
 
     virtual void iupdate( const float64_t pDT );
-    virtual void irender() const;
 
     /// Class Fields ///
 };
@@ -48,7 +47,6 @@ class ball_t : public entity_t {
     protected:
 
     virtual void iupdate( const float64_t pDT );
-    virtual void irender() const;
 
     /// Class Fields ///
 
@@ -78,7 +76,6 @@ class paddle_t : public entity_t {
     protected:
 
     virtual void iupdate( const float64_t pDT );
-    virtual void irender() const;
 
     /// Class Fields ///
 

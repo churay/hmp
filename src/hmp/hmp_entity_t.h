@@ -24,7 +24,7 @@ class entity_t {
     protected:
 
     virtual void iupdate( const float64_t pDT ) = 0;
-    virtual void irender() const = 0;
+    virtual void irender() const;
 
     /// Class Fields ///
 

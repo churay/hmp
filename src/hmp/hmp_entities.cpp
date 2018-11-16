@@ -22,17 +22,6 @@ void bounds_t::iupdate( const float64_t pDT ) {
     
 }
 
-
-void bounds_t::irender() const {
-    glBegin( GL_QUADS ); {
-        glColor4ubv( &mColor[0] );
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
-};
-
 /// 'hmp::ball_t' Functions ///
 
 ball_t::ball_t( const box_t& pBBox, const uint8_t* pColor ) :
@@ -49,17 +38,6 @@ void ball_t::bounce( const glm::vec2& pNormal ) {
 void ball_t::iupdate( const float64_t pDT ) {
     mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
-
-
-void ball_t::irender() const {
-    glBegin( GL_QUADS ); {
-        glColor4ubv( &mColor[0] );
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
-};
 
 /// 'hmp::paddle_t' Functions ///
 
@@ -78,19 +56,7 @@ void paddle_t::move( const int32_t pDX, const int32_t pDY ) {
 void paddle_t::iupdate( const float64_t pDT ) {
     mVel.x = mDX * paddle_t::MOVE_VEL;
     mVel.y = mDY * paddle_t::MOVE_VEL;
-
     mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
-
-
-void paddle_t::irender() const {
-    glBegin( GL_QUADS ); {
-        glColor4ubv( &mColor[0] );
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
-};
 
 }

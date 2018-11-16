@@ -14,9 +14,8 @@ namespace hmp {
 
 /// Class Functions ///
 
-entity_t::entity_t( const box_t& pBBox ) : mBBox( pBBox ) {
-    const uint32_t dColor = 0x00000000;
-    std::memcpy( &mColor[0], &dColor, sizeof(dColor) );
+entity_t::entity_t( const box_t& pBBox ) : mBBox( pBBox ), mLifetime( 0.0f ) {
+    std::memset( &mColor[0], 0, sizeof(mColor) );
 }
 
 
@@ -34,6 +33,17 @@ void entity_t::render() const {
         glMultMatrixf( &matModelWorld[0][0] );
         irender();
     } glPopMatrix();
+}
+
+
+void entity_t::irender() const {
+    glBegin( GL_QUADS ); {
+        glColor4ubv( &mColor[0] );
+        glVertex2f( 0.0f, 0.0f );
+        glVertex2f( 1.0f, 0.0f );
+        glVertex2f( 1.0f, 1.0f );
+        glVertex2f( 0.0f, 1.0f );
+    } glEnd();
 }
 
 }
