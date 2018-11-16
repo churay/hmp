@@ -12,9 +12,9 @@ namespace hmp {
 
 /// 'hmp::bounds_t' Functions ///
 
-bounds_t::bounds_t( const box_t& pBBox ) : entity_t( pBBox ) {
-    const uint8_t dColor[4] = { 0x00, 0x2b, 0x36, 0xFF };
-    std::memcpy( &mColor[0], &dColor, sizeof(dColor) );
+bounds_t::bounds_t( const box_t& pBBox ) :
+        entity_t( pBBox, {0x00, 0x2b, 0x36, 0xFF} ) {
+    
 }
 
 
@@ -24,9 +24,9 @@ void bounds_t::iupdate( const float64_t pDT ) {
 
 /// 'hmp::ball_t' Functions ///
 
-ball_t::ball_t( const box_t& pBBox, const uint8_t* pColor ) :
-        entity_t( pBBox ), mVel( 0.0f, 0.0f ) {
-    std::memcpy( &mColor[0], pColor, sizeof(mColor) );
+ball_t::ball_t( const box_t& pBBox ) :
+        entity_t( pBBox, { 0x80, 0x7e, 0x76, 0xFF } ), mVel( 0.0f, 0.0f ) {
+    
 }
 
 
@@ -41,9 +41,9 @@ void ball_t::iupdate( const float64_t pDT ) {
 
 /// 'hmp::paddle_t' Functions ///
 
-paddle_t::paddle_t( const box_t& pBBox, const uint8_t* pColor ) :
-        entity_t( pBBox ), mVel( 0.0f, 0.0f ), mDX( 0 ), mDY( 0 ) {
-    std::memcpy( &mColor[0], pColor, sizeof(mColor) );
+paddle_t::paddle_t( const box_t& pBBox, const color_t& pColor ) :
+        entity_t( pBBox, pColor ), mVel( 0.0f, 0.0f ), mDX( 0 ), mDY( 0 ) {
+    
 }
 
 

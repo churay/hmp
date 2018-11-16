@@ -14,8 +14,8 @@ namespace hmp {
 
 /// Class Functions ///
 
-entity_t::entity_t( const box_t& pBBox ) : mBBox( pBBox ), mLifetime( 0.0f ) {
-    std::memset( &mColor[0], 0, sizeof(mColor) );
+entity_t::entity_t( const box_t& pBBox, const color_t& pColor ) :
+        mBBox( pBBox ), mColor( pColor ), mLifetime( 0.0f ) {
 }
 
 
@@ -38,7 +38,7 @@ void entity_t::render() const {
 
 void entity_t::irender() const {
     glBegin( GL_QUADS ); {
-        glColor4ubv( &mColor[0] );
+        glColor4ubv( (uint8_t*)&mColor );
         glVertex2f( 0.0f, 0.0f );
         glVertex2f( 1.0f, 0.0f );
         glVertex2f( 1.0f, 1.0f );

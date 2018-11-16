@@ -3,6 +3,7 @@
 
 #include "hmp_box_t.h"
 
+#include "hmp_consts.h"
 #include "consts.h"
 
 namespace hmp {
@@ -12,7 +13,7 @@ class entity_t {
 
     /// Constructors ///
 
-    entity_t( const box_t& pBBox );
+    entity_t( const box_t& pBBox, const color_t& pColor );
 
     /// Class Functions ///
 
@@ -31,7 +32,7 @@ class entity_t {
     public:
 
     box_t mBBox; // units: world
-    uint8_t mColor[4]; // units: (r,g,b,a)
+    color_t mColor; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds
 };
 

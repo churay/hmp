@@ -33,22 +33,21 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const hmp::bounds_t boundsEnt( hmp::box_t(boundsPos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
 
-    const uint8_t ballColor[4] = { 0x80, 0x7e, 0x76, 0xFF };
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
     const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
-    const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims), &ballColor[0] );
+    const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims) );
     std::memcpy( (void*)&pState->ballEnt, (void*)&ballEnt, sizeof(hmp::ball_t) );
 
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
 
-    const uint8_t westColor[4] = { 0x9a, 0x86, 0x00, 0xFF };
+    const color_t westColor = { 0x9a, 0x86, 0x00, 0xFF };
     const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), &westColor[0] );
+    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), westColor );
     std::memcpy( (void*)&pState->paddleEnts[0], (void*)&westEnt, sizeof(hmp::paddle_t) );
 
-    const uint8_t eastColor[4] = { 0x00, 0x9d, 0xa3, 0xFF };
+    const color_t eastColor = { 0x00, 0x9d, 0xa3, 0xFF };
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), &eastColor[0] );
+    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), eastColor );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
 }
 

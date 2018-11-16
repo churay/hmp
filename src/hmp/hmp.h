@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "hmp_entities.h"
+#include "hmp_consts.h"
 #include "consts.h"
 
 namespace hmp {

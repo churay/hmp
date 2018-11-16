@@ -6,6 +6,7 @@
 #include "hmp_entity_t.h"
 #include "hmp_box_t.h"
 
+#include "hmp_consts.h"
 #include "consts.h"
 
 namespace hmp {
@@ -36,7 +37,7 @@ class ball_t : public entity_t {
 
     /// Constructors ///
 
-    ball_t( const box_t& pBBox, const uint8_t* pColor );
+    ball_t( const box_t& pBBox );
 
     /// Class Functions ///
 
@@ -65,7 +66,7 @@ class paddle_t : public entity_t {
 
     /// Constructors ///
 
-    paddle_t( const box_t& pBBox, const uint8_t* pColor );
+    paddle_t( const box_t& pBBox, const color_t& pColor );
 
     /// Class Functions ///
 

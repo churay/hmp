@@ -22,6 +22,7 @@
 #include "memory_t.h"
 #include "path_t.h"
 #include "platform.h"
+#include "util.h"
 #include "consts.h"
 
 typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
@@ -29,6 +30,7 @@ typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef void (*render_f)( const hmp::state_t*, const hmp::input_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
+typedef llce::util::color_t color_t;
 
 int main() {
     /// Initialize Application Memory/State ///
@@ -156,7 +158,7 @@ int main() {
 #ifdef LLCE_DEBUG
     const static uint32_t csTextureTextCap = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
-    uint32_t textureColors[] = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000 }; // little endian
+    color_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
     char8_t textureTexts[][csTextureTextCap] = { "FPS: ???", "Recording", "Replaying", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 
@@ -181,15 +183,10 @@ int main() {
     // performance-level texture generation method, watch the "Handmade Hero" tutorials
     // on OpenGL texturing and font APIs.
     const auto cGenerateTextTexture = [ &textureGLIDs, &font ]
-            ( const uint32_t textureID, const uint32_t textureColor, const char8_t* textureText ) {
+            ( const uint32_t textureID, const color_t textureColor, const char8_t* textureText ) {
         const uint32_t& textureGLID = textureGLIDs[textureID];
 
-        SDL_Color renderColor = {
-            (uint8_t)( (textureColor >> 0*8) & 0xFF ),
-            (uint8_t)( (textureColor >> 1*8) & 0xFF ),
-            (uint8_t)( (textureColor >> 2*8) & 0xFF ),
-            (uint8_t)( (textureColor >> 3*8) & 0xFF ) };
-
+        SDL_Color renderColor = { textureColor.r, textureColor.g, textureColor.b, textureColor.a };
         SDL_Surface* textSurface = TTF_RenderText_Solid( font, textureText, renderColor );
         LLCE_ASSERT_ERROR( textSurface != nullptr,
             "SDL-TTF failed to render font; " << TTF_GetError() );
