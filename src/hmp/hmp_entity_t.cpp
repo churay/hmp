@@ -15,7 +15,13 @@ namespace hmp {
 /// Class Functions ///
 
 entity_t::entity_t( const box_t& pBBox, const color_t& pColor ) :
-        mBBox( pBBox ), mColor( pColor ), mLifetime( 0.0f ) {
+        mBBox( pBBox ), mVel( 0.0f, 0.0f ), mColor( pColor ), mLifetime( 0.0f ) {
+    
+}
+
+
+entity_t::~entity_t() {
+    
 }
 
 
@@ -33,6 +39,11 @@ void entity_t::render() const {
         glMultMatrixf( &matModelWorld[0][0] );
         irender();
     } glPopMatrix();
+}
+
+
+void entity_t::iupdate( const float64_t pDT ) {
+    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
 
 

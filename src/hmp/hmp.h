@@ -21,6 +21,7 @@ struct state_t {
 
     entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
+    bounds_t ricochetEnts[2];
     ball_t ballEnt;
     paddle_t paddleEnts[2];
 };

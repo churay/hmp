@@ -28,9 +28,15 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // instead of invoking the copy constructor in order to ensure that the v-table
     // is copied to the state entity, which is initialized to 'null' by default.
 
-    const glm::vec2 boundsPos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
-    const hmp::bounds_t boundsEnt( hmp::box_t(boundsPos, boundsDims) );
+    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
+    const hmp::bounds_t boundsEnt( hmp::box_t(boundsBasePos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
+
+    for( uint32_t ricochetIdx = 0; ricochetIdx < 2; ricochetIdx++ ) {
+        const glm::vec2 boundsPos = boundsBasePos + glm::vec2( 0.0f, (ricochetIdx != 0) ? 1.0f : -1.0f );
+        hmp::bounds_t ricochetEnt( hmp::box_t(boundsPos, boundsDims) );
+        std::memcpy( (void*)&pState->ricochetEnts[ricochetIdx], (void*)&ricochetEnt, sizeof(hmp::bounds_t) );
+    }
 
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
     const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
@@ -89,38 +95,36 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         pState->entities[entityIdx]->update( pState->dt );
     }
 
-    // Resolve State //
+    if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
+        // TODO(JRC): Randomize this vector.
+        pState->ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
+        pState->roundStarted = true;
+    }
+
+    // Resolve Collisions //
 
     hmp::bounds_t& boundsEnt = pState->boundsEnt;
     hmp::ball_t& ballEnt = pState->ballEnt;
-
-    if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
-        ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
-        pState->roundStarted = true;
-    }
 
     if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
         hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
         hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
         if( !boundsY.contains(ballY) ) {
-            // TODO(JRC): Change this to use general collision handler function.
-            glm::vec2 boundsNormal( 0.0f, (ballY.mMin < boundsY.mMin) ? 1.0f : -1.0f );
-            ballEnt.mVel = glm::reflect( ballEnt.mVel, boundsNormal );
+            uint8_t ricochetIdx = (uint8_t)( ballY.mMin < boundsY.mMin );
+            ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
         } if( !boundsX.contains(ballX) ) {
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
             pState->rt = 0.0f;
             pState->roundStarted = false;
         }
-
-        // ballEnt.mBBox.embed( boundsEnt.mBBox );
     }
 
     for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
         hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
         if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
-            glm::vec2 paddleNormal( paddleIdx ? 1.0f : -1.0f, 0.0f );
-            ballEnt.mVel = glm::reflect( ballEnt.mVel, paddleNormal );
+            ballEnt.ricochet( &paddleEnt );
+            // TODO(JRC): Increase magnitude of vector.
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }

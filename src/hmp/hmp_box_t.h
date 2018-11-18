@@ -28,6 +28,7 @@ class box_t {
     bool32_t empty() const;
     bool32_t valid() const;
 
+    glm::vec2 center() const;
     interval_t xbounds() const;
     interval_t ybounds() const;
 

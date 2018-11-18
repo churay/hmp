@@ -59,6 +59,11 @@ bool32_t box_t::valid() const {
 }
 
 
+glm::vec2 box_t::center() const {
+    return mPos + 0.5f * mDims;
+}
+
+
 interval_t box_t::xbounds() const {
     return interval_t( mPos[0], mPos[0] + mDims[0] );
 }

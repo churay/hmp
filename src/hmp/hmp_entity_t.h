@@ -14,6 +14,7 @@ class entity_t {
     /// Constructors ///
 
     entity_t( const box_t& pBBox, const color_t& pColor );
+    virtual ~entity_t() = 0;
 
     /// Class Functions ///
 
@@ -24,7 +25,7 @@ class entity_t {
 
     protected:
 
-    virtual void iupdate( const float64_t pDT ) = 0;
+    virtual void iupdate( const float64_t pDT );
     virtual void irender() const;
 
     /// Class Fields ///
@@ -32,6 +33,7 @@ class entity_t {
     public:
 
     box_t mBBox; // units: world
+    glm::vec2 mVel; // units: world / second
     color_t mColor; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds
 };

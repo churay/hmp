@@ -22,9 +22,9 @@ class bounds_t : public entity_t {
 
     protected:
 
-    virtual void iupdate( const float64_t pDT );
-
     /// Class Fields ///
+
+    public:
 };
 
 
@@ -39,17 +39,17 @@ class ball_t : public entity_t {
 
     ball_t( const box_t& pBBox );
 
+    /// Class Functions ///
+
+    void ricochet( const entity_t* pSurface );
+
     /// Internal Functions ///
 
     protected:
 
-    virtual void iupdate( const float64_t pDT );
-
     /// Class Fields ///
 
     public:
-
-    glm::vec2 mVel; // units: world / seconds
 };
 
 
@@ -78,7 +78,6 @@ class paddle_t : public entity_t {
 
     public:
 
-    glm::vec2 mVel; // units: world / seconds
     int8_t mDX, mDY;
 };
 
