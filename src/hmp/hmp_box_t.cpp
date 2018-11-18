@@ -27,6 +27,20 @@ bool32_t box_t::embed( const box_t& pOther ) {
 }
 
 
+bool32_t box_t::exbed( const box_t& pOther ) {
+    interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+
+    bool success = tx.exbed( ox ) && ty.exbed( oy );
+    if( success ) {
+        // TODO(JRC): Take direction that is more parallel (higher
+        // normalized dot product) to the direction vector (center to center).
+    }
+
+    return false;
+}
+
+
 bool32_t box_t::contains( const glm::vec2& pPos ) const {
     const interval_t tx = xbounds(), ty = ybounds();
     return tx.contains( pPos[0] ) && ty.contains( pPos[1] );
@@ -44,6 +58,16 @@ bool32_t box_t::overlaps( const box_t& pOther ) const {
     const interval_t tx = xbounds(), ty = ybounds();
     const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
     return tx.overlaps( ox ) && ty.overlaps( oy );
+}
+
+
+box_t box_t::intersect( const box_t& pOther ) const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+
+    interval_t bx = tx.intersect( ox ), by = ty.intersect( oy );
+    return box_t( glm::vec2(bx.mMin, by.mMin),
+        glm::vec2(bx.mMax - bx.mMin, by.mMax - by.mMin) );
 }
 
 

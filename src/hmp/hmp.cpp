@@ -97,7 +97,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
 
     if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         // TODO(JRC): Randomize this vector.
-        pState->ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
+        pState->ballEnt.mVel = glm::normalize( glm::vec2(0.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
         pState->roundStarted = true;
     }
 
@@ -110,7 +110,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
         hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
         if( !boundsY.contains(ballY) ) {
-            uint8_t ricochetIdx = (uint8_t)( ballY.mMin < boundsY.mMin );
+            uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
             ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
         } if( !boundsX.contains(ballX) ) {
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
@@ -125,6 +125,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
             ballEnt.ricochet( &paddleEnt );
             // TODO(JRC): Increase magnitude of vector.
+            ballEnt.mVel *= 1.1f;
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }

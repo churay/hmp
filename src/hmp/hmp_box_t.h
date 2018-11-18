@@ -20,10 +20,12 @@ class box_t {
     /// Class Functions ///
 
     bool32_t embed( const box_t& pOther );
+    bool32_t exbed(const box_t& pOther );
 
     bool32_t contains( const glm::vec2& pPos ) const;
     bool32_t contains( const box_t& pOther ) const;
     bool32_t overlaps( const box_t& pOther ) const;
+    box_t intersect( const box_t& pOther ) const;
 
     bool32_t empty() const;
     bool32_t valid() const;

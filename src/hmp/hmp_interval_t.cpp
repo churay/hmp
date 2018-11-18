@@ -38,6 +38,21 @@ bool32_t interval_t::embed( const interval_t& pOther ) {
 }
 
 
+bool32_t interval_t::exbed( const interval_t& pOther ) {
+    float32_t minDelta = pOther.mMax - mMin;
+    float32_t maxDelta = mMax - pOther.mMin;
+
+    // TODO(JRC): Replace with equivalent fuzzy comparison operator.
+    if( minDelta > 0.0f && maxDelta > 0.0f ) {
+        float32_t intDelta = ( minDelta < maxDelta ) ? minDelta : -maxDelta;
+        mMin += intDelta;
+        mMax += intDelta;
+    }
+
+    return true;
+}
+
+
 bool32_t interval_t::contains( const float32_t pValue ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin <= pValue && pValue <= mMax;

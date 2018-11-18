@@ -26,14 +26,29 @@ ball_t::ball_t( const box_t& pBBox ) :
 
 
 void ball_t::ricochet( const entity_t* pSurface ) {
-    // TODO(JRC): Implement the following pseudocode for this function:
-    //   calculate x, y interval intersections
-    //   calculate contact normal as distance from surface to ball
-    //     with components activated by x, y interval intersections
-    //   generate a new velocity vector as a weighted contribution
-    //     of the original source vector and the velocity of the surface
+    glm::vec2 surfVelVec = ( glm::length(pSurface->mVel) > 1.0e-6f ) ?
+        glm::normalize( pSurface->mVel ) : glm::vec2( 0.0f, 0.0f );
 
-    // mVel
+    glm::vec2 contactVec = mBBox.center() - pSurface->mBBox.center();
+    glm::vec2 contactNormal = contactVec; {
+        // TODO(JRC): If it becomes relevant, fix the case where the ball
+        // is completely contained in the surface; these cases will need
+        // some form of unique logic to handle.
+        bool32_t surfContainsX = pSurface->mBBox.xbounds().contains( mBBox.xbounds() );
+        bool32_t surfContainsY = pSurface->mBBox.ybounds().contains( mBBox.ybounds() );
+        contactNormal.x *= ( !surfContainsX + 0.0f );
+        contactNormal.y *= ( !surfContainsY + 0.0f );
+        contactNormal = glm::normalize( contactNormal );
+    }
+
+    glm::vec2 ricochetVelVec = 0.5f * surfVelVec +
+        0.5f * glm::normalize( glm::reflect(mVel, contactNormal) );
+
+    // perform local 'exbed' by pushing out in direction of contact normal
+    // by intersection depth (projection of COM direction vector onto contact normal)
+    // mBBox.exbed( pSurface->mBBox );
+    // mBBox.mPos += glm::dot() / glm::dot() ;
+    mVel = glm::length( mVel ) * glm::normalize( ricochetVelVec );
 }
 
 /// 'hmp::paddle_t' Functions ///
