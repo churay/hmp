@@ -2,7 +2,6 @@
 #include <sstream>
 
 #include <glm/common.hpp>
-#include <glm/geometric.hpp>
 #include <glm/ext/vector_float2.hpp>
 #include <SDL2/SDL_opengl.h>
 
@@ -25,13 +24,8 @@ void bounds_t::iupdate( const float64_t pDT ) {
 /// 'hmp::ball_t' Functions ///
 
 ball_t::ball_t( const box_t& pBBox ) :
-        entity_t( pBBox, { 0x80, 0x7e, 0x76, 0xFF } ), mVel( 0.0f, 0.0f ) {
+        entity_t( pBBox, {0x80, 0x7e, 0x76, 0xFF} ), mVel( 0.0f, 0.0f ) {
     
-}
-
-
-void ball_t::bounce( const glm::vec2& pNormal ) {
-    mVel = glm::reflect( mVel, pNormal );
 }
 
 

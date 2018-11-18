@@ -39,10 +39,6 @@ class ball_t : public entity_t {
 
     ball_t( const box_t& pBBox );
 
-    /// Class Functions ///
-
-    void bounce( const glm::vec2& pNormal );
-
     /// Internal Functions ///
 
     protected:

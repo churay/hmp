@@ -11,19 +11,18 @@
 
 LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->dt = 0.0; // frame delta time
-    pState->tt = 0.0; // total time
-
     pState->rt = 0.0; // round time
+    pState->tt = 0.0; // total time
     pState->roundStarted = false;
 
-    for( uint32_t entityIdx = 0; entityIdx < hmp::MAX_ENTITIES; entityIdx++ ) {
-        pState->entities[entityIdx] = nullptr;
+    uint32_t entityIdx = 0;
+    pState->entities[entityIdx++] = &pState->boundsEnt;
+    pState->entities[entityIdx++] = &pState->ballEnt;
+    for( uint32_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
+        pState->entities[entityIdx++] = &pState->paddleEnts[paddleIdx];
+    } for( ; entityIdx < hmp::MAX_ENTITIES; ) {
+        pState->entities[entityIdx++] = nullptr;
     }
-
-    pState->entities[0] = &pState->boundsEnt;
-    pState->entities[1] = &pState->ballEnt;
-    pState->entities[2] = &pState->paddleEnts[0];
-    pState->entities[3] = &pState->paddleEnts[1];
 
     // NOTE(JRC): For the virtual types below, a memory copy needs to be performed
     // instead of invoking the copy constructor in order to ensure that the v-table
@@ -90,7 +89,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         pState->entities[entityIdx]->update( pState->dt );
     }
 
-    // Resolve State(?) //
+    // Resolve State //
 
     hmp::bounds_t& boundsEnt = pState->boundsEnt;
     hmp::ball_t& ballEnt = pState->ballEnt;
@@ -100,21 +99,18 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         pState->roundStarted = true;
     }
 
-    // TODO(JRC): There should be some more universal handler for collision
-    // detection/resolution.
-
     if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
         hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
         hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
-        if( ballX.mMin < boundsX.mMin || ballX.mMax > boundsX.mMax ) {
+        if( !boundsY.contains(ballY) ) {
+            // TODO(JRC): Change this to use general collision handler function.
+            glm::vec2 boundsNormal( 0.0f, (ballY.mMin < boundsY.mMin) ? 1.0f : -1.0f );
+            ballEnt.mVel = glm::reflect( ballEnt.mVel, boundsNormal );
+        } if( !boundsX.contains(ballX) ) {
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
             pState->rt = 0.0f;
             pState->roundStarted = false;
-        } else if( ballY.mMin < boundsY.mMin ) {
-            ballEnt.bounce( glm::vec2(0.0f, -1.0f) );
-        } else if( ballY.mMax > boundsY.mMax ) {
-            ballEnt.bounce( glm::vec2(0.0f, 1.0f) );
         }
 
         // ballEnt.mBBox.embed( boundsEnt.mBBox );
@@ -123,7 +119,8 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
     for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
         hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
         if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
-            ballEnt.bounce( glm::vec2(paddleIdx ? 1.0f : -1.0f, 0.0f) );
+            glm::vec2 paddleNormal( paddleIdx ? 1.0f : -1.0f, 0.0f );
+            ballEnt.mVel = glm::reflect( ballEnt.mVel, paddleNormal );
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
@@ -137,4 +134,10 @@ LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pIn
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
         pState->entities[entityIdx]->render();
     }
+
+    // Render UI //
+
+    glBegin( GL_QUADS ); {
+        glColor4ubv( (uint8_t*)&hmp::UI_COLOR );
+    } glEnd();
 }
