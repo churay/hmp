@@ -263,6 +263,9 @@ int main() {
                         recInputStream.close();
                     }
                     isRecording = !isRecording;
+                } else if( pressedKey == SDLK_SPACE ) {
+                    std::memset( (void*)state, 0, sizeof(hmp::state_t) );
+                    dllInit( state, input );
                 }
 #endif
             }
