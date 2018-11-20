@@ -245,7 +245,11 @@ int main() {
                         repFrameIdx = 0;
                         recStateStream.open( cStateFilePath, cIOModeR );
                         recInputStream.open( cInputFilePath, cIOModeR );
+
+                        recFrameCount = (uint32_t)recInputStream.tellg();
                         recInputStream.seekg( 0, std::ios_base::end );
+                        recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
+                        recFrameCount /= sizeof( hmp::input_t );
                     } else {
                         repFrameIdx = 0;
                         recStateStream.close();
