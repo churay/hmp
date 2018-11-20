@@ -97,7 +97,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
 
     if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         // TODO(JRC): Randomize this vector.
-        pState->ballEnt.mVel = glm::normalize( glm::vec2(0.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
+        pState->ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
         pState->roundStarted = true;
     }
 

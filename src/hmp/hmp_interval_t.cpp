@@ -38,18 +38,19 @@ bool32_t interval_t::embed( const interval_t& pOther ) {
 }
 
 
-bool32_t interval_t::exbed( const interval_t& pOther ) {
+float32_t interval_t::exbed( const interval_t& pOther ) {
+    float32_t intDelta = 0.0f;
+
     float32_t minDelta = pOther.mMax - mMin;
     float32_t maxDelta = mMax - pOther.mMin;
-
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     if( minDelta > 0.0f && maxDelta > 0.0f ) {
-        float32_t intDelta = ( minDelta < maxDelta ) ? minDelta : -maxDelta;
+        intDelta = ( minDelta < maxDelta ) ? minDelta : -maxDelta;
         mMin += intDelta;
         mMax += intDelta;
     }
 
-    return true;
+    return std::abs( intDelta );
 }
 
 

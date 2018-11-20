@@ -44,10 +44,7 @@ void ball_t::ricochet( const entity_t* pSurface ) {
     glm::vec2 ricochetVelVec = 0.5f * surfVelVec +
         0.5f * glm::normalize( glm::reflect(mVel, contactNormal) );
 
-    // perform local 'exbed' by pushing out in direction of contact normal
-    // by intersection depth (projection of COM direction vector onto contact normal)
-    // mBBox.exbed( pSurface->mBBox );
-    // mBBox.mPos += glm::dot() / glm::dot() ;
+    mBBox.exbed( pSurface->mBBox );
     mVel = glm::length( mVel ) * glm::normalize( ricochetVelVec );
 }
 

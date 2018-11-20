@@ -31,10 +31,14 @@ bool32_t box_t::exbed( const box_t& pOther ) {
     interval_t tx = xbounds(), ty = ybounds();
     const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
 
-    bool success = tx.exbed( ox ) && ty.exbed( oy );
-    if( success ) {
-        // TODO(JRC): Take direction that is more parallel (higher
-        // normalized dot product) to the direction vector (center to center).
+    float32_t minDeltaX = tx.exbed( ox ), minDeltaY = ty.exbed( oy );
+    // TODO(JRC): Replace with equivalent fuzzy comparison operator.
+    if( minDeltaX < minDeltaY ) {
+        mPos = glm::vec2( tx.mMin, mPos[1] );
+        mDims = glm::vec2( tx.mMax - tx.mMin, mDims[1] );
+    } else {
+        mPos = glm::vec2( mPos[0], ty.mMin );
+        mDims = glm::vec2( mDims[0], ty.mMax - ty.mMin );
     }
 
     return false;
