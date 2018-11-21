@@ -9,6 +9,8 @@
 
 namespace hmp {
 
+/// State Types/Variables ///
+
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
@@ -26,9 +28,15 @@ struct state_t {
     paddle_t paddleEnts[2];
 };
 
+/// Inpuit Types/Variables ///
+
+constexpr static uint8_t KEY_DIFF_NONE = 0;
+constexpr static uint8_t KEY_DIFF_DOWN = 1;
+constexpr static uint8_t KEY_DIFF_UP = 2;
 
 struct input_t {
     uint8_t keys[SDL_Scancode::SDL_NUM_SCANCODES];
+    uint8_t diffs[SDL_Scancode::SDL_NUM_SCANCODES];
 };
 
 }

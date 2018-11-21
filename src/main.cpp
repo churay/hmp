@@ -207,6 +207,20 @@ int main() {
     }
 #endif
 
+    /// Input Wrangling ///
+
+    const auto cIsKeyDown = [ &input ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( input->keys[pKey] );
+    };
+
+    const auto cWasKeyPressed = [ &input ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_DOWN );
+    };
+
+    const auto cWasKeyReleased = [ &input ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_UP );
+    };
+
     /// Update/Render Loop ///
 
     bool32_t isRunning = true;
@@ -222,6 +236,7 @@ int main() {
 
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
         std::memcpy( input->keys, keyboardState, sizeof(input->keys) );
+        std::memset( input->diffs, hmp::KEY_DIFF_NONE, sizeof(input->diffs) );
 
         SDL_Event event;
         while( SDL_PollEvent(&event) ) {
@@ -232,50 +247,49 @@ int main() {
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
                 SDL_GetWindowSize( window, &windowWidth, &windowHeight );
             } else if( event.type == SDL_KEYDOWN ) {
-                // NOTE(JRC): The keys processed here are those that are pressed
-                // but not held. This type of processing is good for one-time
-                // events (e.g. recording, replaying, etc.).
-                SDL_Keycode pressedKey = event.key.keysym.sym;
-                if( pressedKey == SDLK_q ) {
-                    isRunning = false;
-                }
-#ifdef LLCE_DEBUG
-                else if( pressedKey == SDLK_t && !isRecording ) {
-                    if( !isReplaying ) {
-                        repFrameIdx = 0;
-                        recStateStream.open( cStateFilePath, cIOModeR );
-                        recInputStream.open( cInputFilePath, cIOModeR );
-
-                        recFrameCount = (uint32_t)recInputStream.tellg();
-                        recInputStream.seekg( 0, std::ios_base::end );
-                        recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
-                        recFrameCount /= sizeof( hmp::input_t );
-                    } else {
-                        repFrameIdx = 0;
-                        recStateStream.close();
-                        recInputStream.close();
-                    }
-                    isReplaying = !isReplaying;
-                } else if( pressedKey == SDLK_r && !isReplaying ) {
-                    if( !isRecording ) {
-                        recFrameCount = 0;
-                        recStateStream.open( cStateFilePath, cIOModeW );
-                        recStateStream.write( mem.buffer(), mem.length() );
-                        recStateStream.close();
-                        recInputStream.open( cInputFilePath, cIOModeW );
-                    } else {
-                        recInputStream.close();
-                    }
-                    isRecording = !isRecording;
-                } else if( pressedKey == SDLK_SPACE ) {
-                    std::memset( (void*)state, 0, sizeof(hmp::state_t) );
-                    dllInit( state, input );
-                }
-#endif
+                input->keys[event.key.keysym.scancode] = 1;
+                input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_DOWN;
+            } else if( event.type == SDL_KEYUP ) {
+                input->keys[event.key.keysym.scancode] = 0;
+                input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_UP;
             }
         }
 
 #ifdef LLCE_DEBUG
+        if( cIsKeyDown(SDL_SCANCODE_Q) ) {
+            isRunning = false;
+        } else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
+            std::memset( (void*)state, 0, sizeof(hmp::state_t) );
+            dllInit( state, input );
+        } else if( cWasKeyPressed(SDL_SCANCODE_T) && !isRecording ) {
+            if( !isReplaying ) {
+                repFrameIdx = 0;
+                recStateStream.open( cStateFilePath, cIOModeR );
+                recInputStream.open( cInputFilePath, cIOModeR );
+
+                recFrameCount = (uint32_t)recInputStream.tellg();
+                recInputStream.seekg( 0, std::ios_base::end );
+                recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
+                recFrameCount /= sizeof( hmp::input_t );
+            } else {
+                repFrameIdx = 0;
+                recStateStream.close();
+                recInputStream.close();
+            }
+            isReplaying = !isReplaying;
+        } else if( cWasKeyPressed(SDL_SCANCODE_R) && !isReplaying ) {
+            if( !isRecording ) {
+                recFrameCount = 0;
+                recStateStream.open( cStateFilePath, cIOModeW );
+                recStateStream.write( mem.buffer(), mem.length() );
+                recStateStream.close();
+                recInputStream.open( cInputFilePath, cIOModeW );
+            } else {
+                recInputStream.close();
+            }
+            isRecording = !isRecording;
+        }
+
         // TODO(JRC): This is a bit weird for replaying because we allow intercepts
         // from any key before replacing all key presses with replay data. This is
         // good in some ways as it allows recordings to be excited, but it does
