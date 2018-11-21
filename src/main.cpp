@@ -247,10 +247,10 @@ int main() {
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
                 SDL_GetWindowSize( window, &windowWidth, &windowHeight );
             } else if( event.type == SDL_KEYDOWN ) {
-                input->keys[event.key.keysym.scancode] = 1;
+                input->keys[event.key.keysym.scancode] = true;
                 input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_DOWN;
             } else if( event.type == SDL_KEYUP ) {
-                input->keys[event.key.keysym.scancode] = 0;
+                input->keys[event.key.keysym.scancode] = false;
                 input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_UP;
             }
         }
@@ -295,7 +295,7 @@ int main() {
         // good in some ways as it allows recordings to be excited, but it does
         // open the door for weird behavior like embedded recordings.
         if( isRecording ) {
-            recInputStream.write( (bit8_t*)input->keys, sizeof(input->keys) );
+            recInputStream.write( (bit8_t*)input, sizeof(hmp::input_t) );
             recFrameCount++;
         } if( isReplaying ) {
             if( recInputStream.peek() == EOF || recInputStream.eof() ) {
@@ -304,7 +304,7 @@ int main() {
                 recStateStream.read( mem.buffer(), mem.length() );
                 recInputStream.seekg( 0 );
             }
-            recInputStream.read( (bit8_t*)input->keys, sizeof(input->keys) );
+            recInputStream.read( (bit8_t*)input, sizeof(hmp::input_t) );
             repFrameIdx++;
         }
 
