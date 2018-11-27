@@ -1,10 +1,14 @@
 #include <cstring>
 #include <sstream>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_RADIANS
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/matrix_transform_2d.hpp>
+#include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
-#include <SDL2/SDL_opengl.h>
 
 #include "hmp_entities.h"
 
@@ -26,8 +30,7 @@ ball_t::ball_t( const box_t& pBBox ) :
 
 
 void ball_t::ricochet( const entity_t* pSurface ) {
-    glm::vec2 surfVelVec = ( glm::length(pSurface->mVel) > 1.0e-6f ) ?
-        glm::normalize( pSurface->mVel ) : glm::vec2( 0.0f, 0.0f );
+    mBBox.exbed( pSurface->mBBox );
 
     glm::vec2 contactVec = mBBox.center() - pSurface->mBBox.center();
     glm::vec2 contactNormal = contactVec; {
@@ -41,11 +44,30 @@ void ball_t::ricochet( const entity_t* pSurface ) {
         contactNormal = glm::normalize( contactNormal );
     }
 
-    glm::vec2 ricochetVelVec = 0.5f * surfVelVec +
-        0.5f * glm::normalize( glm::reflect(mVel, contactNormal) );
+    glm::vec2 refspaceNormal = ( glm::length(pSurface->mVel) > glm::epsilon<float32_t>() ) ?
+        glm::normalize( pSurface->mVel ) : glm::vec2( 0.0f, 0.0f );
 
-    mBBox.exbed( pSurface->mBBox );
-    mVel = glm::length( mVel ) * glm::normalize( ricochetVelVec );
+    glm::vec2 ricochetNormal = glm::normalize(
+        0.5f * glm::normalize(glm::reflect(mVel, contactNormal)) +
+        0.5f * refspaceNormal );
+    float32_t ricochetAngle = glm::orientedAngle( contactNormal, ricochetNormal );
+
+    glm::vec2 ricochetMinNormal, ricochetMaxNormal; {
+        glm::vec3 vecRotate3d( contactNormal.x, contactNormal.y, 1.0f );
+        glm::vec3 vecMinRotate3d =
+            glm::rotate( glm::mat3(1.0f), -ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
+        glm::vec3 vecMaxRotate3d =
+            glm::rotate( glm::mat3(1.0f), +ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
+
+        ricochetMinNormal = glm::vec2( vecMinRotate3d.x, vecMinRotate3d.y );
+        ricochetMaxNormal = glm::vec2( vecMaxRotate3d.x, vecMaxRotate3d.y );
+    }
+
+    ricochetNormal = (
+        (ricochetAngle < -ball_t::MAX_RICOCHET_ANGLE) ? ricochetMinNormal : (
+        (ricochetAngle > +ball_t::MAX_RICOCHET_ANGLE) ? ricochetMaxNormal : (
+        ricochetNormal )));
+    mVel = glm::length( mVel ) * ricochetNormal;
 }
 
 /// 'hmp::paddle_t' Functions ///

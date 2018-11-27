@@ -1,7 +1,6 @@
 #include <sstream>
 
 #include <glm/ext/vector_float2.hpp>
-#include <SDL2/SDL_opengl.h>
 
 #include "hmp_box_t.h"
 

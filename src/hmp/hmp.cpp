@@ -124,7 +124,6 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
         hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
         if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
             ballEnt.ricochet( &paddleEnt );
-            // TODO(JRC): Increase magnitude of vector.
             ballEnt.mVel *= 1.1f;
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );

@@ -1,6 +1,7 @@
 #ifndef HMP_PADDLE_T_H
 #define HMP_PADDLE_T_H
 
+#include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_entity_t.h"
@@ -34,6 +35,7 @@ class ball_t : public entity_t {
     /// Class Attributes ///
 
     constexpr static float32_t MOVE_VEL = 5.0e-1f; // units: world / seconds
+    constexpr static float32_t MAX_RICOCHET_ANGLE = ( 7.0f / 8.0f ) * ( M_PI / 2.0f ); // units: radians
 
     /// Constructors ///
 
