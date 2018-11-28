@@ -13,7 +13,7 @@
 #include <SDL2/SDL_ttf.h>
 
 #include <cstring>
-#include <iostream>
+#include <cstdio>
 #include <fstream>
 
 #include "hmp/hmp.h"
@@ -65,6 +65,7 @@ int main() {
         "Failed to find path to running executable." );
     const path_t cInstallLockPath( 2, cInstallPath.cstr(), "install.lock" );
 
+    const path_t cOutputPath( 3, cInstallPath.cstr(), "out" );
     const path_t cStateFilePath( 3, cInstallPath.cstr(), "out", "state.dat" );
     const path_t cInputFilePath( 3, cInstallPath.cstr(), "out", "input.dat" );
 
@@ -210,16 +211,53 @@ int main() {
 
     /// Input Wrangling ///
 
+    const SDL_Scancode cFXKeyGroup[] = {
+        SDL_SCANCODE_F1, SDL_SCANCODE_F2, SDL_SCANCODE_F3, SDL_SCANCODE_F4,
+        SDL_SCANCODE_F5, SDL_SCANCODE_F6, SDL_SCANCODE_F7, SDL_SCANCODE_F8,
+        SDL_SCANCODE_F9, SDL_SCANCODE_F10, SDL_SCANCODE_F11, SDL_SCANCODE_F12
+    };
+    const uint32_t cFXKeyGroupSize = sizeof( cFXKeyGroup ) / sizeof( cFXKeyGroup[0] );
+
+    // const SDL_Scancode cAltKeyGroup[] = { SDL_SCANCODE_LALT, SDL_SCANCODE_RALT };
+    // const uint32_t cAltKeyGroupSize = sizeof( cAltKeyGroup ) / sizeof( cAltKeyGroup[0] );
+
+    // const SDL_Scancode cCtlKeyGroup[] = { SDL_SCANCODE_LCTRL, SDL_SCANCODE_RCTRL };
+    // const uint32_t cCtlKeyGroupSize = sizeof( cCtlKeyGroup ) / sizeof( cCtlKeyGroup[0] );
+
     const auto cIsKeyDown = [ &input ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( input->keys[pKey] );
+    };
+    const auto cIsKGDown = [ &input, &cIsKeyDown ]
+            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
+        uint32_t firstIdx = 0;
+        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
+            firstIdx = cIsKeyDown( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
+        }
+        return firstIdx;
     };
 
     const auto cWasKeyPressed = [ &input ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_DOWN );
     };
+    const auto cWasKGPressed = [ &input, &cWasKeyPressed ]
+            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
+        uint32_t firstIdx = 0;
+        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
+            firstIdx = cWasKeyPressed( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
+        }
+        return firstIdx;
+    };
 
     const auto cWasKeyReleased = [ &input ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_UP );
+    };
+    const auto cWasKGReleased = [ &input, &cWasKeyReleased ]
+            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
+        uint32_t firstIdx = 0;
+        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
+            firstIdx = cWasKeyReleased( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
+        }
+        return firstIdx;
     };
 
     /// Update/Render Loop ///
@@ -256,40 +294,84 @@ int main() {
             }
         }
 
+        // NOTE(JRC): The following commands are the new debugging commands:
+        // - FX: Toggle recording for slot X.
+        // - Alt + FX: Toggle replaying for slot X. (no-op if record doesn't exist at FX)
+        // - Ctl + FX: Hotload state (no input replay) at slot X. (no-op if record doesn't exist at FX)
+
 #ifdef LLCE_DEBUG
+        uint32_t fxPressIdx = 0;
+
         if( cIsKeyDown(SDL_SCANCODE_Q) ) {
             isRunning = false;
         } else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
             std::memset( (void*)state, 0, sizeof(hmp::state_t) );
             dllInit( state, input );
-        } else if( cWasKeyPressed(SDL_SCANCODE_T) && !isRecording ) {
-            if( !isReplaying ) {
-                repFrameIdx = 0;
-                recStateStream.open( cStateFilePath, cIOModeR );
-                recInputStream.open( cInputFilePath, cIOModeR );
+        } else if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
+            fxPressIdx--;
 
-                recFrameCount = (uint32_t)recInputStream.tellg();
-                recInputStream.seekg( 0, std::ios_base::end );
-                recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
-                recFrameCount /= sizeof( hmp::input_t );
-            } else {
-                repFrameIdx = 0;
-                recStateStream.close();
-                recInputStream.close();
+            if( cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording ) {
+                // lshift + fx = toggle slot x replay
+                if( !isReplaying ) {
+                    repFrameIdx = 0;
+                    recStateStream.open( cStateFilePath, cIOModeR );
+                    recInputStream.open( cInputFilePath, cIOModeR );
+
+                    recFrameCount = (uint32_t)recInputStream.tellg();
+                    recInputStream.seekg( 0, std::ios_base::end );
+                    recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
+                    recFrameCount /= sizeof( hmp::input_t );
+                } else {
+                    repFrameIdx = 0;
+                    recStateStream.close();
+                    recInputStream.close();
+                }
+                isReplaying = !isReplaying;
+            } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording && !isReplaying ) {
+                // rshift + fx = hotload slot x state
+            } else if( !isReplaying ) {
+                // fx = toggle slot x recording
+                if( !isRecording ) {
+                    recFrameCount = 0;
+                    recStateStream.open( cStateFilePath, cIOModeW );
+                    recStateStream.write( mem.buffer(), mem.length() );
+                    recStateStream.close();
+                    recInputStream.open( cInputFilePath, cIOModeW );
+                } else {
+                    recInputStream.close();
+                }
+                isRecording = !isRecording;
             }
-            isReplaying = !isReplaying;
-        } else if( cWasKeyPressed(SDL_SCANCODE_R) && !isReplaying ) {
-            if( !isRecording ) {
-                recFrameCount = 0;
-                recStateStream.open( cStateFilePath, cIOModeW );
-                recStateStream.write( mem.buffer(), mem.length() );
-                recStateStream.close();
-                recInputStream.open( cInputFilePath, cIOModeW );
-            } else {
-                recInputStream.close();
-            }
-            isRecording = !isRecording;
         }
+
+        // } else if( cWasKeyPressed(SDL_SCANCODE_T) && !isRecording ) {
+        //     if( !isReplaying ) {
+        //         repFrameIdx = 0;
+        //         recStateStream.open( cStateFilePath, cIOModeR );
+        //         recInputStream.open( cInputFilePath, cIOModeR );
+
+        //         recFrameCount = (uint32_t)recInputStream.tellg();
+        //         recInputStream.seekg( 0, std::ios_base::end );
+        //         recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
+        //         recFrameCount /= sizeof( hmp::input_t );
+        //     } else {
+        //         repFrameIdx = 0;
+        //         recStateStream.close();
+        //         recInputStream.close();
+        //     }
+        //     isReplaying = !isReplaying;
+        // } else if( cWasKeyPressed(SDL_SCANCODE_R) && !isReplaying ) {
+        //     if( !isRecording ) {
+        //         recFrameCount = 0;
+        //         recStateStream.open( cStateFilePath, cIOModeW );
+        //         recStateStream.write( mem.buffer(), mem.length() );
+        //         recStateStream.close();
+        //         recInputStream.open( cInputFilePath, cIOModeW );
+        //     } else {
+        //         recInputStream.close();
+        //     }
+        //     isRecording = !isRecording;
+        // }
 
         // TODO(JRC): This is a bit weird for replaying because we allow intercepts
         // from any key before replacing all key presses with replay data. This is
