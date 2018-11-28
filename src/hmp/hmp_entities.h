@@ -35,7 +35,7 @@ class ball_t : public entity_t {
     /// Class Attributes ///
 
     constexpr static float32_t MOVE_VEL = 5.0e-1f; // units: world / seconds
-    constexpr static float32_t MAX_RICOCHET_ANGLE = ( 7.0f / 8.0f ) * ( M_PI / 2.0f ); // units: radians
+    constexpr static float32_t MAX_RICOCHET_ANGLE = ( 3.0f / 5.0f ) * ( M_PI / 2.0f ); // units: radians
 
     /// Constructors ///
 

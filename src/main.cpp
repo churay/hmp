@@ -65,9 +65,13 @@ int main() {
         "Failed to find path to running executable." );
     const path_t cInstallLockPath( 2, cInstallPath.cstr(), "install.lock" );
 
-    const path_t cOutputPath( 3, cInstallPath.cstr(), "out" );
-    const path_t cStateFilePath( 3, cInstallPath.cstr(), "out", "state.dat" );
-    const path_t cInputFilePath( 3, cInstallPath.cstr(), "out", "input.dat" );
+    // NOTE(JRC): It's important to realize that the pathing here ties debugging
+    // outputs to particular builds of the code. This is probably a good thing, but
+    // it does mean clearing the current build will cause all debug files to be lost.
+    const path_t cOutputPath( 2, cInstallPath.cstr(), "out" );
+    const char8_t* cStateFileFormat = "state%u.dat";
+    const char8_t* cInputFileFormat = "input%u.dat";
+    const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
 
@@ -158,10 +162,10 @@ int main() {
         "SDL-TTF failed to create font; " << TTF_GetError() );
 
 #ifdef LLCE_DEBUG
-    const static uint32_t csTextureTextCap = 20;
+    const static uint32_t csTextureTextLength = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
     color_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
-    char8_t textureTexts[][csTextureTextCap] = { "FPS: ???", "Recording", "Replaying", "Time: ???" };
+    char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 
     const uint32_t cTextureCount = sizeof( textureGLIDs ) / sizeof( textureGLIDs[0] );
@@ -263,6 +267,8 @@ int main() {
     /// Update/Render Loop ///
 
     bool32_t isRunning = true;
+
+    uint32_t dbgSlotIdx = 0;
     bool32_t isRecording = false, isReplaying = false;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
@@ -294,11 +300,6 @@ int main() {
             }
         }
 
-        // NOTE(JRC): The following commands are the new debugging commands:
-        // - FX: Toggle recording for slot X.
-        // - Alt + FX: Toggle replaying for slot X. (no-op if record doesn't exist at FX)
-        // - Ctl + FX: Hotload state (no input replay) at slot X. (no-op if record doesn't exist at FX)
-
 #ifdef LLCE_DEBUG
         uint32_t fxPressIdx = 0;
 
@@ -308,14 +309,26 @@ int main() {
             std::memset( (void*)state, 0, sizeof(hmp::state_t) );
             dllInit( state, input );
         } else if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
-            fxPressIdx--;
+            // function key (fx) = debug state operation
+            dbgSlotIdx = fxPressIdx - 1;
+
+            char8_t slotStateFileName[csOutputFileNameLength];
+            char8_t slotInputFileName[csOutputFileNameLength];
+
+            std::snprintf( &slotStateFileName[0], sizeof(slotStateFileName),
+                cStateFileFormat, dbgSlotIdx );
+            std::snprintf( &slotInputFileName[0], sizeof(slotInputFileName),
+                cInputFileFormat, dbgSlotIdx );
+
+            path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
+            path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
 
             if( cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording ) {
                 // lshift + fx = toggle slot x replay
                 if( !isReplaying ) {
                     repFrameIdx = 0;
-                    recStateStream.open( cStateFilePath, cIOModeR );
-                    recInputStream.open( cInputFilePath, cIOModeR );
+                    recStateStream.open( slotStateFilePath, cIOModeR );
+                    recInputStream.open( slotInputFilePath, cIOModeR );
 
                     recFrameCount = (uint32_t)recInputStream.tellg();
                     recInputStream.seekg( 0, std::ios_base::end );
@@ -329,49 +342,21 @@ int main() {
                 isReplaying = !isReplaying;
             } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording && !isReplaying ) {
                 // rshift + fx = hotload slot x state
+                // TODO(JRC): Implement this functionality.
             } else if( !isReplaying ) {
                 // fx = toggle slot x recording
                 if( !isRecording ) {
                     recFrameCount = 0;
-                    recStateStream.open( cStateFilePath, cIOModeW );
+                    recStateStream.open( slotStateFilePath, cIOModeW );
                     recStateStream.write( mem.buffer(), mem.length() );
                     recStateStream.close();
-                    recInputStream.open( cInputFilePath, cIOModeW );
+                    recInputStream.open( slotInputFilePath, cIOModeW );
                 } else {
                     recInputStream.close();
                 }
                 isRecording = !isRecording;
             }
         }
-
-        // } else if( cWasKeyPressed(SDL_SCANCODE_T) && !isRecording ) {
-        //     if( !isReplaying ) {
-        //         repFrameIdx = 0;
-        //         recStateStream.open( cStateFilePath, cIOModeR );
-        //         recInputStream.open( cInputFilePath, cIOModeR );
-
-        //         recFrameCount = (uint32_t)recInputStream.tellg();
-        //         recInputStream.seekg( 0, std::ios_base::end );
-        //         recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
-        //         recFrameCount /= sizeof( hmp::input_t );
-        //     } else {
-        //         repFrameIdx = 0;
-        //         recStateStream.close();
-        //         recInputStream.close();
-        //     }
-        //     isReplaying = !isReplaying;
-        // } else if( cWasKeyPressed(SDL_SCANCODE_R) && !isReplaying ) {
-        //     if( !isRecording ) {
-        //         recFrameCount = 0;
-        //         recStateStream.open( cStateFilePath, cIOModeW );
-        //         recStateStream.write( mem.buffer(), mem.length() );
-        //         recStateStream.close();
-        //         recInputStream.open( cInputFilePath, cIOModeW );
-        //     } else {
-        //         recInputStream.close();
-        //     }
-        //     isRecording = !isRecording;
-        // }
 
         // TODO(JRC): This is a bit weird for replaying because we allow intercepts
         // from any key before replacing all key presses with replay data. This is
@@ -447,7 +432,7 @@ int main() {
 #ifdef LLCE_DEBUG
         glEnable( GL_TEXTURE_2D ); {
             std::snprintf( &textureTexts[cFPSTextureID][0],
-                csTextureTextCap,
+                csTextureTextLength,
                 "FPS: %0.2f", simTimer.fps() );
             cGenerateTextTexture( cFPSTextureID, textureColors[cFPSTextureID], textureTexts[cFPSTextureID] );
 
@@ -462,6 +447,11 @@ int main() {
 
             if( isRecording || isReplaying ) {
                 uint32_t textureID = isRecording ? cRecTextureID : cRepTextureID;
+                std::snprintf( &textureTexts[textureID][0],
+                    csTextureTextLength, isRecording ?
+                    "Recording %02d" : "Replaying %02d",
+                    dbgSlotIdx );
+                cGenerateTextTexture( textureID, textureColors[textureID], textureTexts[textureID] );
 
                 glBindTexture( GL_TEXTURE_2D, textureGLIDs[textureID] );
                 glBegin( GL_QUADS ); {
@@ -472,7 +462,7 @@ int main() {
                 } glEnd();
 
                 std::snprintf( &textureTexts[cTimeTextureID][0],
-                    csTextureTextCap, isRecording ?
+                    csTextureTextLength, isRecording ?
                     "%1u%010u" : "%05u/%05u",
                     repFrameIdx, recFrameCount );
                 cGenerateTextTexture( cTimeTextureID, textureColors[textureID], textureTexts[cTimeTextureID] );
