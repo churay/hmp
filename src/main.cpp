@@ -222,8 +222,8 @@ int main() {
     };
     const uint32_t cFXKeyGroupSize = sizeof( cFXKeyGroup ) / sizeof( cFXKeyGroup[0] );
 
-    const SDL_Scancode cShiftKeyGroup[] = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT };
-    const uint32_t cShiftKeyGroupSize = sizeof( cShiftKeyGroup ) / sizeof( cShiftKeyGroup[0] );
+    // const SDL_Scancode cShiftKeyGroup[] = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT };
+    // const uint32_t cShiftKeyGroupSize = sizeof( cShiftKeyGroup ) / sizeof( cShiftKeyGroup[0] );
 
     const auto cIsKeyDown = [ &input ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( input->keys[pKey] );
@@ -263,17 +263,38 @@ int main() {
 
     /// Update/Render Loop ///
 
-    bool32_t isRunning = true, isStepping = false;
+    bool32_t isRunning = true, isStepping = false, doStep = false;
 
-    uint32_t dbgSlotIdx = 0;
+    uint32_t fxPressIdx = 0, dbgSlotIdx = 0;
     bool32_t isRecording = false, isReplaying = false;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    llce::timer_t simTimer( 60, llce::timer_t::type::fps );
+    const float64_t cSimFPS = 60.0;
+    llce::timer_t simTimer( cSimFPS, llce::timer_t::type::fps );
     float64_t simDT = 0.0;
 
     dllInit( state, input );
     while( isRunning ) {
+#ifdef LLCE_DEBUG
+        bool32_t isStepReady = false;
+        while( isRunning && isStepping && !isStepReady ) {
+            SDL_Event event;
+            SDL_WaitEvent( &event );
+
+            if( event.type == SDL_QUIT ) {
+                isRunning = false;
+            // TODO(JRC): This is a hack to allow detecting the space and return
+            // key press events during the pause. This should be fixed so that
+            // this process is integrated
+            } else if( event.type == SDL_KEYDOWN && (
+                    event.key.keysym.scancode == SDL_SCANCODE_RETURN ||
+                    event.key.keysym.scancode == SDL_SCANCODE_SPACE) ) {
+                isStepReady = true;
+            }
+
+            SDL_PushEvent( &event );
+        }
+#endif
         simTimer.split();
 
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
@@ -297,15 +318,17 @@ int main() {
             }
         }
 
-#ifdef LLCE_DEBUG
-        uint32_t fxPressIdx = 0;
-
         if( cIsKeyDown(SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
-        } else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
+        }
+#ifdef LLCE_DEBUG
+        else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             isStepping = !isStepping;
+        } else if( cWasKeyPressed(SDL_SCANCODE_RETURN) && isStepping ) {
+            // return key = advance frame in frame advance mode
+            doStep = true;
         } else if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
             dbgSlotIdx = fxPressIdx - 1;
@@ -483,6 +506,7 @@ int main() {
 
         simTimer.split( true );
         simDT = simTimer.ft();
+        doStep = false;
     }
 
     /// Clean Up + Exit ///
