@@ -222,11 +222,8 @@ int main() {
     };
     const uint32_t cFXKeyGroupSize = sizeof( cFXKeyGroup ) / sizeof( cFXKeyGroup[0] );
 
-    // const SDL_Scancode cAltKeyGroup[] = { SDL_SCANCODE_LALT, SDL_SCANCODE_RALT };
-    // const uint32_t cAltKeyGroupSize = sizeof( cAltKeyGroup ) / sizeof( cAltKeyGroup[0] );
-
-    // const SDL_Scancode cCtlKeyGroup[] = { SDL_SCANCODE_LCTRL, SDL_SCANCODE_RCTRL };
-    // const uint32_t cCtlKeyGroupSize = sizeof( cCtlKeyGroup ) / sizeof( cCtlKeyGroup[0] );
+    const SDL_Scancode cShiftKeyGroup[] = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT };
+    const uint32_t cShiftKeyGroupSize = sizeof( cShiftKeyGroup ) / sizeof( cShiftKeyGroup[0] );
 
     const auto cIsKeyDown = [ &input ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( input->keys[pKey] );
@@ -266,7 +263,7 @@ int main() {
 
     /// Update/Render Loop ///
 
-    bool32_t isRunning = true;
+    bool32_t isRunning = true, isStepping = false;
 
     uint32_t dbgSlotIdx = 0;
     bool32_t isRecording = false, isReplaying = false;
@@ -304,10 +301,11 @@ int main() {
         uint32_t fxPressIdx = 0;
 
         if( cIsKeyDown(SDL_SCANCODE_Q) ) {
+            // q key = quit application
             isRunning = false;
         } else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
-            std::memset( (void*)state, 0, sizeof(hmp::state_t) );
-            dllInit( state, input );
+            // space key = toggle frame advance mode
+            isStepping = !isStepping;
         } else if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
             dbgSlotIdx = fxPressIdx - 1;
@@ -342,7 +340,10 @@ int main() {
                 isReplaying = !isReplaying;
             } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording && !isReplaying ) {
                 // rshift + fx = hotload slot x state
-                // TODO(JRC): Implement this functionality.
+                recStateStream.open( slotStateFilePath, cIOModeR );
+                recInputStream.seekg( 0 );
+                recStateStream.read( mem.buffer(), mem.length() );
+                recStateStream.close();
             } else if( !isReplaying ) {
                 // fx = toggle slot x recording
                 if( !isRecording ) {
