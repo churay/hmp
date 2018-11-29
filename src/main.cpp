@@ -276,23 +276,21 @@ int main() {
     dllInit( state, input );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
+        // TODO(JRC): This step is currently causing problems for the 'key up'
+        // and 'key down' events, which aren't being properly triggered in cases
+        // where the advance happens at a different time than the key press. It
+        // may be best to just avoid these events and use local data instead.
         bool32_t isStepReady = false;
-        while( isRunning && isStepping && !isStepReady ) {
+        while( isStepping && !isStepReady ) {
             SDL_Event event;
             SDL_WaitEvent( &event );
-
-            if( event.type == SDL_QUIT ) {
-                isRunning = false;
-            // TODO(JRC): This is a hack to allow detecting the space and return
-            // key press events during the pause. This should be fixed so that
-            // this process is integrated
-            } else if( event.type == SDL_KEYDOWN && (
+            if( event.type == SDL_QUIT || (
+                    event.type == SDL_KEYDOWN && (
                     event.key.keysym.scancode == SDL_SCANCODE_RETURN ||
-                    event.key.keysym.scancode == SDL_SCANCODE_SPACE) ) {
+                    event.key.keysym.scancode == SDL_SCANCODE_SPACE)) ) {
                 isStepReady = true;
+                SDL_PushEvent( &event );
             }
-
-            SDL_PushEvent( &event );
         }
 #endif
         simTimer.split();
@@ -323,13 +321,17 @@ int main() {
             isRunning = false;
         }
 #ifdef LLCE_DEBUG
-        else if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
+        if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             isStepping = !isStepping;
         } else if( cWasKeyPressed(SDL_SCANCODE_RETURN) && isStepping ) {
             // return key = advance frame in frame advance mode
             doStep = true;
-        } else if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
+        }
+
+        // TODO(JRC): There are some unfortunate interactions with this behavior
+        // and the traditional 'alt+f4' key combination that should be fixed.
+        if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
             dbgSlotIdx = fxPressIdx - 1;
 
@@ -457,7 +459,7 @@ int main() {
         glEnable( GL_TEXTURE_2D ); {
             std::snprintf( &textureTexts[cFPSTextureID][0],
                 csTextureTextLength,
-                "FPS: %0.2f", simTimer.fps() );
+                "FPS: %0.2f", 1.0 / simDT );
             cGenerateTextTexture( cFPSTextureID, textureColors[cFPSTextureID], textureTexts[cFPSTextureID] );
 
             glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
