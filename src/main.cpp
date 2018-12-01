@@ -261,6 +261,17 @@ int main() {
         return firstIdx;
     };
 
+    // const auto cClearKeyStatus = [ &input ] ( const SDL_Scancode pKey ) {
+    //     std::memset( &input->keys[pKey], 0, sizeof(SDL_Scancode) );
+    //     std::memset( &input->diffs[pKey], hmp::KEY_DIFF_NONE, sizeof(SDL_Scancode) );
+    // };
+    // const auto cClearKGStatus = [ &input, &cClearKeyStatus ]
+    //         ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
+    //     for( uint32_t groupIdx = 0; groupIdx < pGroupSize; groupIdx++ ) {
+    //         cClearKeyStatus( pKeyGroup[groupIdx] );
+    //     }
+    // };
+
     /// Update/Render Loop ///
 
     bool32_t isRunning = true, isStepping = false;
@@ -300,11 +311,22 @@ int main() {
             const bool8_t wasKeyDown = input->keys[keyIdx];
             const bool8_t isKeyDown = keyboardState[keyIdx];
 
+
             input->keys[keyIdx] = isKeyDown;
             input->diffs[keyIdx] = (
                 (!wasKeyDown && isKeyDown) ? hmp::KEY_DIFF_DOWN : (
                 (wasKeyDown && !isKeyDown) ? hmp::KEY_DIFF_UP : (
                 hmp::KEY_DIFF_NONE)) );
+
+            if( isKeyDown )
+                std::cout << "Press for Key " <<
+                    SDL_GetKeyName( SDL_GetKeyFromScancode((SDL_Scancode)keyIdx) ) <<
+                    "!" << std::endl;
+
+            if( input->diffs[keyIdx] != hmp::KEY_DIFF_NONE )
+                std::cout << "Status Changed for Key " <<
+                    SDL_GetKeyName( SDL_GetKeyFromScancode((SDL_Scancode)keyIdx) ) <<
+                    "!" << std::endl;
         }
 
         SDL_Event event;
@@ -323,13 +345,19 @@ int main() {
             isRunning = false;
         }
 #ifdef LLCE_DEBUG
-        if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
+        if( (!isStepping && cWasKeyPressed(SDL_SCANCODE_SPACE)) ||
+                (isStepping && cIsKeyDown(SDL_SCANCODE_SPACE)) ) {
             // space key = toggle frame advance mode
             isStepping = !isStepping;
         }
 
-        // TODO(JRC): There are some unfortunate interactions with this behavior
-        // and the traditional 'alt+f4' key combination that should be fixed.
+        // TODO(JRC): There is currently an issue wherein holding a function
+        // key for a few frames after a replay has begun will end the replay.
+        // This is because the replay will contain an embedded release of the
+        // function key (from when the replay was first captured), and a new
+        // press will be detected if the button is held longer than it was held
+        // when capturing the replay. The fix to this issue isn't obvious, but
+        // it should be investigated presently for usability.
         if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
             dbgSlotIdx = fxPressIdx - 1;
@@ -382,6 +410,11 @@ int main() {
                 isRecording = !isRecording;
             }
         }
+
+        // NOTE(JRC): The appearance of debug keystrokes in saved input replays
+        // causes problems, so they're simply cleared before any recording occurs.
+        // cClearKGStatus( &cFXKeyGroup[0], cFXKeyGroupSize );
+        // cClearKGStatus( &cShiftKeyGroup[0], cShiftKeyGroupSize );
 
         // TODO(JRC): This is a bit weird for replaying because we allow intercepts
         // from any key before replacing all key presses with replay data. This is
