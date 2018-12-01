@@ -54,6 +54,9 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), eastColor );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
+
+    std::memset( pInput->keys, 0, sizeof(pInput->keys) );
+    std::memset( pInput->diffs, hmp::KEY_DIFF_NONE, sizeof(pInput->diffs) );
 }
 
 

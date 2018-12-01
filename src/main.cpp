@@ -263,7 +263,7 @@ int main() {
 
     /// Update/Render Loop ///
 
-    bool32_t isRunning = true, isStepping = false, doStep = false;
+    bool32_t isRunning = true, isStepping = false;
 
     uint32_t fxPressIdx = 0, dbgSlotIdx = 0;
     bool32_t isRecording = false, isReplaying = false;
@@ -296,8 +296,16 @@ int main() {
         simTimer.split();
 
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
-        std::memcpy( input->keys, keyboardState, sizeof(input->keys) );
-        std::memset( input->diffs, hmp::KEY_DIFF_NONE, sizeof(input->diffs) );
+        for( uint32_t keyIdx = 0; keyIdx < sizeof(input->keys); keyIdx++ ) {
+            const bool8_t wasKeyDown = input->keys[keyIdx];
+            const bool8_t isKeyDown = keyboardState[keyIdx];
+
+            input->keys[keyIdx] = isKeyDown;
+            input->diffs[keyIdx] = (
+                (!wasKeyDown && isKeyDown) ? hmp::KEY_DIFF_DOWN : (
+                (wasKeyDown && !isKeyDown) ? hmp::KEY_DIFF_UP : (
+                hmp::KEY_DIFF_NONE)) );
+        }
 
         SDL_Event event;
         while( SDL_PollEvent(&event) ) {
@@ -307,12 +315,6 @@ int main() {
                    event.window.event == SDL_WINDOWEVENT_RESIZED ||
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
                 SDL_GetWindowSize( window, &windowWidth, &windowHeight );
-            } else if( event.type == SDL_KEYDOWN ) {
-                input->keys[event.key.keysym.scancode] = true;
-                input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_DOWN;
-            } else if( event.type == SDL_KEYUP ) {
-                input->keys[event.key.keysym.scancode] = false;
-                input->diffs[event.key.keysym.scancode] = hmp::KEY_DIFF_UP;
             }
         }
 
@@ -324,9 +326,6 @@ int main() {
         if( cWasKeyPressed(SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             isStepping = !isStepping;
-        } else if( cWasKeyPressed(SDL_SCANCODE_RETURN) && isStepping ) {
-            // return key = advance frame in frame advance mode
-            doStep = true;
         }
 
         // TODO(JRC): There are some unfortunate interactions with this behavior
@@ -508,7 +507,6 @@ int main() {
 
         simTimer.split( true );
         simDT = simTimer.ft();
-        doStep = false;
     }
 
     /// Clean Up + Exit ///
