@@ -364,12 +364,17 @@ int main() {
                     recInputStream.close();
                 }
                 isReplaying = !isReplaying;
-            } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording && !isReplaying ) {
-                // rshift + fx = hotload slot x state
-                recStateStream.open( slotStateFilePath, cIOModeR );
-                recInputStream.seekg( 0 );
-                recStateStream.read( mem.buffer(), mem.length() );
-                recStateStream.close();
+            } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording ) {
+                // rshift + fx = hotload slot x state (reset replay)
+                if( isReplaying ) {
+                    repFrameIdx = 0;
+                    recInputStream.seekg( 0, std::ios_base::end );
+                } else {
+                    recStateStream.open( slotStateFilePath, cIOModeR );
+                    recInputStream.seekg( 0 );
+                    recStateStream.read( mem.buffer(), mem.length() );
+                    recStateStream.close();
+                }
             } else if( !isReplaying ) {
                 // fx = toggle slot x recording
                 if( !isRecording ) {
