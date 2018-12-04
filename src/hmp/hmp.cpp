@@ -9,7 +9,8 @@
 
 #include "hmp.h"
 
-LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
+
+extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->dt = 0.0; // frame delta time
     pState->rt = 0.0; // round time
     pState->tt = 0.0; // total time
@@ -60,7 +61,7 @@ LLCE_DYLOAD_API void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 }
 
 
-LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     // Process Input //
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
@@ -135,7 +136,7 @@ LLCE_DYLOAD_API void update( hmp::state_t* pState, hmp::input_t* pInput, const f
 }
 
 
-LLCE_DYLOAD_API void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
+extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
     // Render State //
 
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {

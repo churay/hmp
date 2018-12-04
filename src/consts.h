@@ -27,9 +27,6 @@ typedef double float64_t;
 #define GIGABYTE_BL(v) (MEGABYTE_BL(v)*1024)
 #define TERABYTE_BL(v) (GIGABYTE_BL(v)*1024)
 
-// TODO(JRC): Consider moving these macros to a different module.
-#define LLCE_DYLOAD_API extern "C"
-
 // TODO(JRC): Consider changing these functions to use 'prinf' functionality
 // instead of 'std::cerr' functionality.
 // NOTE(JRC): Code inspired by Stack Overflow response:

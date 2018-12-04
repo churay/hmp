@@ -45,14 +45,14 @@ int main() {
 #endif
     const uint64_t cBufferLength = MEGABYTE_BL( 1 );
     llce::memory_t mem( 1, &cBufferLength, cBufferAddress );
-    hmp::input_t rawInput;
+    hmp::input_t inputs[2];
 
     std::fstream recStateStream, recInputStream;
     const ioflag_t cIOModeR = std::fstream::binary | std::fstream::in;
     const ioflag_t cIOModeW = std::fstream::binary | std::fstream::out | std::fstream::trunc;
 
-    hmp::state_t* state = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) );
-    hmp::input_t* input = &rawInput;
+    hmp::state_t* simState = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) );
+    hmp::input_t* simInput = &inputs[0];
 
     /// Find Project Paths ///
 
@@ -215,6 +215,11 @@ int main() {
 
     /// Input Wrangling ///
 
+    // NOTE(JRC): This is the true input stream for the application.
+    // The simulation stream is kept separate so its inputs don't interfere
+    // with application-level functionality (e.g. debugging contexts, etc.).
+    hmp::input_t* appInput = &inputs[1];
+
     const SDL_Scancode cFXKeyGroup[] = {
         SDL_SCANCODE_F1, SDL_SCANCODE_F2, SDL_SCANCODE_F3, SDL_SCANCODE_F4,
         SDL_SCANCODE_F5, SDL_SCANCODE_F6, SDL_SCANCODE_F7, SDL_SCANCODE_F8,
@@ -222,13 +227,10 @@ int main() {
     };
     const uint32_t cFXKeyGroupSize = sizeof( cFXKeyGroup ) / sizeof( cFXKeyGroup[0] );
 
-    // const SDL_Scancode cShiftKeyGroup[] = { SDL_SCANCODE_LSHIFT, SDL_SCANCODE_RSHIFT };
-    // const uint32_t cShiftKeyGroupSize = sizeof( cShiftKeyGroup ) / sizeof( cShiftKeyGroup[0] );
-
-    const auto cIsKeyDown = [ &input ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( input->keys[pKey] );
+    const auto cIsKeyDown = [ &appInput ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( appInput->keys[pKey] );
     };
-    const auto cIsKGDown = [ &input, &cIsKeyDown ]
+    const auto cIsKGDown = [ &appInput, &cIsKeyDown ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -237,10 +239,10 @@ int main() {
         return firstIdx;
     };
 
-    const auto cWasKeyPressed = [ &input ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_DOWN );
+    const auto cWasKeyPressed = [ &appInput ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_DOWN );
     };
-    const auto cWasKGPressed = [ &input, &cWasKeyPressed ]
+    const auto cWasKGPressed = [ &appInput, &cWasKeyPressed ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -249,10 +251,10 @@ int main() {
         return firstIdx;
     };
 
-    const auto cWasKeyReleased = [ &input ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( input->keys[pKey] && input->diffs[pKey] == hmp::KEY_DIFF_UP );
+    const auto cWasKeyReleased = [ &appInput ] ( const SDL_Scancode pKey ) {
+        return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_UP );
     };
-    const auto cWasKGReleased = [ &input, &cWasKeyReleased ]
+    const auto cWasKGReleased = [ &appInput, &cWasKeyReleased ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -260,17 +262,6 @@ int main() {
         }
         return firstIdx;
     };
-
-    // const auto cClearKeyStatus = [ &input ] ( const SDL_Scancode pKey ) {
-    //     std::memset( &input->keys[pKey], 0, sizeof(SDL_Scancode) );
-    //     std::memset( &input->diffs[pKey], hmp::KEY_DIFF_NONE, sizeof(SDL_Scancode) );
-    // };
-    // const auto cClearKGStatus = [ &input, &cClearKeyStatus ]
-    //         ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-    //     for( uint32_t groupIdx = 0; groupIdx < pGroupSize; groupIdx++ ) {
-    //         cClearKeyStatus( pKeyGroup[groupIdx] );
-    //     }
-    // };
 
     /// Update/Render Loop ///
 
@@ -284,7 +275,7 @@ int main() {
     llce::timer_t simTimer( cSimFPS, llce::timer_t::type::fps );
     float64_t simDT = 0.0;
 
-    dllInit( state, input );
+    dllInit( simState, simInput );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
         // TODO(JRC): This step is currently causing problems for the 'key up'
@@ -307,27 +298,17 @@ int main() {
         simTimer.split();
 
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
-        for( uint32_t keyIdx = 0; keyIdx < sizeof(input->keys); keyIdx++ ) {
-            const bool8_t wasKeyDown = input->keys[keyIdx];
+        for( uint32_t keyIdx = 0; keyIdx < sizeof(appInput->keys); keyIdx++ ) {
+            const bool8_t wasKeyDown = appInput->keys[keyIdx];
             const bool8_t isKeyDown = keyboardState[keyIdx];
 
-
-            input->keys[keyIdx] = isKeyDown;
-            input->diffs[keyIdx] = (
+            appInput->keys[keyIdx] = isKeyDown;
+            appInput->diffs[keyIdx] = (
                 (!wasKeyDown && isKeyDown) ? hmp::KEY_DIFF_DOWN : (
                 (wasKeyDown && !isKeyDown) ? hmp::KEY_DIFF_UP : (
                 hmp::KEY_DIFF_NONE)) );
-
-            if( isKeyDown )
-                std::cout << "Press for Key " <<
-                    SDL_GetKeyName( SDL_GetKeyFromScancode((SDL_Scancode)keyIdx) ) <<
-                    "!" << std::endl;
-
-            if( input->diffs[keyIdx] != hmp::KEY_DIFF_NONE )
-                std::cout << "Status Changed for Key " <<
-                    SDL_GetKeyName( SDL_GetKeyFromScancode((SDL_Scancode)keyIdx) ) <<
-                    "!" << std::endl;
         }
+        std::memcpy( simInput, appInput, sizeof(hmp::input_t) );
 
         SDL_Event event;
         while( SDL_PollEvent(&event) ) {
@@ -351,13 +332,6 @@ int main() {
             isStepping = !isStepping;
         }
 
-        // TODO(JRC): There is currently an issue wherein holding a function
-        // key for a few frames after a replay has begun will end the replay.
-        // This is because the replay will contain an embedded release of the
-        // function key (from when the replay was first captured), and a new
-        // press will be detected if the button is held longer than it was held
-        // when capturing the replay. The fix to this issue isn't obvious, but
-        // it should be investigated presently for usability.
         if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
             dbgSlotIdx = fxPressIdx - 1;
@@ -411,17 +385,8 @@ int main() {
             }
         }
 
-        // NOTE(JRC): The appearance of debug keystrokes in saved input replays
-        // causes problems, so they're simply cleared before any recording occurs.
-        // cClearKGStatus( &cFXKeyGroup[0], cFXKeyGroupSize );
-        // cClearKGStatus( &cShiftKeyGroup[0], cShiftKeyGroupSize );
-
-        // TODO(JRC): This is a bit weird for replaying because we allow intercepts
-        // from any key before replacing all key presses with replay data. This is
-        // good in some ways as it allows recordings to be excited, but it does
-        // open the door for weird behavior like embedded recordings.
         if( isRecording ) {
-            recInputStream.write( (bit8_t*)input, sizeof(hmp::input_t) );
+            recInputStream.write( (bit8_t*)simInput, sizeof(hmp::input_t) );
             recFrameCount++;
         } if( isReplaying ) {
             if( recInputStream.peek() == EOF || recInputStream.eof() ) {
@@ -430,7 +395,7 @@ int main() {
                 recStateStream.read( mem.buffer(), mem.length() );
                 recInputStream.seekg( 0 );
             }
-            recInputStream.read( (bit8_t*)input, sizeof(hmp::input_t) );
+            recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
             repFrameIdx++;
         }
 
@@ -483,8 +448,8 @@ int main() {
                 glVertex2f( 0.0f, 1.0f );
             } glEnd();
 
-            dllUpdate( state, input, simDT );
-            dllRender( state, input );
+            dllUpdate( simState, simInput, simDT );
+            dllRender( simState, simInput );
         } glPopMatrix();
 
 #ifdef LLCE_DEBUG
