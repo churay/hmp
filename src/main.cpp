@@ -44,7 +44,7 @@ int main() {
     // in the 'doc/static_address.md' documentation file.
 #ifdef LLCE_DEBUG
     bit8_t* const cBufferAddress = (bit8_t*)0x0000100000000000;
-    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 3.0 * cSimFPS );
+    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 2.0 * cSimFPS );
 #else
     bit8_t* const cBufferAddress = nullptr;
     const uint64_t cBackupBufferCount = 0;
@@ -62,7 +62,6 @@ int main() {
 #ifdef LLCE_DEBUG
     hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
     hmp::state_t* backupStates = (hmp::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::state_t) );
-    uint64_t backupIdx = 0;
 #endif
 
     std::fstream recStateStream, recInputStream;
@@ -282,12 +281,16 @@ int main() {
 
     bool32_t isRunning = true, isStepping = false;
 
-    uint32_t fxPressIdx = 0, dbgSlotIdx = 0;
     bool32_t isRecording = false, isReplaying = false;
+    uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
     llce::timer_t simTimer( cSimFPS, llce::timer_t::type::fps );
     float64_t simDT = 0.0;
+    // NOTE(JRC): A cursory check shows that it will take ~1e10 years of
+    // uninterrupted run time for this to overflow at 60 FPS, so the fact
+    // that this increments very quickly over time isn't a big concern.
+    uint64_t simFrame = 0;
 
     dllInit( simState, simInput );
     while( isRunning ) {
@@ -340,23 +343,27 @@ int main() {
             isRunning = false;
         }
 #ifdef LLCE_DEBUG
+        uint64_t backupIdx = simFrame % cBackupBufferCount;
+        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(hmp::input_t) );
+        std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(hmp::state_t) );
+
         if( (!isStepping && cWasKeyPressed(SDL_SCANCODE_SPACE)) ||
                 (isStepping && cIsKeyDown(SDL_SCANCODE_SPACE)) ) {
             // space key = toggle frame advance mode
             isStepping = !isStepping;
         }
 
-        if( (fxPressIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
+        if( (currSlotIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
             // function key (fx) = debug state operation
-            dbgSlotIdx = fxPressIdx - 1;
+            recSlotIdx = currSlotIdx;
 
             char8_t slotStateFileName[csOutputFileNameLength];
             char8_t slotInputFileName[csOutputFileNameLength];
 
             std::snprintf( &slotStateFileName[0], sizeof(slotStateFileName),
-                cStateFileFormat, dbgSlotIdx );
+                cStateFileFormat, recSlotIdx );
             std::snprintf( &slotInputFileName[0], sizeof(slotInputFileName),
-                cInputFileFormat, dbgSlotIdx );
+                cInputFileFormat, recSlotIdx );
 
             path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
             path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
@@ -386,21 +393,37 @@ int main() {
                 } else {
                     recStateStream.open( slotStateFilePath, cIOModeR );
                     recInputStream.seekg( 0 );
-                    recStateStream.read( (char8_t*)simState, sizeof(hmp::state_t) );
+                    recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
                     recStateStream.close();
                 }
-            } else if( !isReplaying ) {
+            } else if( recSlotIdx != 1 && !isReplaying ) {
                 // fx = toggle slot x recording
                 if( !isRecording ) {
                     recFrameCount = 0;
                     recStateStream.open( slotStateFilePath, cIOModeW );
-                    recStateStream.write( (char8_t*)simState, sizeof(hmp::state_t) );
+                    recStateStream.write( (bit8_t*)simState, sizeof(hmp::state_t) );
                     recStateStream.close();
                     recInputStream.open( slotInputFilePath, cIOModeW );
                 } else {
                     recInputStream.close();
                 }
                 isRecording = !isRecording;
+                // f1 = instant backup record
+            } else if(recSlotIdx == 1 && !isReplaying ) {
+                // TODO(JRC): It's potentially worth putting a guard on this
+                // function or improving the backup state implementation so
+                // that hot-saving before the number of total backups is possible.
+                uint64_t backupStartIdx = ( backupIdx + 1 ) % cBackupBufferCount;
+                recStateStream.open( slotStateFilePath, cIOModeW );
+                recStateStream.write( (bit8_t*)&backupStates[backupStartIdx], sizeof(hmp::state_t) );
+                recStateStream.close();
+
+                recInputStream.open( slotInputFilePath, cIOModeW );
+                for( uint32_t bufferIdx = 0; bufferIdx < cBackupBufferCount; bufferIdx++ ) {
+                    uint64_t bbIdx = (backupStartIdx + bufferIdx) % cBackupBufferCount;
+                    recInputStream.write( (bit8_t*)&backupInputs[bbIdx], sizeof(hmp::input_t) );
+                }
+                recInputStream.close();
             }
         }
 
@@ -411,7 +434,7 @@ int main() {
             if( recInputStream.peek() == EOF || recInputStream.eof() ) {
                 repFrameIdx = 0;
                 recStateStream.seekg( 0 );
-                recStateStream.read( (char8_t*)simState, sizeof(hmp::state_t) );
+                recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
                 recInputStream.seekg( 0 );
             }
             recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
@@ -492,7 +515,7 @@ int main() {
                 std::snprintf( &textureTexts[textureID][0],
                     csTextureTextLength, isRecording ?
                     "Recording %02d" : "Replaying %02d",
-                    dbgSlotIdx );
+                    recSlotIdx );
                 cGenerateTextTexture( textureID, textureColors[textureID], textureTexts[textureID] );
 
                 glBindTexture( GL_TEXTURE_2D, textureGLIDs[textureID] );
@@ -524,6 +547,7 @@ int main() {
 
         simTimer.split( true );
         simDT = simTimer.ft();
+        simFrame += 1;
     }
 
     /// Clean Up + Exit ///
