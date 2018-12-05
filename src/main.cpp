@@ -34,25 +34,40 @@ typedef llce::platform::path_t path_t;
 typedef llce::util::color_t color_t;
 
 int main() {
+    /// Initialize Global Constant State ///
+
+    const float64_t cSimFPS = 60.0;
+
     /// Initialize Application Memory/State ///
 
     // NOTE(JRC): This base address was chosen by following the steps enumerated
     // in the 'doc/static_address.md' documentation file.
 #ifdef LLCE_DEBUG
     bit8_t* const cBufferAddress = (bit8_t*)0x0000100000000000;
+    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 3.0 * cSimFPS );
 #else
     bit8_t* const cBufferAddress = nullptr;
+    const uint64_t cBackupBufferCount = 0;
 #endif
-    const uint64_t cBufferLength = MEGABYTE_BL( 1 );
-    llce::memory_t mem( 1, &cBufferLength, cBufferAddress );
-    hmp::input_t inputs[2];
+    const uint64_t cSimBufferIdx = 0, cSimBufferLength = MEGABYTE_BL( 1 );
+    const uint64_t cBackupBufferIdx = 1, cBackupBufferLength = cBackupBufferCount * cSimBufferLength;
+    const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
+
+    llce::memory_t mem( 2, &cBufferLengths[0], cBufferAddress );
+    hmp::input_t* inputs = (hmp::input_t*)mem.allocate( cSimBufferIdx, 2 * sizeof(hmp::input_t) );
+
+    hmp::state_t* simState = (hmp::state_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::state_t) );
+    hmp::input_t* simInput = &inputs[0];
+
+#ifdef LLCE_DEBUG
+    hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
+    hmp::state_t* backupStates = (hmp::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::state_t) );
+    uint64_t backupIdx = 0;
+#endif
 
     std::fstream recStateStream, recInputStream;
     const ioflag_t cIOModeR = std::fstream::binary | std::fstream::in;
     const ioflag_t cIOModeW = std::fstream::binary | std::fstream::out | std::fstream::trunc;
-
-    hmp::state_t* simState = (hmp::state_t*)mem.allocate( 0, sizeof(hmp::state_t) );
-    hmp::input_t* simInput = &inputs[0];
 
     /// Find Project Paths ///
 
@@ -271,7 +286,6 @@ int main() {
     bool32_t isRecording = false, isReplaying = false;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    const float64_t cSimFPS = 60.0;
     llce::timer_t simTimer( cSimFPS, llce::timer_t::type::fps );
     float64_t simDT = 0.0;
 
@@ -372,7 +386,7 @@ int main() {
                 } else {
                     recStateStream.open( slotStateFilePath, cIOModeR );
                     recInputStream.seekg( 0 );
-                    recStateStream.read( mem.buffer(), mem.length() );
+                    recStateStream.read( (char8_t*)simState, sizeof(hmp::state_t) );
                     recStateStream.close();
                 }
             } else if( !isReplaying ) {
@@ -380,7 +394,7 @@ int main() {
                 if( !isRecording ) {
                     recFrameCount = 0;
                     recStateStream.open( slotStateFilePath, cIOModeW );
-                    recStateStream.write( mem.buffer(), mem.length() );
+                    recStateStream.write( (char8_t*)simState, sizeof(hmp::state_t) );
                     recStateStream.close();
                     recInputStream.open( slotInputFilePath, cIOModeW );
                 } else {
@@ -397,7 +411,7 @@ int main() {
             if( recInputStream.peek() == EOF || recInputStream.eof() ) {
                 repFrameIdx = 0;
                 recStateStream.seekg( 0 );
-                recStateStream.read( mem.buffer(), mem.length() );
+                recStateStream.read( (char8_t*)simState, sizeof(hmp::state_t) );
                 recInputStream.seekg( 0 );
             }
             recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
