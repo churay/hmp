@@ -187,10 +187,10 @@ bool32_t path_t::wait() const {
 /// External Functions ///
 
 path_t pathLockPath( const path_t& pBasePath ) {
-    const char8_t* lockSuffix = ".lock";
+    const char8_t* cLockSuffix = ".lock";
 
     path_t lockPath = pBasePath;
-    for( const char8_t* pItr = lockSuffix; *pItr != path_t::EOS; pItr++ ) {
+    for( const char8_t* pItr = cLockSuffix; *pItr != path_t::EOS; pItr++ ) {
         lockPath.mBuffer[lockPath.mLength++] = *pItr;
     }
     lockPath.mBuffer[lockPath.mLength] = path_t::EOS;
@@ -204,15 +204,16 @@ path_t exeBasePath() {
     int64_t status = readlink( "/proc/self/exe", &exePath.mBuffer[0],
         path_t::MAX_LENGTH );
 
-    if( status <= 0 ) {
-        exePath.mBuffer[0] = path_t::EOS;
-        exePath.mLength = 0;
-        LLCE_ASSERT_INFO( false,
-            "Failed to retrieve the path to the running executable; " <<
-            strerror(errno) );
-    } else {
-        exePath.mLength = status;
-    }
+    int64_t pathLength = ( status <= 0 ) ? 0 : status;
+    LLCE_ASSERT_INFO( pathLength > 0,
+        "Failed to retrieve the path to the running executable; " <<
+        strerror(errno) );
+
+    // NOTE(JRC): It's important that the null character be set explicitly
+    // since 'readlink' doesn't guarantee this behavior by default (see:
+    // http://man7.org/linux/man-pages/man2/readlink.2.html).
+    exePath.mLength = pathLength;
+    exePath.mBuffer[pathLength] = path_t::EOS;
 
     return exePath;
 }

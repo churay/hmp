@@ -122,8 +122,10 @@ int main() {
 
     /// Initialize Windows/Graphics ///
 
+    // TODO(JRC): Include 'SDL_INIT_GAMECONTROLLER' when it's needed; it causes
+    // extra one-time leaks so it has been excluded to aid in memory error tracking.
     LLCE_ASSERT_ERROR(
-        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER) >= 0,
+        SDL_Init(SDL_INIT_VIDEO) >= 0,
         "SDL failed to initialize; " << SDL_GetError() );
 
     LLCE_ASSERT_ERROR(
@@ -552,12 +554,17 @@ int main() {
 
     /// Clean Up + Exit ///
 
+    if( dllHandle != nullptr ) {
+        llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
+    }
+
     recStateStream.close();
     recInputStream.close();
 
     TTF_CloseFont( font );
     TTF_Quit();
 
+    SDL_GL_DeleteContext( glcontext );
     SDL_DestroyWindow( window );
     SDL_Quit();
 
