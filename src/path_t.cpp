@@ -116,6 +116,7 @@ bool32_t path_t::dn( const char8_t* pChild ) {
         mBuffer[mLength] = path_t::DSEP;
         memcpy( &mBuffer[mLength + 1], pChild, childLength );
         mLength += 1 + childLength;
+        mBuffer[mLength] = path_t::EOS;
     }
 
     return success;
