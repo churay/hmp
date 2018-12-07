@@ -144,7 +144,7 @@ int main() {
 
     int32_t windowWidth = 640, windowHeight = 480;
     SDL_Window* window = SDL_CreateWindow(
-        "Loop-Live Code Editing",                   // Window Title
+        "Handmade Pong",                            // Window Title
         SDL_WINDOWPOS_UNDEFINED,                    // Window X Position
         SDL_WINDOWPOS_UNDEFINED,                    // Window Y Position
         windowWidth,                                // Window Width
@@ -352,6 +352,7 @@ int main() {
         if( (!isStepping && cWasKeyPressed(SDL_SCANCODE_SPACE)) ||
                 (isStepping && cIsKeyDown(SDL_SCANCODE_SPACE)) ) {
             // space key = toggle frame advance mode
+            LLCE_ALERT_INFO( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
         }
 
@@ -372,6 +373,7 @@ int main() {
 
             if( cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording ) {
                 // lshift + fx = toggle slot x replay
+                LLCE_ALERT_INFO( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
                     repFrameIdx = 0;
                     recStateStream.open( slotStateFilePath, cIOModeR );
@@ -389,6 +391,7 @@ int main() {
                 isReplaying = !isReplaying;
             } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording ) {
                 // rshift + fx = hotload slot x state (reset replay)
+                LLCE_ALERT_INFO( "Hotload Slot {" << recSlotIdx << "}" );
                 if( isReplaying ) {
                     repFrameIdx = 0;
                     recInputStream.seekg( 0, std::ios_base::end );
@@ -400,6 +403,7 @@ int main() {
                 }
             } else if( recSlotIdx != 1 && !isReplaying ) {
                 // fx = toggle slot x recording
+                LLCE_ALERT_INFO( "Record Slot {" << recSlotIdx << "} <" << (!isRecording ? "ON " : "OFF") << ">" );
                 if( !isRecording ) {
                     recFrameCount = 0;
                     recStateStream.open( slotStateFilePath, cIOModeW );
@@ -410,8 +414,9 @@ int main() {
                     recInputStream.close();
                 }
                 isRecording = !isRecording;
-                // f1 = instant backup record
             } else if(recSlotIdx == 1 && !isReplaying ) {
+                // f1 = instant backup record
+                LLCE_ALERT_INFO( "Hotsave Slot {" << recSlotIdx << "}" );
                 // TODO(JRC): It's potentially worth putting a guard on this
                 // function or improving the backup state implementation so
                 // that hot-saving before the number of total backups is possible.
@@ -460,6 +465,8 @@ int main() {
             LLCE_ASSERT_ERROR( cDLLReload(),
                 "Couldn't load library `" << cDLLFileName << "` symbols at " <<
                 "simulation time " << simTimer.tt() << "." );
+
+            LLCE_ALERT_INFO( "DLL Reload {" << simFrame << "}" );
 
             prevDylibModTime = currDylibModTime;
         }

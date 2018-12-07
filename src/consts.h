@@ -32,6 +32,15 @@ typedef double float64_t;
 // NOTE(JRC): Code inspired by Stack Overflow response:
 // https://stackoverflow.com/a/3767883.
 #ifdef LLCE_DEBUG
+#define LLCE_ALERT_INFO(message) \
+    do { \
+        std::cerr << "[ALERT] : " << message << std::endl; \
+    } while (false)
+#else
+#define LLCE_ALERT_INFO(message) do { } while(false)
+#endif
+
+#ifdef LLCE_DEBUG
 #define LLCE_ASSERT_INFO(condition, message) \
     do { \
         if (! (condition)) { \
