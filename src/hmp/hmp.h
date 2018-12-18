@@ -14,8 +14,7 @@ namespace hmp {
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
-constexpr static color_t BG_COLOR = { 0x00, 0x2b, 0x36, 0xFF };
-constexpr static color_t UI_COLOR = { 0x00, 0x2b, 0x36, 0xFF };
+constexpr static float32_t UI_HEIGHT = 1.0e-1f;
 
 struct state_t {
     float64_t dt, rt, tt;
@@ -24,6 +23,7 @@ struct state_t {
     entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
     bounds_t ricochetEnts[2];
+    scoreboard_t scoreEnt;
     ball_t ballEnt;
     paddle_t paddleEnts[2];
 };

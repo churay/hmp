@@ -491,6 +491,7 @@ int main() {
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 0.0f) );
             glMultMatrixf( &matWorldView[0][0] );
 
+            /*
             glBegin( GL_QUADS ); {
                 glColor4ub( 0x00, 0x2b, 0x36, 0xFF );
                 glVertex2f( 0.0f, 0.0f );
@@ -498,6 +499,7 @@ int main() {
                 glVertex2f( 1.0f, 1.0f );
                 glVertex2f( 0.0f, 1.0f );
             } glEnd();
+            */
 
             dllUpdate( simState, simInput, simDT );
             dllRender( simState, simInput );

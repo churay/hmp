@@ -16,8 +16,11 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->tt = 0.0; // total time
     pState->roundStarted = false;
 
+    // TODO(JRC): This should be more automated if possible (iterate over
+    // the state variables after 'entities' array, perhaps?).
     uint32_t entityIdx = 0;
     pState->entities[entityIdx++] = &pState->boundsEnt;
+    pState->entities[entityIdx++] = &pState->scoreEnt;
     pState->entities[entityIdx++] = &pState->ballEnt;
     for( uint32_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
         pState->entities[entityIdx++] = &pState->paddleEnts[paddleIdx];
@@ -29,7 +32,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // instead of invoking the copy constructor in order to ensure that the v-table
     // is copied to the state entity, which is initialized to 'null' by default.
 
-    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
+    const color_t westColor = { 0x9a, 0x86, 0x00, 0xFF };
+    const color_t eastColor = { 0x00, 0x9d, 0xa3, 0xFF };
+
+    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f - hmp::UI_HEIGHT );
     const hmp::bounds_t boundsEnt( hmp::box_t(boundsBasePos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
 
@@ -39,6 +45,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
         std::memcpy( (void*)&pState->ricochetEnts[ricochetIdx], (void*)&ricochetEnt, sizeof(hmp::bounds_t) );
     }
 
+    const glm::vec2 scoreBasePos( 0.0f, boundsDims.y ), scoreDims( 1.0f, hmp::UI_HEIGHT );
+    const hmp::scoreboard_t scoreEnt( hmp::box_t(scoreBasePos, scoreDims), westColor, eastColor );
+    std::memcpy( (void*)&pState->scoreEnt, (void*)&scoreEnt, sizeof(hmp::scoreboard_t) );
+
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
     const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
     const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims) );
@@ -46,12 +56,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
 
-    const color_t westColor = { 0x9a, 0x86, 0x00, 0xFF };
     const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), westColor );
     std::memcpy( (void*)&pState->paddleEnts[0], (void*)&westEnt, sizeof(hmp::paddle_t) );
 
-    const color_t eastColor = { 0x00, 0x9d, 0xa3, 0xFF };
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), eastColor );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
@@ -145,7 +153,5 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput )
 
     // Render UI //
 
-    glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)&hmp::UI_COLOR );
-    } glEnd();
+    // TODO(JRC)
 }

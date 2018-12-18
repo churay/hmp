@@ -18,7 +18,6 @@ class bounds_t : public entity_t {
     /// Class Attributes ///
 
     constexpr static float32_t LINE_WIDTH = 5.0e-2f;
-    constexpr static float32_t LINE_BFACTOR = 1.5e0f;
 
     /// Constructors ///
 
@@ -90,6 +89,38 @@ class paddle_t : public entity_t {
     public:
 
     int8_t mDX, mDY;
+};
+
+
+class scoreboard_t : public entity_t {
+    public:
+
+    /// Class Attributes ///
+
+    constexpr static float32_t INNER_PADDING = 1.0e-1f;
+    constexpr static float32_t DIGIT_WIDTH = 1.0e-1f;
+    constexpr static float32_t LINE_WIDTH = 3.0e-2f;
+
+    /// Constructors ///
+
+    scoreboard_t( const box_t& pBBox, const color_t& pWestColor, const color_t& pEastColor );
+
+    /// Class Functions ///
+
+    void tally( const uint8_t pWestDelta, const uint8_t pEastDelta );
+
+    /// Internal Functions ///
+
+    protected:
+
+    virtual void irender() const;
+
+    /// Class Fields ///
+
+    public:
+
+    uint8_t mWestScore, mEastScore;
+    color_t mWestColor, mEastColor; // units: (r,g,b,a)
 };
 
 }

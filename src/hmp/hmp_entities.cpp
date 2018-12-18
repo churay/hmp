@@ -20,7 +20,7 @@ namespace hmp {
 
 bounds_t::bounds_t( const box_t& pBBox ) :
         entity_t( pBBox, {0x00, 0x2b, 0x36, 0xFF} ),
-        mLineColor( llce::util::brighten(mColor, bounds_t::LINE_BFACTOR) ) {
+        mLineColor( llce::util::brighten(mColor, 1.5f) ) {
     
 }
 
@@ -103,6 +103,32 @@ void paddle_t::iupdate( const float64_t pDT ) {
     mVel.x = mDX * paddle_t::MOVE_VEL;
     mVel.y = mDY * paddle_t::MOVE_VEL;
     entity_t::iupdate( pDT );
+}
+
+/// 'hmp::scoreboard_t' Functions ///
+
+scoreboard_t::scoreboard_t( const box_t& pBBox, const color_t& pWestColor, const color_t& pEastColor ) :
+        entity_t( pBBox, {0x3F, 0x47, 0x49, 0xFF} ),
+        mWestScore( 0 ), mEastScore( 0 ),
+        mWestColor( pWestColor ), mEastColor( pEastColor ) {
+    
+}
+
+
+void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
+    mWestScore += pWestDelta;
+    mEastScore += pEastDelta;
+}
+
+
+void scoreboard_t::irender() const {
+    entity_t::irender();
+    /*
+    glBegin( GL_QUADS ); {
+        glColor4ubv( (uint8_t*)&mWestColor );
+        glColor4ubv( (uint8_t*)&mEastColor );
+    } glEnd();
+    */
 }
 
 }
