@@ -10,6 +10,8 @@
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
 
+#include <SDL2/SDL_opengl.h>
+
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -17,8 +19,21 @@ namespace hmp {
 /// 'hmp::bounds_t' Functions ///
 
 bounds_t::bounds_t( const box_t& pBBox ) :
-        entity_t( pBBox, {0x00, 0x2b, 0x36, 0xFF} ) {
+        entity_t( pBBox, {0x00, 0x2b, 0x36, 0xFF} ),
+        mLineColor( llce::util::brighten(mColor, bounds_t::LINE_BFACTOR) ) {
     
+}
+
+
+void bounds_t::irender() const {
+    entity_t::irender();
+    glBegin( GL_QUADS ); {
+        glColor4ubv( (uint8_t*)&mLineColor );
+        glVertex2f( 0.5f - (bounds_t::LINE_WIDTH / 2.0f), 0.0f );
+        glVertex2f( 0.5f + (bounds_t::LINE_WIDTH / 2.0f), 0.0f );
+        glVertex2f( 0.5f + (bounds_t::LINE_WIDTH / 2.0f), 1.0f );
+        glVertex2f( 0.5f - (bounds_t::LINE_WIDTH / 2.0f), 1.0f );
+    } glEnd();
 }
 
 /// 'hmp::ball_t' Functions ///

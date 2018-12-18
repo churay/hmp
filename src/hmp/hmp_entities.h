@@ -15,6 +15,11 @@ namespace hmp {
 class bounds_t : public entity_t {
     public:
 
+    /// Class Attributes ///
+
+    constexpr static float32_t LINE_WIDTH = 5.0e-2f;
+    constexpr static float32_t LINE_BFACTOR = 1.5e0f;
+
     /// Constructors ///
 
     bounds_t( const box_t& pBBox );
@@ -23,9 +28,13 @@ class bounds_t : public entity_t {
 
     protected:
 
+    virtual void irender() const;
+
     /// Class Fields ///
 
     public:
+
+    color_t mLineColor; // units: (r,g,b,a)
 };
 
 

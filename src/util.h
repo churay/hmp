@@ -14,7 +14,8 @@ namespace util {
 
     /// Namespace Functions ///
 
-    
+    // TODO(JRC): Move this function to a better location.
+    color_t brighten( const color_t& pColor, const float32_t pFactor );
 }
 
 }
