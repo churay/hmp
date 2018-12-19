@@ -20,7 +20,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // the state variables after 'entities' array, perhaps?).
     uint32_t entityIdx = 0;
     pState->entities[entityIdx++] = &pState->boundsEnt;
-    pState->entities[entityIdx++] = &pState->scoreEnt;
+    // pState->entities[entityIdx++] = &pState->scoreEnt;
     pState->entities[entityIdx++] = &pState->ballEnt;
     for( uint32_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
         pState->entities[entityIdx++] = &pState->paddleEnts[paddleIdx];
@@ -32,10 +32,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // instead of invoking the copy constructor in order to ensure that the v-table
     // is copied to the state entity, which is initialized to 'null' by default.
 
-    const color_t westColor = { 0x9a, 0x86, 0x00, 0xFF };
-    const color_t eastColor = { 0x00, 0x9d, 0xa3, 0xFF };
-
-    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f - hmp::UI_HEIGHT );
+    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f * hmp::SIM_ASPECT );
     const hmp::bounds_t boundsEnt( hmp::box_t(boundsBasePos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
 
@@ -45,8 +42,8 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
         std::memcpy( (void*)&pState->ricochetEnts[ricochetIdx], (void*)&ricochetEnt, sizeof(hmp::bounds_t) );
     }
 
-    const glm::vec2 scoreBasePos( 0.0f, boundsDims.y ), scoreDims( 1.0f, hmp::UI_HEIGHT );
-    const hmp::scoreboard_t scoreEnt( hmp::box_t(scoreBasePos, scoreDims), westColor, eastColor );
+    const glm::vec2 scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f * hmp::UI_ASPECT );
+    const hmp::scoreboard_t scoreEnt( hmp::box_t(scoreBasePos, scoreDims), hmp::COLOR_WEST, hmp::COLOR_EAST );
     std::memcpy( (void*)&pState->scoreEnt, (void*)&scoreEnt, sizeof(hmp::scoreboard_t) );
 
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
@@ -57,11 +54,11 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
 
     const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), westColor );
+    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), hmp::COLOR_WEST );
     std::memcpy( (void*)&pState->paddleEnts[0], (void*)&westEnt, sizeof(hmp::paddle_t) );
 
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), eastColor );
+    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::COLOR_EAST );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
 
     std::memset( pInput->keys, 0, sizeof(pInput->keys) );
@@ -146,6 +143,9 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
     // Render State //
+
+    // TODO(JRC): When rendering, establish a hierarchy and do a bottom-up render
+    // approach. This allows for the results to be scaled .
 
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
         pState->entities[entityIdx]->render();
