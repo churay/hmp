@@ -30,6 +30,12 @@ struct state_t {
     float64_t dt, rt, tt;
     bool32_t roundStarted;
 
+    // TODO(JRC): The following variables will work as state variables since
+    // the application always uses the same values for these buffers, but this
+    // assumption may not always hold going forward.
+    uint32_t simBufferGLID, uiBufferGLID;
+    uint32_t simTextureGLID, uiTextureGLID;
+
     entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
     bounds_t ricochetEnts[2];

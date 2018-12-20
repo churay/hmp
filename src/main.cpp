@@ -184,7 +184,7 @@ int main() {
     char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 
-    const uint32_t cTextureCount = sizeof( textureGLIDs ) / sizeof( textureGLIDs[0] );
+    const uint32_t cTextureCount = ARRAY_LEN( textureGLIDs );
     for( uint32_t textureIdx = 0; textureIdx < cTextureCount; textureIdx++ ) {
         uint32_t& textureGLID = textureGLIDs[textureIdx];
         glGenTextures( 1, &textureGLID );
@@ -241,7 +241,7 @@ int main() {
         SDL_SCANCODE_F5, SDL_SCANCODE_F6, SDL_SCANCODE_F7, SDL_SCANCODE_F8,
         SDL_SCANCODE_F9, SDL_SCANCODE_F10, SDL_SCANCODE_F11, SDL_SCANCODE_F12
     };
-    const uint32_t cFXKeyGroupSize = sizeof( cFXKeyGroup ) / sizeof( cFXKeyGroup[0] );
+    const uint32_t cFXKeyGroupSize = ARRAY_LEN( cFXKeyGroup );
 
     const auto cIsKeyDown = [ &appInput ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( appInput->keys[pKey] );

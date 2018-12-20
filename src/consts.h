@@ -27,6 +27,8 @@ typedef double float64_t;
 #define GIGABYTE_BL(v) (MEGABYTE_BL(v)*1024)
 #define TERABYTE_BL(v) (GIGABYTE_BL(v)*1024)
 
+#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
+
 // TODO(JRC): Consider changing these functions to use 'prinf' functionality
 // instead of 'std::cerr' functionality.
 // NOTE(JRC): Code inspired by Stack Overflow response:
