@@ -1,8 +1,10 @@
 #include <cstring>
 #include <cstdlib>
 
+#define GL_GLEXT_PROTOTYPES
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_opengl_glext.h>
 
 #include <glm/geometric.hpp>
 #include <glm/ext/vector_float2.hpp>
@@ -20,36 +22,36 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     // Initialize Graphics //
 
-    // uint32_t* stateBufferGLIDs[] = { &pState->simBufferGLID, &pState->uiBufferGLID };
-    // uint32_t* stateTextureGLIDs[] = { &pState->simTextureGLID, &pState->uiTextureGLID };
-    // const uint32_t* stateBufferAspects[] = { &hmp::SIM_RESOLUTION[0], &hmp::UI_RESOLUTION[0] };
+    uint32_t* stateBufferGLIDs[] = { &pState->simBufferGLID, &pState->uiBufferGLID };
+    uint32_t* stateTextureGLIDs[] = { &pState->simTextureGLID, &pState->uiTextureGLID };
+    const uint32_t* stateBufferAspects[] = { &hmp::SIM_RESOLUTION[0], &hmp::UI_RESOLUTION[0] };
 
-    // const uint32_t cStateBufferCount = ARRAY_LEN( stateBufferGLIDs );
-    // for( uint32_t bufferIdx = 0; bufferIdx < cStateBufferCount; bufferIdx++ ) {
-    //     uint32_t& bufferGLID = *stateBufferGLIDs[bufferIdx];
-    //     uint32_t& bufferTextureGLID = *stateTextureGLIDs[bufferIdx];
+    const uint32_t cStateBufferCount = ARRAY_LEN( stateBufferGLIDs );
+    for( uint32_t bufferIdx = 0; bufferIdx < cStateBufferCount; bufferIdx++ ) {
+        uint32_t& bufferGLID = *stateBufferGLIDs[bufferIdx];
+        uint32_t& bufferTextureGLID = *stateTextureGLIDs[bufferIdx];
 
-    //     glGenFramebuffers( 1, &bufferGLID );
-    //     glBindFramebuffer( GL_FRAMEBUFFER, bufferGLID );
+        glGenFramebuffers( 1, &bufferGLID );
+        glBindFramebuffer( GL_FRAMEBUFFER, bufferGLID );
 
-    //     glGenTextures( 1, &bufferTextureGLID );
-    //     glBindTexture( GL_TEXTURE_2D, bufferTextureGLID );
-    //     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-    //     glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+        glGenTextures( 1, &bufferTextureGLID );
+        glBindTexture( GL_TEXTURE_2D, bufferTextureGLID );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
-    //     glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-    //         stateBufferAspects[bufferIdx][0], stateBufferAspects[bufferIdx][1],
-    //         0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
-    //     glFramebufferTexture( GL_FRAMEBUFFER,
-    //         GL_COLOR_ATTACHMENT0, bufferTextureGLID, 0 );
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
+            stateBufferAspects[bufferIdx][0], stateBufferAspects[bufferIdx][1],
+            0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
+        glFramebufferTexture( GL_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0, bufferTextureGLID, 0 );
 
-    //     LLCE_ASSERT_ERROR(
-    //         glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
-    //         "Failed to initialize HMP frame buffer " << bufferIdx << "." );
-    // }
+        LLCE_ASSERT_ERROR(
+            glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+            "Failed to initialize HMP frame buffer " << bufferIdx << "." );
+    }
 
-    // glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    // glBindTexture( GL_TEXTURE_2D, 0 );
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glBindTexture( GL_TEXTURE_2D, 0 );
 
     // Initialize Entities //
 

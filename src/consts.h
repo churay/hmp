@@ -36,7 +36,7 @@ typedef double float64_t;
 #ifdef LLCE_DEBUG
 #define LLCE_ALERT_INFO(message) \
     do { \
-        std::cerr << "[ALERT] : " << message << std::endl; \
+        std::cerr << "[ALERT]: " << message << std::endl; \
     } while (false)
 #else
 #define LLCE_ALERT_INFO(message) do { } while(false)
@@ -80,5 +80,4 @@ typedef double float64_t;
             exit(1); \
         } \
     } while (false)
-
 #endif

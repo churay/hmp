@@ -7,9 +7,11 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
+#define GL_GLEXT_PROTOTYPES
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_pixels.h>
 #include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_opengl_glext.h>
 #include <SDL2/SDL_ttf.h>
 
 #include <cstring>
@@ -139,7 +141,7 @@ int main() {
         SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 ); // double-buffer
         SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 32 );
 
-        SDL_GL_SetSwapInterval( 1 ); //vsync
+        SDL_GL_SetSwapInterval( 1 ); // vsync
     }
 
     int32_t windowWidth = 640, windowHeight = 480;
@@ -156,6 +158,16 @@ int main() {
     SDL_GLContext glcontext = SDL_GL_CreateContext( window );
     LLCE_ASSERT_ERROR( glcontext != nullptr,
         "SDL failed to generate OpenGL context; " << SDL_GetError() );
+
+    { // Load OpenGL Extensions //
+        const static char8_t* cGLExtensionNames[] = { "GL_EXT_framebuffer_object" };
+        const static uint32_t cGLExtensionCount = ARRAY_LEN( cGLExtensionNames );
+        for( uint32_t extensionIdx = 0; extensionIdx < cGLExtensionCount; ++extensionIdx ) {
+            const char8_t* glExtensionName = cGLExtensionNames[extensionIdx];
+            LLCE_ASSERT_ERROR( SDL_GL_ExtensionSupported(glExtensionName),
+                "Failed to load OpenGL extension '" << glExtensionName << "'." );
+        }
+    }
 
     { // Configure OpenGL Context //
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
