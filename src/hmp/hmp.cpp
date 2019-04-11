@@ -24,7 +24,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     uint32_t* stateBufferGLIDs[] = { &pState->simBufferGLID, &pState->uiBufferGLID };
     uint32_t* stateTextureGLIDs[] = { &pState->simTextureGLID, &pState->uiTextureGLID };
-    const uint32_t* stateBufferAspects[] = { &hmp::SIM_RESOLUTION[0], &hmp::UI_RESOLUTION[0] };
+    const uint32_t* stateBufferResolutions[] = { &hmp::SIM_RESOLUTION[0], &hmp::UI_RESOLUTION[0] };
 
     const uint32_t cStateBufferCount = ARRAY_LEN( stateBufferGLIDs );
     for( uint32_t bufferIdx = 0; bufferIdx < cStateBufferCount; bufferIdx++ ) {
@@ -40,10 +40,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
         glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-            stateBufferAspects[bufferIdx][0], stateBufferAspects[bufferIdx][1],
+            stateBufferResolutions[bufferIdx][0], stateBufferResolutions[bufferIdx][1],
             0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
-        glFramebufferTexture( GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0, bufferTextureGLID, 0 );
+        glFramebufferTexture2D( GL_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferTextureGLID, 0 );
 
         LLCE_ASSERT_ERROR(
             glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
@@ -183,14 +183,33 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
     // Render State //
 
-    // TODO(JRC): When rendering, establish a hierarchy and do a bottom-up render
-    // approach. This allows for the results to be scaled .
-
+    // glBindFramebuffer( GL_FRAMEBUFFER, pState->simBufferGLID );
+    // glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
         pState->entities[entityIdx]->render();
     }
+    // glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+    // glEnable( GL_TEXTURE_2D ); {
+    //     glBindTexture( GL_TEXTURE_2D, pState->simTextureGLID );
+    //     glBegin( GL_QUADS ); {
+    //         glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
+    //         glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 0.8f );
+    //         glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 0.8f );
+    //         glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+    //     } glEnd();
+    //     glBindTexture( GL_TEXTURE_2D, 0 );
+    // } glDisable( GL_TEXTURE_2D );
 
     // Render UI //
 
-    // TODO(JRC)
+    // TODO(JRC): Add code to render the UI here.
+
+    // glBegin( GL_QUADS ); {
+    //     glColor4ub( 0xFF, 0xFF, 0xFF, 0xFF );
+    //     glVertex2f( 0.0f, 0.8f );
+    //     glVertex2f( 0.0f, 1.0f );
+    //     glVertex2f( 1.0f, 1.0f );
+    //     glVertex2f( 1.0f, 0.8f );
+    // } glEnd();
 }
