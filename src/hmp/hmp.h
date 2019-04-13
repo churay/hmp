@@ -18,8 +18,6 @@ constexpr static float32_t ROUND_START_TIME = 1.0f;
 
 constexpr static uint32_t SIM_RESOLUTION[2] = { 256, 256 };
 constexpr static uint32_t UI_RESOLUTION[2] = { 256, 32 };
-constexpr static float32_t SIM_ASPECT = SIM_RESOLUTION[0] / SIM_RESOLUTION[1];
-constexpr static float32_t UI_ASPECT = UI_RESOLUTION[0] / UI_RESOLUTION[1];
 
 constexpr static color_t COLOR_WEST = { 0x9a, 0x86, 0x00, 0xFF };
 constexpr static color_t COLOR_EAST = { 0x00, 0x9d, 0xa3, 0xFF };

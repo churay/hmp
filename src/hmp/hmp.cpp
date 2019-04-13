@@ -8,6 +8,10 @@
 
 #include <glm/geometric.hpp>
 #include <glm/ext/vector_float2.hpp>
+#include <glm/ext/vector_float3.hpp>
+#include <glm/ext/vector_float4.hpp>
+#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/ext/matrix_transform.hpp>
 
 #include "hmp.h"
 
@@ -71,7 +75,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // instead of invoking the copy constructor in order to ensure that the v-table
     // is copied to the state entity, which is initialized to 'null' by default.
 
-    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f * hmp::SIM_ASPECT );
+    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
     const hmp::bounds_t boundsEnt( hmp::box_t(boundsBasePos, boundsDims) );
     std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
 
@@ -81,7 +85,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
         std::memcpy( (void*)&pState->ricochetEnts[ricochetIdx], (void*)&ricochetEnt, sizeof(hmp::bounds_t) );
     }
 
-    const glm::vec2 scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f * hmp::UI_ASPECT );
+    const glm::vec2 scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f );
     const hmp::scoreboard_t scoreEnt( hmp::box_t(scoreBasePos, scoreDims), hmp::COLOR_WEST, hmp::COLOR_EAST );
     std::memcpy( (void*)&pState->scoreEnt, (void*)&scoreEnt, sizeof(hmp::scoreboard_t) );
 
@@ -183,23 +187,37 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
     // Render State //
 
-    // glBindFramebuffer( GL_FRAMEBUFFER, pState->simBufferGLID );
-    // glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-        pState->entities[entityIdx]->render();
-    }
-    // glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glBindFramebuffer( GL_FRAMEBUFFER, pState->simBufferGLID );
+    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
-    // glEnable( GL_TEXTURE_2D ); {
-    //     glBindTexture( GL_TEXTURE_2D, pState->simTextureGLID );
-    //     glBegin( GL_QUADS ); {
-    //         glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
-    //         glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 0.8f );
-    //         glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 0.8f );
-    //         glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
-    //     } glEnd();
-    //     glBindTexture( GL_TEXTURE_2D, 0 );
-    // } glDisable( GL_TEXTURE_2D );
+    glMatrixMode( GL_MODELVIEW );
+    glPushMatrix(); {
+        glLoadIdentity();
+        glm::mat4 matWorldView( 1.0f );
+        matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+        matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(0.8f, 1.0f, 0.0f) );
+        glMultMatrixf( &matWorldView[0][0] );
+
+        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+            pState->entities[entityIdx]->render();
+        }
+    } glPopMatrix();
+
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+    glEnable( GL_TEXTURE_2D ); {
+        glBindTexture( GL_TEXTURE_2D, pState->simTextureGLID );
+        // NOTE(JRC): This is required to get the expected/correct texture color,
+        // but it's unclear as to why. OpenGL may perform color mixing by default?
+        glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+        glBegin( GL_QUADS ); {
+            glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
+            glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 0.8f );
+            glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 0.8f );
+            glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+        } glEnd();
+        glBindTexture( GL_TEXTURE_2D, 0 );
+    } glDisable( GL_TEXTURE_2D );
 
     // Render UI //
 
