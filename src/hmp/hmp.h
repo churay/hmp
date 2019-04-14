@@ -48,7 +48,7 @@ constexpr static color_t COLOR_EAST = { 0x00, 0x9d, 0xa3, 0xFF };
 struct graphics_t {
     uint32_t bufferFBOs[GFX_BUFFER_COUNT];
     uint32_t bufferTIDs[GFX_BUFFER_COUNT];
-    uint32_t bufferRess[GFX_BUFFER_COUNT][2];
+    uicoord32_t bufferRess[GFX_BUFFER_COUNT];
     box_t bufferBoxs[GFX_BUFFER_COUNT];
 };
 

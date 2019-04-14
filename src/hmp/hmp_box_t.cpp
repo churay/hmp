@@ -86,6 +86,16 @@ bool32_t box_t::valid() const {
 }
 
 
+glm::vec2 box_t::min() const {
+    return mPos;
+}
+
+
+glm::vec2 box_t::max() const {
+    return mPos + mDims;
+}
+
+
 glm::vec2 box_t::center() const {
     return mPos + 0.5f * mDims;
 }

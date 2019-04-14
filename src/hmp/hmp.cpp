@@ -22,8 +22,8 @@ struct fbos_t {
         glBindFramebuffer( GL_FRAMEBUFFER, pGraphics->bufferFBOs[pBufferIdx] );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glViewport( 0, 0,
-            pGraphics->bufferRess[pBufferIdx][0],
-            pGraphics->bufferRess[pBufferIdx][1] );
+            pGraphics->bufferRess[pBufferIdx].x,
+            pGraphics->bufferRess[pBufferIdx].y );
         glPushMatrix();
     }
 
@@ -100,11 +100,9 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 extern "C" void boot( hmp::graphics_t* pGraphics ) {
     // Initialize Graphics //
 
-    // TODO(JRC): The verbosity of these assignments is really awful and should
-    // be improved if at all possible (e.g. using 'std::memcpy' maybe?).
-    pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER][1] = 512;
-    pGraphics->bufferRess[hmp::GFX_BUFFER_SIM][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_SIM][1] = 512;
-    pGraphics->bufferRess[hmp::GFX_BUFFER_UI][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_UI][1] = 64;
+    pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
+    pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] = { 512, 512 };
+    pGraphics->bufferRess[hmp::GFX_BUFFER_UI] = { 512, 64 };
 
     pGraphics->bufferBoxs[hmp::GFX_BUFFER_MASTER] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f) );
     pGraphics->bufferBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.85f) );
@@ -113,7 +111,7 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
     for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
         uint32_t& bufferFBO = pGraphics->bufferFBOs[bufferIdx];
         uint32_t& bufferTID = pGraphics->bufferTIDs[bufferIdx];
-        const uint32_t* bufferRes = pGraphics->bufferRess[bufferIdx];
+        const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
 
         glGenFramebuffers( 1, &bufferFBO );
         glBindFramebuffer( GL_FRAMEBUFFER, bufferFBO );
@@ -123,7 +121,7 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
 
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, bufferRes[0], bufferRes[1],
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, bufferRes.x, bufferRes.y,
             0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
         glFramebufferTexture2D( GL_FRAMEBUFFER,
             GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferTID, 0 );
@@ -245,30 +243,21 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
             fbos_t masterFBOS( pGraphics, hmp::GFX_BUFFER_MASTER );
 
             const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-            const uint32_t* masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+            const uicoord32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
             for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
                 const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
-                const uint32_t* bufferRes = pGraphics->bufferRess[bufferIdx];
+                const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
                 const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
 
-                // TODO(JRC): The duplicated calls are necessary here since the
-                // 'GL_LINEAR' filter is the only valid filter for colors and
-                // 'GL_NEAREST' is the only valid filter for depths. This should
-                // be cleaned up so that some form of iteration strategy is used instead.
                 glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
                 glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
-                glBlitFramebuffer( 0, 0, bufferRes[0], bufferRes[1],
-                    (bufferBox.mPos.x + 0.0f) * masterRes[0],
-                    (bufferBox.mPos.y + 0.0f) * masterRes[1],
-                    (bufferBox.mPos.x + bufferBox.mDims.x) * masterRes[0],
-                    (bufferBox.mPos.y + bufferBox.mDims.y) * masterRes[1],
-                    GL_COLOR_BUFFER_BIT, GL_LINEAR );
-                glBlitFramebuffer( 0, 0, bufferRes[0], bufferRes[1],
-                    (bufferBox.mPos.x + 0.0f) * masterRes[0],
-                    (bufferBox.mPos.y + 0.0f) * masterRes[1],
-                    (bufferBox.mPos.x + bufferBox.mDims.x) * masterRes[0],
-                    (bufferBox.mPos.y + bufferBox.mDims.y) * masterRes[1],
-                    GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+                for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
+                    glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
+                        bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
+                        bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
+                        bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
+                        bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
+                }
             }
         }
     } glPopMatrix();
