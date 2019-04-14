@@ -29,8 +29,9 @@
 #include "consts.h"
 
 typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
+typedef void (*boot_f)( hmp::graphics_t* );
 typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
-typedef void (*render_f)( const hmp::state_t*, const hmp::input_t* );
+typedef void (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 typedef llce::util::color_t color_t;
@@ -60,6 +61,7 @@ int main() {
 
     hmp::state_t* simState = (hmp::state_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::state_t) );
     hmp::input_t* simInput = &inputs[0];
+    hmp::graphics_t* simGraphics = (hmp::graphics_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::graphics_t) );
 
 #ifdef LLCE_DEBUG
     hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
@@ -98,20 +100,23 @@ int main() {
 
     void* dllHandle = nullptr;
     init_f dllInit = nullptr;
+    boot_f dllBoot = nullptr;
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
-    const auto cDLLReload = [ &cDLLPath, &dllHandle, &dllInit, &dllUpdate, &dllRender ] () {
+    const auto cDLLReload = [ &cDLLPath, &dllHandle, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
         if( dllHandle != nullptr ) {
             llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
         }
 
         dllHandle = llce::platform::dllLoadHandle( cDLLPath );
         dllInit = (init_f)llce::platform::dllLoadSymbol( dllHandle, "init" );
+        dllBoot = (boot_f)llce::platform::dllLoadSymbol( dllHandle, "boot" );
         dllUpdate = (update_f)llce::platform::dllLoadSymbol( dllHandle, "update" );
         dllRender = (render_f)llce::platform::dllLoadSymbol( dllHandle, "render" );
 
         return dllHandle != nullptr &&
-            dllInit != nullptr && dllUpdate != nullptr && dllRender != nullptr;
+            dllInit != nullptr && dllBoot != nullptr &&
+            dllUpdate != nullptr && dllRender != nullptr;
     };
 
     LLCE_ASSERT_ERROR( cDLLReload(),
@@ -160,7 +165,7 @@ int main() {
         "SDL failed to generate OpenGL context; " << SDL_GetError() );
 
     { // Load OpenGL Extensions //
-        const static char8_t* cGLExtensionNames[] = { "GL_EXT_framebuffer_object" };
+        const static char8_t* cGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
         const static uint32_t cGLExtensionCount = ARRAY_LEN( cGLExtensionNames );
         for( uint32_t extensionIdx = 0; extensionIdx < cGLExtensionCount; ++extensionIdx ) {
             const char8_t* glExtensionName = cGLExtensionNames[extensionIdx];
@@ -307,6 +312,7 @@ int main() {
     uint64_t simFrame = 0;
 
     dllInit( simState, simInput );
+    dllBoot( simGraphics );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
         // TODO(JRC): This step is currently causing problems for the 'key up'
@@ -484,18 +490,19 @@ int main() {
         }
 #endif
 
-        glViewport( 0, 0, windowWidth, windowHeight );
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity();
         glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
         glMatrixMode( GL_MODELVIEW );
         glLoadIdentity();
 
+        dllUpdate( simState, simInput, simDT );
+        dllRender( simState, simInput, simGraphics );
+
+        glViewport( 0, 0, windowWidth, windowHeight );
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
             const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
-
             glm::mat4 matWorldView( 1.0f );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
@@ -504,15 +511,25 @@ int main() {
             glMultMatrixf( &matWorldView[0][0] );
 
             glBegin( GL_QUADS ); {
-                glColor4ub( 0x00, 0x2b, 0x36, 0xFF );
+                // NOTE(JRC): This is required to get the expected/correct texture color,
+                // but it's unclear as to why. OpenGL may perform color mixing by default?
+                glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
                 glVertex2f( 0.0f, 0.0f );
                 glVertex2f( 1.0f, 0.0f );
                 glVertex2f( 1.0f, 1.0f );
                 glVertex2f( 0.0f, 1.0f );
             } glEnd();
 
-            dllUpdate( simState, simInput, simDT );
-            dllRender( simState, simInput );
+            glEnable( GL_TEXTURE_2D ); {
+                glBindTexture( GL_TEXTURE_2D, simGraphics->bufferTIDs[hmp::GFX_BUFFER_MASTER] );
+                glBegin( GL_QUADS ); {
+                    glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
+                    glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
+                    glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
+                    glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+                } glEnd();
+                glBindTexture( GL_TEXTURE_2D, 0 );
+            } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
 #ifdef LLCE_DEBUG

@@ -15,6 +15,23 @@
 
 #include "hmp.h"
 
+/// Helper Classes/Functions ///
+
+struct fbo_t {
+    fbo_t( const hmp::graphics_t* pGraphics, const uint32_t pBufferIdx ) {
+        glBindFramebuffer( GL_FRAMEBUFFER, pGraphics->bufferFBOs[pBufferIdx] );
+        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+        glViewport( 0, 0,
+            pGraphics->bufferRess[pBufferIdx][0],
+            pGraphics->bufferRess[pBufferIdx][1] );
+    }
+
+    ~fbo_t() {
+        glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    }
+};
+
+/// Implementation ///
 
 extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Initialize Simulation //
@@ -23,39 +40,6 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->rt = 0.0; // round time
     pState->tt = 0.0; // total time
     pState->roundStarted = false;
-
-    // Initialize Graphics //
-
-    uint32_t* stateBufferGLIDs[] = { &pState->simBufferGLID, &pState->uiBufferGLID };
-    uint32_t* stateTextureGLIDs[] = { &pState->simTextureGLID, &pState->uiTextureGLID };
-    const uint32_t* stateBufferResolutions[] = { &hmp::SIM_RESOLUTION[0], &hmp::UI_RESOLUTION[0] };
-
-    const uint32_t cStateBufferCount = ARRAY_LEN( stateBufferGLIDs );
-    for( uint32_t bufferIdx = 0; bufferIdx < cStateBufferCount; bufferIdx++ ) {
-        uint32_t& bufferGLID = *stateBufferGLIDs[bufferIdx];
-        uint32_t& bufferTextureGLID = *stateTextureGLIDs[bufferIdx];
-
-        glGenFramebuffers( 1, &bufferGLID );
-        glBindFramebuffer( GL_FRAMEBUFFER, bufferGLID );
-
-        glGenTextures( 1, &bufferTextureGLID );
-        glBindTexture( GL_TEXTURE_2D, bufferTextureGLID );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8,
-            stateBufferResolutions[bufferIdx][0], stateBufferResolutions[bufferIdx][1],
-            0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
-        glFramebufferTexture2D( GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferTextureGLID, 0 );
-
-        LLCE_ASSERT_ERROR(
-            glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
-            "Failed to initialize HMP frame buffer " << bufferIdx << "." );
-    }
-
-    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    glBindTexture( GL_TEXTURE_2D, 0 );
 
     // Initialize Entities //
 
@@ -104,8 +88,49 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::COLOR_EAST );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
 
+    // Initialize Input //
+
     std::memset( pInput->keys, 0, sizeof(pInput->keys) );
     std::memset( pInput->diffs, hmp::KEY_DIFF_NONE, sizeof(pInput->diffs) );
+}
+
+
+extern "C" void boot( hmp::graphics_t* pGraphics ) {
+    // Initialize Graphics //
+
+    pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER][1] = 512;
+    pGraphics->bufferRess[hmp::GFX_BUFFER_SIM][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_SIM][1] = 512;
+    pGraphics->bufferRess[hmp::GFX_BUFFER_UI][0] = 512; pGraphics->bufferRess[hmp::GFX_BUFFER_UI][1] = 64;
+
+    pGraphics->bufferBoxs[hmp::GFX_BUFFER_MASTER] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f) );
+    pGraphics->bufferBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.8f) );
+    pGraphics->bufferBoxs[hmp::GFX_BUFFER_UI] = hmp::box_t( glm::vec2(0.0f, 0.8f), glm::vec2(1.0f, 0.2f) );
+
+    for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
+        uint32_t& bufferFBO = pGraphics->bufferFBOs[bufferIdx];
+        uint32_t& bufferTID = pGraphics->bufferTIDs[bufferIdx];
+        const uint32_t* bufferRes = pGraphics->bufferRess[bufferIdx];
+
+        glGenFramebuffers( 1, &bufferFBO );
+        glBindFramebuffer( GL_FRAMEBUFFER, bufferFBO );
+
+        glGenTextures( 1, &bufferTID );
+        glBindTexture( GL_TEXTURE_2D, bufferTID );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, bufferRes[0], bufferRes[1],
+            0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
+        glFramebufferTexture2D( GL_FRAMEBUFFER,
+            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferTID, 0 );
+
+        LLCE_ASSERT_ERROR(
+            glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+            "Failed to initialize HMP frame buffer " << bufferIdx << "." );
+    }
+
+    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+    glBindTexture( GL_TEXTURE_2D, 0 );
 }
 
 
@@ -184,50 +209,35 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 }
 
 
-extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput ) {
-    // Render State //
-
-    glBindFramebuffer( GL_FRAMEBUFFER, pState->simBufferGLID );
-    glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    glMatrixMode( GL_MODELVIEW );
+extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     glPushMatrix(); {
-        glLoadIdentity();
-        glm::mat4 matWorldView( 1.0f );
-        matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-        matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(0.8f, 1.0f, 0.0f) );
-        glMultMatrixf( &matWorldView[0][0] );
+        glm::mat4 matRender( 1.0f );
+        matRender *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+        matRender *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+        glMultMatrixf( &matRender[0][0] );
 
-        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-            pState->entities[entityIdx]->render();
+        { // Render State //
+            // fbo_t simFBO( pGraphics, hmp::GFX_BUFFER_SIM );
+            fbo_t simFBO( pGraphics, hmp::GFX_BUFFER_MASTER );
+            for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+                pState->entities[entityIdx]->render();
+            }
         }
+
+        /*
+        { // Render UI //
+            fbo_t uiFBO( pGraphics, hmp::GFX_BUFFER_UI );
+            // TODO(JRC)
+        }
+
+        { // Render Master //
+            fbo_t masterFBO( pGraphics, hmp::GFX_BUFFER_MASTER );
+            for( uint32_t bufferIdx = hmp::GFX_BUFFER_MASTER + 1; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
+                uint32_t& bufferFBO = pGraphics->bufferTIDs[bufferIdx];
+                const uint32_t* bufferRes = *pGraphics->bufferRess[bufferIdx];
+                const box_t& bufferBox = 
+            }
+        }
+        */
     } glPopMatrix();
-
-    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-
-    glEnable( GL_TEXTURE_2D ); {
-        glBindTexture( GL_TEXTURE_2D, pState->simTextureGLID );
-        // NOTE(JRC): This is required to get the expected/correct texture color,
-        // but it's unclear as to why. OpenGL may perform color mixing by default?
-        glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-        glBegin( GL_QUADS ); {
-            glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
-            glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 0.8f );
-            glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 0.8f );
-            glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
-        } glEnd();
-        glBindTexture( GL_TEXTURE_2D, 0 );
-    } glDisable( GL_TEXTURE_2D );
-
-    // Render UI //
-
-    // TODO(JRC): Add code to render the UI here.
-
-    // glBegin( GL_QUADS ); {
-    //     glColor4ub( 0xFF, 0xFF, 0xFF, 0xFF );
-    //     glVertex2f( 0.0f, 0.8f );
-    //     glVertex2f( 0.0f, 1.0f );
-    //     glVertex2f( 1.0f, 1.0f );
-    //     glVertex2f( 1.0f, 0.8f );
-    // } glEnd();
 }
