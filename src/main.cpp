@@ -304,7 +304,7 @@ int main() {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    llce::timer_t simTimer( cSimFPS, llce::timer_t::type::fps );
+    llce::timer_t simTimer( cSimFPS, llce::timer_t::type_e::fps );
     float64_t simDT = 0.0;
     // NOTE(JRC): A cursory check shows that it will take ~1e10 years of
     // uninterrupted run time for this to overflow at 60 FPS, so the fact

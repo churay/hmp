@@ -13,13 +13,13 @@ class timer_t {
 
     /// Class Attributes ///
 
-    enum class type { fps, spf };
+    enum class type_e : int8_t { fps, spf };
 
     const static uint32_t CACHE_SIZE = 10;
 
     /// Constructors ///
 
-    timer_t( float64_t pRatio = 60.0, type pType = type::fps );
+    timer_t( float64_t pRatio = 60.0, type_e pType = type_e::fps );
 
     /// Class Functions ///
 

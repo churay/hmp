@@ -42,9 +42,6 @@ struct input_t {
 constexpr static uint32_t GFX_BUFFER_MASTER = 0, GFX_BUFFER_SIM = 1, GFX_BUFFER_UI = 2;
 constexpr static uint32_t GFX_BUFFER_COUNT = 3;
 
-constexpr static color_t COLOR_WEST = { 0x9a, 0x86, 0x00, 0xFF };
-constexpr static color_t COLOR_EAST = { 0x00, 0x9d, 0xa3, 0xFF };
-
 struct graphics_t {
     uint32_t bufferFBOs[GFX_BUFFER_COUNT];
     uint32_t bufferTIDs[GFX_BUFFER_COUNT];

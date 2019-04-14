@@ -34,7 +34,7 @@ class entity_t {
 
     box_t mBBox; // units: world
     glm::vec2 mVel; // units: world / second
-    color_t mColor; // units: (r,g,b,a)
+    const color_t* mColor; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds
 };
 

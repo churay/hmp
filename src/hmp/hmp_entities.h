@@ -32,8 +32,6 @@ class bounds_t : public entity_t {
     /// Class Fields ///
 
     public:
-
-    color_t mLineColor; // units: (r,g,b,a)
 };
 
 
@@ -60,6 +58,8 @@ class ball_t : public entity_t {
     /// Class Fields ///
 
     public:
+
+    team_e mTeam;
 };
 
 
@@ -72,7 +72,7 @@ class paddle_t : public entity_t {
 
     /// Constructors ///
 
-    paddle_t( const box_t& pBBox, const color_t& pColor );
+    paddle_t( const box_t& pBBox, const team_e& pTeam );
 
     /// Class Functions ///
 
@@ -88,6 +88,7 @@ class paddle_t : public entity_t {
 
     public:
 
+    team_e mTeam;
     int8_t mDX, mDY;
 };
 
@@ -103,7 +104,7 @@ class scoreboard_t : public entity_t {
 
     /// Constructors ///
 
-    scoreboard_t( const box_t& pBBox, const color_t& pWestColor, const color_t& pEastColor );
+    scoreboard_t( const box_t& pBBox );
 
     /// Class Functions ///
 
@@ -120,7 +121,6 @@ class scoreboard_t : public entity_t {
     public:
 
     uint8_t mWestScore, mEastScore;
-    color_t mWestColor, mEastColor; // units: (r,g,b,a)
 };
 
 }

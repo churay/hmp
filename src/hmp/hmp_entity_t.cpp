@@ -15,7 +15,7 @@ namespace hmp {
 /// Class Functions ///
 
 entity_t::entity_t( const box_t& pBBox, const color_t& pColor ) :
-        mBBox( pBBox ), mVel( 0.0f, 0.0f ), mColor( pColor ), mLifetime( 0.0f ) {
+        mBBox( pBBox ), mVel( 0.0f, 0.0f ), mColor( &pColor ), mLifetime( 0.0f ) {
     
 }
 
@@ -49,7 +49,7 @@ void entity_t::iupdate( const float64_t pDT ) {
 
 void entity_t::irender() const {
     glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)&mColor );
+        glColor4ubv( (uint8_t*)mColor );
         glVertex2f( 0.0f, 0.0f );
         glVertex2f( 1.0f, 0.0f );
         glVertex2f( 1.0f, 1.0f );
