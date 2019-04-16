@@ -13,9 +13,14 @@ namespace hmp {
 class box_t {
     public:
 
+    /// Class Attributes ///
+
+    enum class pos_type : int8_t { sw=0, se=1, nw=2, ne=3, c=7 };
+
     /// Constructors ///
 
-    box_t( const glm::vec2& pPos, const glm::vec2& pDims );
+    box_t();
+    box_t( const glm::vec2& pPos, const glm::vec2& pDims, const pos_type pType = pos_type::sw );
 
     /// Class Functions ///
 

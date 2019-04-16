@@ -8,8 +8,19 @@ namespace hmp {
 
 /// Class Functions ///
 
-box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims ) :
+box_t::box_t() :
+        mPos( 0.0f, 0.0f ), mDims( 0.0f, 0.0f ) {
+    
+}
+
+
+box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_type pType ) :
         mPos( pPos ), mDims( pDims ) {
+    int8_t intType = static_cast<int8_t>( pType );
+    int8_t xScale = ( intType >> 0 ) & 1;
+    int8_t yScale = ( intType >> 1 ) & 1;
+    int8_t dimSkew = ( (intType >> 2) & 1 ) ? -2 : 1;
+    mPos += ( (1.0f / dimSkew) * glm::vec2(xScale * mDims.x, yScale * mDims.y) );
 }
 
 

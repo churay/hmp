@@ -165,10 +165,10 @@ int main() {
         "SDL failed to generate OpenGL context; " << SDL_GetError() );
 
     { // Load OpenGL Extensions //
-        const static char8_t* cGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
-        const static uint32_t cGLExtensionCount = ARRAY_LEN( cGLExtensionNames );
-        for( uint32_t extensionIdx = 0; extensionIdx < cGLExtensionCount; ++extensionIdx ) {
-            const char8_t* glExtensionName = cGLExtensionNames[extensionIdx];
+        const static char8_t* csGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
+        const static uint32_t csGLExtensionCount = ARRAY_LEN( csGLExtensionNames );
+        for( uint32_t extensionIdx = 0; extensionIdx < csGLExtensionCount; ++extensionIdx ) {
+            const char8_t* glExtensionName = csGLExtensionNames[extensionIdx];
             LLCE_ASSERT_ERROR( SDL_GL_ExtensionSupported(glExtensionName),
                 "Failed to load OpenGL extension '" << glExtensionName << "'." );
         }

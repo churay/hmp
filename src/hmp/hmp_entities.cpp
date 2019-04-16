@@ -12,6 +12,7 @@
 
 #include <SDL2/SDL_opengl.h>
 
+#include "hmp_gfx.h"
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -25,16 +26,11 @@ bounds_t::bounds_t( const box_t& pBBox ) :
 
 
 void bounds_t::irender() const {
-    color_t lineColor = llce::util::brighten( *mColor, 1.5f );
-
     entity_t::irender();
-    glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)&lineColor );
-        glVertex2f( 0.5f - (bounds_t::LINE_WIDTH / 2.0f), 0.0f );
-        glVertex2f( 0.5f + (bounds_t::LINE_WIDTH / 2.0f), 0.0f );
-        glVertex2f( 0.5f + (bounds_t::LINE_WIDTH / 2.0f), 1.0f );
-        glVertex2f( 0.5f - (bounds_t::LINE_WIDTH / 2.0f), 1.0f );
-    } glEnd();
+
+    box_t lineBox( glm::vec2(0.5f, 0.5f), glm::vec2(bounds_t::LINE_WIDTH, 1.0f), box_t::pos_type::c );
+    color_t lineColor = llce::util::brighten( *mColor, 1.5f );
+    hmp::gfx::render( lineBox, lineColor );
 }
 
 /// 'hmp::ball_t' Functions ///
@@ -106,11 +102,34 @@ void paddle_t::iupdate( const float64_t pDT ) {
     entity_t::iupdate( pDT );
 }
 
+/// 'hmp::digit_t' Functions ///
+
+digit_t::digit_t( const box_t& pBBox, const team_e& pTeam, const uint8_t pValue ) :
+        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int32_t>(pTeam)] ), mTeam( pTeam ), mValue( pValue ) {
+    
+}
+
+
+void digit_t::irender() const {
+    entity_t::irender();
+
+    // TODO(JRC): Write a procedure to output numbers using a digital strategy.
+
+    /*
+    glBegin( GL_QUADS ); {
+        glColor4ubv( (uint8_t*)mWestColor );
+        glColor4ubv( (uint8_t*)mEastColor );
+    } glEnd();
+    */
+}
+
 /// 'hmp::scoreboard_t' Functions ///
 
 scoreboard_t::scoreboard_t( const box_t& pBBox ) :
         entity_t( pBBox, hmp::INTERFACE_COLOR ),
-        mWestScore( 0 ), mEastScore( 0 ) {
+        mWestScore( hmp::WINNING_SCORE ), mEastScore( hmp::WINNING_SCORE ),
+        mWestDigit( box_t(), hmp::team_e::west, hmp::WINNING_SCORE ),
+        mEastDigit( box_t(), hmp::team_e::east, hmp::WINNING_SCORE ) {
     
 }
 
@@ -123,12 +142,8 @@ void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
 
 void scoreboard_t::irender() const {
     entity_t::irender();
-    /*
-    glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)mWestColor );
-        glColor4ubv( (uint8_t*)mEastColor );
-    } glEnd();
-    */
+
+    
 }
 
 }

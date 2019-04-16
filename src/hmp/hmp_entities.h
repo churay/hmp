@@ -1,5 +1,5 @@
-#ifndef HMP_PADDLE_T_H
-#define HMP_PADDLE_T_H
+#ifndef HMP_ENTITIES_T_H
+#define HMP_ENTITIES_T_H
 
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
@@ -93,6 +93,46 @@ class paddle_t : public entity_t {
 };
 
 
+class digit_t : public entity_t {
+    public:
+
+    /// Class Attributes ///
+
+    constexpr static float32_t DIGIT_PADDING = 1.0e-1f;
+    constexpr static float32_t DIGIT_WIDTH = 1.0e-1f;
+    constexpr static float32_t LINE_WIDTH = 3.0e-2f;
+    constexpr static bit8_t DISPLAY_LINES[10][3][3] = {
+        { {1, 1, 0}, {1, 0, 1}, {1, 1, 0} },   // 0
+        { {0, 0, 0}, {0, 0, 0}, {1, 1, 0} },   // 1
+        { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 2
+        { {0, 0, 0}, {1, 1, 1}, {1, 1, 0} },   // 3
+        { {1, 0, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
+        { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 5
+        { {1, 1, 0}, {1, 1, 1}, {0, 1, 0} },   // 6
+        { {0, 0, 0}, {1, 0, 0}, {1, 1, 0} },   // 7
+        { {1, 1, 0}, {1, 1, 1}, {1, 1, 0} },   // 8
+        { {1, 0, 0}, {1, 1, 1}, {1, 1, 0} }    // 9
+    };
+
+    /// Constructors ///
+
+    digit_t( const box_t& pBBox, const team_e& pTeam, const uint8_t pValue );
+
+    /// Internal Functions ///
+
+    protected:
+
+    virtual void irender() const;
+
+    /// Class Fields ///
+
+    public:
+
+    team_e mTeam;
+    uint8_t mValue;
+};
+
+
 class scoreboard_t : public entity_t {
     public:
 
@@ -121,6 +161,7 @@ class scoreboard_t : public entity_t {
     public:
 
     uint8_t mWestScore, mEastScore;
+    digit_t mWestDigit, mEastDigit;
 };
 
 }

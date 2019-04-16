@@ -196,6 +196,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
             pState->rt = 0.0f;
             pState->roundStarted = false;
+            // pState->scoreEnt.tally();
         }
     }
 
@@ -227,16 +228,8 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
         }
 
         { // Render UI //
-            // TODO(JRC)
             fbos_t uiFBOS( pGraphics, hmp::GFX_BUFFER_UI );
-
-            glBegin( GL_QUADS ); {
-                glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-                glVertex2f( 0.0f, 0.0f );
-                glVertex2f( 1.0f, 0.0f );
-                glVertex2f( 1.0f, 1.0f );
-                glVertex2f( 0.0f, 1.0f );
-            } glEnd();
+            pState->scoreEnt.render();
         }
 
         { // Render Master //
