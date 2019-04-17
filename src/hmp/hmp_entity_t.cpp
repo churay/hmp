@@ -8,6 +8,7 @@
 
 #include <SDL2/SDL_opengl.h>
 
+#include "hmp_gfx.h"
 #include "hmp_entity_t.h"
 
 namespace hmp {
@@ -32,13 +33,8 @@ void entity_t::update( const float64_t pDT ) {
 
 
 void entity_t::render() const {
-    glPushMatrix(); {
-        glm::mat4 matModelWorld( 1.0f );
-        matModelWorld *= glm::translate( glm::mat4(1.0f), glm::vec3(mBBox.mPos.x, mBBox.mPos.y, 0.0f) );
-        matModelWorld *= glm::scale( glm::mat4(1.0f), glm::vec3(mBBox.mDims.x, mBBox.mDims.y, 0.0f) );
-        glMultMatrixf( &matModelWorld[0][0] );
-        irender();
-    } glPopMatrix();
+    hmp::gfx::render_context_t entityRC( mBBox, *mColor );
+    irender();
 }
 
 
@@ -49,7 +45,6 @@ void entity_t::iupdate( const float64_t pDT ) {
 
 void entity_t::irender() const {
     glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)mColor );
         glVertex2f( 0.0f, 0.0f );
         glVertex2f( 1.0f, 0.0f );
         glVertex2f( 1.0f, 1.0f );

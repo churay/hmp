@@ -24,6 +24,11 @@ box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_ty
 }
 
 
+box_t::box_t( const float32_t pPosX, const float32_t pPosY, const float32_t pDimsX, const float32_t pDimsY, const pos_type pType ) :
+        box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pType ) {
+}
+
+
 bool32_t box_t::embed( const box_t& pOther ) {
     interval_t tx = xbounds(), ty = ybounds();
     const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();

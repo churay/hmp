@@ -138,9 +138,7 @@ class scoreboard_t : public entity_t {
 
     /// Class Attributes ///
 
-    constexpr static float32_t INNER_PADDING = 1.0e-1f;
-    constexpr static float32_t DIGIT_WIDTH = 1.0e-1f;
-    constexpr static float32_t LINE_WIDTH = 3.0e-2f;
+    constexpr static float32_t PADDING_WIDTH = 1.0e-2f;
 
     /// Constructors ///
 

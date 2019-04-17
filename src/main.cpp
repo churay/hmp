@@ -489,6 +489,7 @@ int main() {
             prevDylibModTime = currDylibModTime;
         }
 #endif
+        glViewport( 0, 0, windowWidth, windowHeight );
 
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity();
@@ -499,7 +500,6 @@ int main() {
         dllUpdate( simState, simInput, simDT );
         dllRender( simState, simInput, simGraphics );
 
-        glViewport( 0, 0, windowWidth, windowHeight );
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
             const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
@@ -510,17 +510,10 @@ int main() {
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 0.0f) );
             glMultMatrixf( &matWorldView[0][0] );
 
-            glBegin( GL_QUADS ); {
+            glEnable( GL_TEXTURE_2D ); {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?
                 glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-                glVertex2f( 0.0f, 0.0f );
-                glVertex2f( 1.0f, 0.0f );
-                glVertex2f( 1.0f, 1.0f );
-                glVertex2f( 0.0f, 1.0f );
-            } glEnd();
-
-            glEnable( GL_TEXTURE_2D ); {
                 glBindTexture( GL_TEXTURE_2D, simGraphics->bufferTIDs[hmp::GFX_BUFFER_MASTER] );
                 glBegin( GL_QUADS ); {
                     glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );

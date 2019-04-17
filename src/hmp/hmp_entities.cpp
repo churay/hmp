@@ -28,9 +28,10 @@ bounds_t::bounds_t( const box_t& pBBox ) :
 void bounds_t::irender() const {
     entity_t::irender();
 
-    box_t lineBox( glm::vec2(0.5f, 0.5f), glm::vec2(bounds_t::LINE_WIDTH, 1.0f), box_t::pos_type::c );
-    color_t lineColor = llce::util::brighten( *mColor, 1.5f );
-    hmp::gfx::render( lineBox, lineColor );
+    hmp::gfx::render_context_t entityRC(
+        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::pos_type::c),
+        llce::util::brighten(*mColor, 1.5f) );
+    entityRC.render();
 }
 
 /// 'hmp::ball_t' Functions ///
@@ -115,6 +116,8 @@ void digit_t::irender() const {
 
     // TODO(JRC): Write a procedure to output numbers using a digital strategy.
 
+    // hmp::gfx::render( box, color );
+
     /*
     glBegin( GL_QUADS ); {
         glColor4ubv( (uint8_t*)mWestColor );
@@ -126,7 +129,7 @@ void digit_t::irender() const {
 /// 'hmp::scoreboard_t' Functions ///
 
 scoreboard_t::scoreboard_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::INTERFACE_COLOR ),
+        entity_t( pBBox, hmp::BORDER_COLOR ),
         mWestScore( hmp::WINNING_SCORE ), mEastScore( hmp::WINNING_SCORE ),
         mWestDigit( box_t(), hmp::team_e::west, hmp::WINNING_SCORE ),
         mEastDigit( box_t(), hmp::team_e::east, hmp::WINNING_SCORE ) {
@@ -143,7 +146,11 @@ void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
 void scoreboard_t::irender() const {
     entity_t::irender();
 
-    
+    box_t interfaceBox(
+        scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f),
+        (1.0f - 2.0f * scoreboard_t::PADDING_WIDTH) * glm::vec2(1.0f, 1.0f) );
+    hmp::gfx::render_context_t entityRC( interfaceBox, hmp::INTERFACE_COLOR );
+    entityRC.render();
 }
 
 }

@@ -13,27 +13,9 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include "hmp_gfx.h"
 #include "hmp.h"
 
-/// Helper Classes/Functions ///
-
-struct fbos_t {
-    fbos_t( const hmp::graphics_t* pGraphics, const uint32_t pBufferIdx ) {
-        glBindFramebuffer( GL_FRAMEBUFFER, pGraphics->bufferFBOs[pBufferIdx] );
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glViewport( 0, 0,
-            pGraphics->bufferRess[pBufferIdx].x,
-            pGraphics->bufferRess[pBufferIdx].y );
-        glPushMatrix();
-    }
-
-    ~fbos_t() {
-        glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-        glPopMatrix();
-    }
-};
-
-/// Implementation ///
 
 extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Initialize Simulation //
@@ -213,45 +195,46 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
-    glPushMatrix(); {
-        glm::mat4 matRender( 1.0f );
-        matRender *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-        matRender *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-        glMultMatrixf( &matRender[0][0] );
+    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), hmp::VOID_COLOR );
+    hmpRC.render();
 
-        { // Render State //
-            fbos_t simFBOS( pGraphics, hmp::GFX_BUFFER_SIM );
+    { // Render State //
+        hmp::gfx::fbo_context_t simFBOC(
+            pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
+            pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] );
 
-            for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-                pState->entities[entityIdx]->render();
+        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+            pState->entities[entityIdx]->render();
+        }
+    }
+
+    { // Render UI //
+        hmp::gfx::fbo_context_t simFBOC(
+            pGraphics->bufferFBOs[hmp::GFX_BUFFER_UI],
+            pGraphics->bufferRess[hmp::GFX_BUFFER_UI] );
+
+        pState->scoreEnt.render();
+    }
+
+    { // Render Master //
+        const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
+        const uicoord32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+        hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+
+        for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
+            const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
+            const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
+            const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
+
+            glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
+            glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
+            for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
+                glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
+                    bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
+                    bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
+                    bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
+                    bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
             }
         }
-
-        { // Render UI //
-            fbos_t uiFBOS( pGraphics, hmp::GFX_BUFFER_UI );
-            pState->scoreEnt.render();
-        }
-
-        { // Render Master //
-            fbos_t masterFBOS( pGraphics, hmp::GFX_BUFFER_MASTER );
-
-            const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-            const uicoord32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
-            for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
-                const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
-                const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
-                const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
-
-                glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
-                glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
-                for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
-                    glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
-                        bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
-                        bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
-                        bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
-                        bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
-                }
-            }
-        }
-    } glPopMatrix();
+    }
 }

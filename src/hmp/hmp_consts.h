@@ -10,6 +10,7 @@ namespace hmp {
 
 enum class team_e : int8_t { west = 0, east = 1, neutral = 2 };
 
+constexpr static color_t VOID_COLOR = { 0xFF, 0xFF, 0xFF, 0xFF };
 constexpr static color_t BACKGROUND_COLOR = { 0x00, 0x2b, 0x36, 0xFF };
 constexpr static color_t INTERFACE_COLOR = { 0x58, 0x58, 0x58, 0xFF };
 constexpr static color_t BORDER_COLOR = { 0x26, 0x26, 0x26, 0xFF };
