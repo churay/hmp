@@ -37,7 +37,7 @@ void bounds_t::irender() const {
 /// 'hmp::ball_t' Functions ///
 
 ball_t::ball_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int32_t>(hmp::team_e::neutral)] ), mTeam( hmp::team_e::neutral ) {
+        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int>(hmp::team_e::neutral)] ), mTeam( hmp::team_e::neutral ) {
     
 }
 
@@ -86,7 +86,7 @@ void ball_t::ricochet( const entity_t* pSurface ) {
 /// 'hmp::paddle_t' Functions ///
 
 paddle_t::paddle_t( const box_t& pBBox, const team_e& pTeam ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int32_t>(pTeam)] ), mTeam( pTeam ), mDX( 0 ), mDY( 0 ) {
+        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int>(pTeam)] ), mTeam( pTeam ), mDX( 0 ), mDY( 0 ) {
     
 }
 
@@ -103,54 +103,61 @@ void paddle_t::iupdate( const float64_t pDT ) {
     entity_t::iupdate( pDT );
 }
 
-/// 'hmp::digit_t' Functions ///
-
-digit_t::digit_t( const box_t& pBBox, const team_e& pTeam, const uint8_t pValue ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int32_t>(pTeam)] ), mTeam( pTeam ), mValue( pValue ) {
-    
-}
-
-
-void digit_t::irender() const {
-    entity_t::irender();
-
-    // TODO(JRC): Write a procedure to output numbers using a digital strategy.
-
-    // hmp::gfx::render( box, color );
-
-    /*
-    glBegin( GL_QUADS ); {
-        glColor4ubv( (uint8_t*)mWestColor );
-        glColor4ubv( (uint8_t*)mEastColor );
-    } glEnd();
-    */
-}
-
 /// 'hmp::scoreboard_t' Functions ///
 
 scoreboard_t::scoreboard_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::BORDER_COLOR ),
-        mWestScore( hmp::WINNING_SCORE ), mEastScore( hmp::WINNING_SCORE ),
-        mWestDigit( box_t(), hmp::team_e::west, hmp::WINNING_SCORE ),
-        mEastDigit( box_t(), hmp::team_e::east, hmp::WINNING_SCORE ) {
-    
+        entity_t( pBBox, hmp::BORDER_COLOR ) {
+    mScores[static_cast<int>(hmp::team_e::west)] = hmp::WINNING_SCORE;
+    mScores[static_cast<int>(hmp::team_e::east)] = hmp::WINNING_SCORE;
 }
 
 
 void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
-    mWestScore += pWestDelta;
-    mEastScore += pEastDelta;
+    mScores[static_cast<int>(hmp::team_e::west)] += pWestDelta;
+    mScores[static_cast<int>(hmp::team_e::east)] += pEastDelta;
 }
 
 
 void scoreboard_t::irender() const {
+    const static bit8_t DIGIT_DISPLAY_LINES[10][3][3] = {
+        { {1, 1, 0}, {1, 0, 1}, {1, 1, 0} },   // 0
+        { {0, 0, 0}, {0, 0, 0}, {1, 1, 0} },   // 1
+        { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 2
+        { {0, 0, 0}, {1, 1, 1}, {1, 1, 0} },   // 3
+        { {1, 0, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
+        { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 5
+        { {1, 1, 0}, {1, 1, 1}, {0, 1, 0} },   // 6
+        { {0, 0, 0}, {1, 0, 0}, {1, 1, 0} },   // 7
+        { {1, 1, 0}, {1, 1, 1}, {1, 1, 0} },   // 8
+        { {1, 0, 0}, {1, 1, 1}, {1, 1, 0} }    // 9
+    };
+
     entity_t::irender();
 
-    box_t interfaceBox(
-        scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f),
-        (1.0f - 2.0f * scoreboard_t::PADDING_WIDTH) * glm::vec2(1.0f, 1.0f) );
-    hmp::gfx::render_context_t entityRC( interfaceBox, hmp::INTERFACE_COLOR );
-    entityRC.render();
+    for( uint8_t teamIdx = 0; teamIdx < 2; teamIdx++ ) {
+        hmp::team_e team = static_cast<hmp::team_e>( teamIdx );
+
+        const uint8_t teamScore = mScores[teamIdx];
+        const color_t& teamColor = hmp::TEAM_COLORS[teamIdx];
+        const auto teamAnchor = ( team == hmp::team_e::west ) ?
+            box_t::pos_type::sw : box_t::pos_type::se;
+
+        // TODO(JRC): Clean up this disgusting mess that you've made.
+        hmp::box_t teamBox(
+            glm::vec2((team == hmp::team_e::west) ? scoreboard_t::PADDING_WIDTH : 1.0f - scoreboard_t::PADDING_WIDTH, scoreboard_t::PADDING_WIDTH),
+            glm::vec2(0.5f, 1.0f) - (2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f)),
+            teamAnchor );
+        hmp::gfx::render_context_t teamContext( teamBox, hmp::INTERFACE_COLOR );
+        teamContext.render();
+
+        color_t teamColorClear = teamColor;
+        teamColorClear.a = 0xFF / 4;
+        hmp::box_t scoreBox( 0.0f, 0.0f, teamScore / (hmp::WINNING_SCORE + 0.0f), 1.0f );
+        hmp::gfx::render_context_t scoreContext( scoreBox, teamColorClear );
+        scoreContext.render();
+
+        // TODO(JRC): Digit w/ black outline but same color
+    }
 }
 
 }
