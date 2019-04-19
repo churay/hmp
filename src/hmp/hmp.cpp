@@ -65,11 +65,11 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
 
     const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), hmp::team_e::west );
+    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), hmp::team::west );
     std::memcpy( (void*)&pState->paddleEnts[0], (void*)&westEnt, sizeof(hmp::paddle_t) );
 
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::team_e::east );
+    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::team::east );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
 
     // Initialize Input //

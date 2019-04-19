@@ -12,6 +12,20 @@
 
 namespace hmp {
 
+class team_entity_t : public entity_t {
+    public:
+
+    /// Constructors ///
+
+    team_entity_t( const box_t& pBBox, const team::team_e& pTeam );
+
+    /// Class Fields ///
+
+    public:
+
+    uint8_t mTeam;
+};
+
 class bounds_t : public entity_t {
     public:
 
@@ -35,7 +49,7 @@ class bounds_t : public entity_t {
 };
 
 
-class ball_t : public entity_t {
+class ball_t : public team_entity_t {
     public:
 
     /// Class Attributes ///
@@ -58,12 +72,10 @@ class ball_t : public entity_t {
     /// Class Fields ///
 
     public:
-
-    team_e mTeam;
 };
 
 
-class paddle_t : public entity_t {
+class paddle_t : public team_entity_t {
     public:
 
     /// Class Attributes ///
@@ -72,7 +84,7 @@ class paddle_t : public entity_t {
 
     /// Constructors ///
 
-    paddle_t( const box_t& pBBox, const team_e& pTeam );
+    paddle_t( const box_t& pBBox, const team::team_e& pTeam );
 
     /// Class Functions ///
 
@@ -88,7 +100,6 @@ class paddle_t : public entity_t {
 
     public:
 
-    team_e mTeam;
     int8_t mDX, mDY;
 };
 

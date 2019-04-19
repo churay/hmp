@@ -8,7 +8,7 @@ namespace hmp {
 
 /// Class Functions ///
 
-box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_type pType ) :
+box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_type_e pType ) :
         mPos( pPos ), mDims( pDims ) {
     int8_t intType = static_cast<int8_t>( pType );
     int8_t xScale = ( intType >> 0 ) & 1;
@@ -18,7 +18,7 @@ box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_ty
 }
 
 
-box_t::box_t( const float32_t pPosX, const float32_t pPosY, const float32_t pDimsX, const float32_t pDimsY, const pos_type pType ) :
+box_t::box_t( const float32_t pPosX, const float32_t pPosY, const float32_t pDimsX, const float32_t pDimsY, const pos_type_e pType ) :
         box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pType ) {
 }
 

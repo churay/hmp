@@ -17,6 +17,13 @@
 
 namespace hmp {
 
+/// 'hmp::team_entity_t' Functions ///
+
+team_entity_t::team_entity_t( const box_t& pBBox, const team::team_e& pTeam ) :
+        entity_t( pBBox, hmp::TEAM_COLORS[pTeam] ), mTeam( pTeam ) {
+    
+}
+
 /// 'hmp::bounds_t' Functions ///
 
 bounds_t::bounds_t( const box_t& pBBox ) :
@@ -29,7 +36,7 @@ void bounds_t::irender() const {
     entity_t::irender();
 
     hmp::gfx::render_context_t entityRC(
-        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::pos_type::c),
+        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::pos_type_e::c),
         llce::util::brighten(*mColor, 1.5f) );
     entityRC.render();
 }
@@ -37,7 +44,7 @@ void bounds_t::irender() const {
 /// 'hmp::ball_t' Functions ///
 
 ball_t::ball_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int>(hmp::team_e::neutral)] ), mTeam( hmp::team_e::neutral ) {
+        team_entity_t( pBBox, hmp::team::neutral ) {
     
 }
 
@@ -85,8 +92,8 @@ void ball_t::ricochet( const entity_t* pSurface ) {
 
 /// 'hmp::paddle_t' Functions ///
 
-paddle_t::paddle_t( const box_t& pBBox, const team_e& pTeam ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[static_cast<int>(pTeam)] ), mTeam( pTeam ), mDX( 0 ), mDY( 0 ) {
+paddle_t::paddle_t( const box_t& pBBox, const team::team_e& pTeam ) :
+        team_entity_t( pBBox, pTeam ), mDX( 0 ), mDY( 0 ) {
     
 }
 
@@ -107,14 +114,14 @@ void paddle_t::iupdate( const float64_t pDT ) {
 
 scoreboard_t::scoreboard_t( const box_t& pBBox ) :
         entity_t( pBBox, hmp::BORDER_COLOR ) {
-    mScores[static_cast<int>(hmp::team_e::west)] = hmp::WINNING_SCORE;
-    mScores[static_cast<int>(hmp::team_e::east)] = hmp::WINNING_SCORE;
+    mScores[hmp::team::west] = hmp::WINNING_SCORE;
+    mScores[hmp::team::east] = hmp::WINNING_SCORE;
 }
 
 
 void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
-    mScores[static_cast<int>(hmp::team_e::west)] += pWestDelta;
-    mScores[static_cast<int>(hmp::team_e::east)] += pEastDelta;
+    mScores[hmp::team::west] += pWestDelta;
+    mScores[hmp::team::east] += pEastDelta;
 }
 
 
@@ -134,17 +141,15 @@ void scoreboard_t::irender() const {
 
     entity_t::irender();
 
-    for( uint8_t teamIdx = 0; teamIdx < 2; teamIdx++ ) {
-        hmp::team_e team = static_cast<hmp::team_e>( teamIdx );
-
-        const uint8_t teamScore = mScores[teamIdx];
-        const color_t& teamColor = hmp::TEAM_COLORS[teamIdx];
-        const auto teamAnchor = ( team == hmp::team_e::west ) ?
-            box_t::pos_type::sw : box_t::pos_type::se;
+    for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
+        const uint8_t teamScore = mScores[team];
+        const color_t& teamColor = hmp::TEAM_COLORS[team];
+        const auto teamAnchor = ( team == hmp::team::west ) ?
+            box_t::pos_type_e::sw : box_t::pos_type_e::se;
 
         // TODO(JRC): Clean up this disgusting mess that you've made.
         hmp::box_t teamBox(
-            glm::vec2((team == hmp::team_e::west) ? scoreboard_t::PADDING_WIDTH : 1.0f - scoreboard_t::PADDING_WIDTH, scoreboard_t::PADDING_WIDTH),
+            glm::vec2((team == hmp::team::west) ? scoreboard_t::PADDING_WIDTH : 1.0f - scoreboard_t::PADDING_WIDTH, scoreboard_t::PADDING_WIDTH),
             glm::vec2(0.5f, 1.0f) - (2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f)),
             teamAnchor );
         hmp::gfx::render_context_t teamContext( teamBox, hmp::INTERFACE_COLOR );
