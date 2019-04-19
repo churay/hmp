@@ -8,18 +8,22 @@ namespace hmp {
 
 /// Class Functions ///
 
-box_t::box_t( const glm::vec2& pPos, const glm::vec2& pDims, const box_t::pos_type_e pType ) :
+box_t::box_t(
+        const glm::vec2& pPos, const glm::vec2& pDims, const box_t::anchor_e pAnchor ) :
         mPos( pPos ), mDims( pDims ) {
-    int8_t intType = static_cast<int8_t>( pType );
-    int8_t xScale = ( intType >> 0 ) & 1;
-    int8_t yScale = ( intType >> 1 ) & 1;
-    int8_t dimSkew = ( (intType >> 2) & 1 ) ? 2 : 1;
+    uint8_t intAnchor = static_cast<int8_t>( pAnchor );
+    uint8_t xScale = ( intAnchor >> 0 ) & 1;
+    uint8_t yScale = ( intAnchor >> 1 ) & 1;
+    uint8_t dimSkew = ( (intAnchor >> 2) & 1 ) ? 2 : 1;
     mPos -= ( (1.0f / dimSkew) * glm::vec2(xScale * mDims.x, yScale * mDims.y) );
 }
 
 
-box_t::box_t( const float32_t pPosX, const float32_t pPosY, const float32_t pDimsX, const float32_t pDimsY, const pos_type_e pType ) :
-        box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pType ) {
+box_t::box_t(
+        const float32_t pPosX, const float32_t pPosY,
+        const float32_t pDimsX, const float32_t pDimsY, const box_t::anchor_e pAnchor ) :
+        box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pAnchor ) {
+    
 }
 
 

@@ -15,12 +15,17 @@ class box_t {
 
     /// Class Attributes ///
 
-    enum class pos_type_e : int8_t { sw=0, se=1, nw=2, ne=3, c=7 };
+    enum class anchor_e : uint8_t { sw=0, se=1, nw=2, ne=3, c=7 };
 
     /// Constructors ///
 
-    box_t( const glm::vec2& pPos, const glm::vec2& pDims, const pos_type_e pType = pos_type_e::sw );
-    box_t( const float32_t pPosX, const float32_t pPosY, const float32_t pDimsX, const float32_t pDimsY, const pos_type_e pType = pos_type_e::sw );
+    box_t(
+        const glm::vec2& pPos, const glm::vec2& pDims,
+        const anchor_e pAnch = anchor_e::sw );
+    box_t(
+        const float32_t pPosX, const float32_t pPosY,
+        const float32_t pDimsX, const float32_t pDimsY,
+        const anchor_e pType = anchor_e::sw );
 
     /// Class Functions ///
 

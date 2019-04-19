@@ -36,7 +36,7 @@ void bounds_t::irender() const {
     entity_t::irender();
 
     hmp::gfx::render_context_t entityRC(
-        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::pos_type_e::c),
+        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c),
         llce::util::brighten(*mColor, 1.5f) );
     entityRC.render();
 }
@@ -144,24 +144,31 @@ void scoreboard_t::irender() const {
     for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const uint8_t teamScore = mScores[team];
         const color_t& teamColor = hmp::TEAM_COLORS[team];
-        const auto teamAnchor = ( team == hmp::team::west ) ?
-            box_t::pos_type_e::sw : box_t::pos_type_e::se;
+        const bool isTeamWest = team == hmp::team::west;
 
-        // TODO(JRC): Clean up this disgusting mess that you've made.
-        hmp::box_t teamBox(
-            glm::vec2((team == hmp::team::west) ? scoreboard_t::PADDING_WIDTH : 1.0f - scoreboard_t::PADDING_WIDTH, scoreboard_t::PADDING_WIDTH),
-            glm::vec2(0.5f, 1.0f) - (2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f)),
-            teamAnchor );
-        hmp::gfx::render_context_t teamContext( teamBox, hmp::INTERFACE_COLOR );
-        teamContext.render();
+        const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
+        const auto teamAnchor = isTeamWest ? box_t::anchor_e::se : box_t::anchor_e::sw;
+        const glm::vec2 teamBasePos = glm::vec2( 0.5f, scoreboard_t::PADDING_WIDTH ) +
+            teamOrient * glm::vec2( scoreboard_t::PADDING_WIDTH, 0.0f );
+        const glm::vec2 teamBaseDims = glm::vec2( 0.5f, 1.0f ) -
+            ( 2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f) );
 
-        color_t teamColorClear = teamColor;
-        teamColorClear.a = 0xFF / 4;
-        hmp::box_t scoreBox( 0.0f, 0.0f, teamScore / (hmp::WINNING_SCORE + 0.0f), 1.0f );
-        hmp::gfx::render_context_t scoreContext( scoreBox, teamColorClear );
-        scoreContext.render();
+        const hmp::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
+            hmp::gfx::render_context_t teamRC( teamBox, hmp::INTERFACE_COLOR );
+            teamRC.render();
 
-        // TODO(JRC): Digit w/ black outline but same color
+            const float32_t teamScoreFrac = teamScore / (hmp::WINNING_SCORE + 0.0f);
+            const glm::vec2 scoreBasePos = glm::vec2( isTeamWest ? 1.0f : 0.0f, 0.0f ) +
+                teamOrient * glm::vec2( 1.0f - teamScoreFrac, 0.0f );
+            const glm::vec2 scoreBaseDims = glm::vec2( teamScoreFrac, 1.0f );
+            const hmp::box_t scoreBox( scoreBasePos, scoreBaseDims, teamAnchor ); {
+                hmp::gfx::render_context_t scoreRC( scoreBox, teamColor );
+                scoreRC.render();
+
+                // TODO(JRC): Digit w/ black outline but same color
+            }
+        }
+
     }
 }
 
