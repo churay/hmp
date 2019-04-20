@@ -1,18 +1,15 @@
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_RADIANS
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_pixels.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_opengl_glext.h>
+#include <SDL2/SDL_ttf.h>
+
 #include <glm/ext/vector_float2.hpp>
 #include <glm/ext/vector_float3.hpp>
 #include <glm/ext/vector_float4.hpp>
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtx/string_cast.hpp>
-
-#define GL_GLEXT_PROTOTYPES
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_pixels.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_opengl_glext.h>
-#include <SDL2/SDL_ttf.h>
 
 #include <cstring>
 #include <cstdio>

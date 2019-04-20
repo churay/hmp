@@ -1,16 +1,14 @@
 #include <cstring>
 #include <sstream>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_RADIANS
+#include <SDL2/SDL_opengl.h>
+
 #include <glm/common.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
-
-#include <SDL2/SDL_opengl.h>
 
 #include "hmp_gfx.h"
 #include "hmp_entities.h"

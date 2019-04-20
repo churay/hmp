@@ -2,6 +2,7 @@
 #define HMP_BOX_T_H
 
 #include <sstream>
+
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_interval_t.h"
