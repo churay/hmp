@@ -20,6 +20,13 @@ box_t::box_t(
 
 
 box_t::box_t(
+        const float32_t pPos, const float32_t pDims, const box_t::anchor_e pAnchor ) :
+        box_t( glm::vec2(pPos, pPos), glm::vec2(pDims, pDims), pAnchor ) {
+    
+}
+
+
+box_t::box_t(
         const float32_t pPosX, const float32_t pPosY,
         const float32_t pDimsX, const float32_t pDimsY, const box_t::anchor_e pAnchor ) :
         box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pAnchor ) {

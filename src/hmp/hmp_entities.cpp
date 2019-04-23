@@ -162,11 +162,37 @@ void scoreboard_t::irender() const {
             const hmp::box_t scoreBox( scoreBasePos, scoreBaseDims, teamAnchor ); {
                 hmp::gfx::render_context_t scoreRC( scoreBox, teamColor );
                 scoreRC.render();
+            }
 
-                // TODO(JRC): Digit w/ black outline but same color
+            const color_t tallyColor = { 0x00, 0x00, 0x00, 0xFF };
+            const color_t tallyBoxColor = { 0xFF, 0xFF, 0xFF, 0xFF };
+            const hmp::box_t tallyBox( 0.5f, scoreboard_t::TALLY_WIDTH, box_t::anchor_e::c ); {
+                hmp::gfx::render_context_t tallyRC( tallyBox, tallyBoxColor );
+                tallyRC.render();
+
+                const float32_t digitLineWidth = ( (1.0f - 4.0f * scoreboard_t::TALLY_RADIUS) / 1.0f );
+                const float32_t digitLineHeight = ( (1.0f - 6.0f * scoreboard_t::TALLY_RADIUS) / 2.0f );
+                const float32_t digitLineOffset = ( 2.0f * scoreboard_t::TALLY_RADIUS + digitLineHeight );
+                const auto digitLines = &DIGIT_DISPLAY_LINES[teamScore][0];
+                for( uint8_t colIdx = 0, lineIdx = 0; colIdx < 3; colIdx++ ) {
+                    for( uint8_t rowIdx = 0; rowIdx < 3; rowIdx++, lineIdx++ ) {
+                        const bool8_t isLineVertical = colIdx % 2 == 0;
+
+                        const float32_t lineX = scoreboard_t::TALLY_RADIUS + colIdx * (scoreboard_t::TALLY_RADIUS + digitLineWidth / 2.0f);
+                        const float32_t lineY = isLineVertical ?
+                            2.0f * scoreboard_t::TALLY_RADIUS + digitLineHeight / 2.0f + rowIdx * digitLineOffset:
+                            scoreboard_t::TALLY_RADIUS + rowIdx * digitLineOffset;
+                        const float32_t lineWidth = !isLineVertical ? digitLineWidth : scoreboard_t::TALLY_RADIUS / 2.0f;
+                        const float32_t lineHeight = isLineVertical ? digitLineHeight : scoreboard_t::TALLY_RADIUS / 2.0f;
+                        if( digitLines[colIdx][rowIdx] ) {
+                            const hmp::box_t lineBox( lineX, lineY, lineWidth, lineHeight, box_t::anchor_e::c );
+                            hmp::gfx::render_context_t lineRC( lineBox, tallyColor );
+                            lineRC.render();
+                        }
+                    }
+                }
             }
         }
-
     }
 }
 

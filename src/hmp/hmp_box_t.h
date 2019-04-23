@@ -24,6 +24,9 @@ class box_t {
         const glm::vec2& pPos, const glm::vec2& pDims,
         const anchor_e pAnch = anchor_e::sw );
     box_t(
+        const float32_t pPos, const float32_t pDims,
+        const anchor_e pType = anchor_e::sw );
+    box_t(
         const float32_t pPosX, const float32_t pPosY,
         const float32_t pDimsX, const float32_t pDimsY,
         const anchor_e pType = anchor_e::sw );
