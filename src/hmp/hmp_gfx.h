@@ -9,7 +9,7 @@ namespace hmp {
 namespace gfx {
 
 struct render_context_t {
-    render_context_t( const hmp::box_t& pBox, const color_t& pColor );
+    render_context_t( const hmp::box_t& pBox, const color_t* pColor );
     ~render_context_t();
 
     void render() const;

@@ -33,7 +33,7 @@ void entity_t::update( const float64_t pDT ) {
 
 
 void entity_t::render() const {
-    hmp::gfx::render_context_t entityRC( mBBox, *mColor );
+    hmp::gfx::render_context_t entityRC( mBBox, mColor );
     irender();
 }
 

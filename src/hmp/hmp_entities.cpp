@@ -33,9 +33,9 @@ bounds_t::bounds_t( const box_t& pBBox ) :
 void bounds_t::irender() const {
     entity_t::irender();
 
+    const color_t entityColor = llce::util::brighten( *mColor, 1.5f );
     hmp::gfx::render_context_t entityRC(
-        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c),
-        llce::util::brighten(*mColor, 1.5f) );
+        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c), &entityColor );
     entityRC.render();
 }
 
@@ -127,21 +127,28 @@ void scoreboard_t::irender() const {
     const static bit8_t DIGIT_DISPLAY_LINES[10][3][3] = {
         { {1, 1, 0}, {1, 0, 1}, {1, 1, 0} },   // 0
         { {0, 0, 0}, {0, 0, 0}, {1, 1, 0} },   // 1
-        { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 2
+        { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 2
         { {0, 0, 0}, {1, 1, 1}, {1, 1, 0} },   // 3
         { {1, 0, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
-        { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 5
-        { {1, 1, 0}, {1, 1, 1}, {0, 1, 0} },   // 6
-        { {0, 0, 0}, {1, 0, 0}, {1, 1, 0} },   // 7
+        { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 5
+        { {1, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 6
+        { {0, 0, 0}, {0, 0, 1}, {1, 1, 0} },   // 7
         { {1, 1, 0}, {1, 1, 1}, {1, 1, 0} },   // 8
-        { {1, 0, 0}, {1, 1, 1}, {1, 1, 0} }    // 9
+        { {0, 1, 0}, {1, 1, 1}, {1, 1, 0} }    // 9
     };
+
+    const static float32_t DIGIT_LINE_WIDTH =
+        ( (1.0f - 4.0f * scoreboard_t::TALLY_RADIUS) / 1.0f );
+    const static float32_t DIGIT_LINE_HEIGHT =
+        ( (1.0f - 6.0f * scoreboard_t::TALLY_RADIUS) / 2.0f );
+    const static float32_t DIGIT_LINE_OFFSET =
+        ( 2.0f * scoreboard_t::TALLY_RADIUS + DIGIT_LINE_HEIGHT );
 
     entity_t::irender();
 
     for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const uint8_t teamScore = mScores[team];
-        const color_t& teamColor = hmp::TEAM_COLORS[team];
+        const color_t* teamColor = &hmp::TEAM_COLORS[team];
         const bool isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
@@ -152,43 +159,36 @@ void scoreboard_t::irender() const {
             ( 2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f) );
 
         const hmp::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
-            hmp::gfx::render_context_t teamRC( teamBox, hmp::INTERFACE_COLOR );
+            hmp::gfx::render_context_t teamRC( teamBox, &hmp::INTERFACE_COLOR );
             teamRC.render();
 
-            const float32_t teamScoreFrac = teamScore / (hmp::WINNING_SCORE + 0.0f);
-            const glm::vec2 scoreBasePos = glm::vec2( isTeamWest ? 1.0f : 0.0f, 0.0f ) +
-                teamOrient * glm::vec2( 1.0f - teamScoreFrac, 0.0f );
-            const glm::vec2 scoreBaseDims = glm::vec2( teamScoreFrac, 1.0f );
-            const hmp::box_t scoreBox( scoreBasePos, scoreBaseDims, teamAnchor ); {
-                hmp::gfx::render_context_t scoreRC( scoreBox, teamColor );
-                scoreRC.render();
-            }
+            // TODO(JRC): This segment was removed because it doesn't interact well
+            // with a digit overlay, but it could be reintroduced at some point.
+            //
+            // const float32_t teamScoreFrac = teamScore / (hmp::WINNING_SCORE + 0.0f);
+            // const glm::vec2 scoreBasePos = glm::vec2( isTeamWest ? 1.0f : 0.0f, 0.0f ) +
+            //     teamOrient * glm::vec2( 1.0f - teamScoreFrac, 0.0f );
+            // const glm::vec2 scoreBaseDims = glm::vec2( teamScoreFrac, 1.0f );
+            // const hmp::box_t scoreBox( scoreBasePos, scoreBaseDims, teamAnchor ); {
+            //     hmp::gfx::render_context_t scoreRC( scoreBox, teamColor );
+            //     scoreRC.render();
+            // }
 
-            const color_t tallyColor = { 0x00, 0x00, 0x00, 0xFF };
-            const color_t tallyBoxColor = { 0xFF, 0xFF, 0xFF, 0xFF };
-            const hmp::box_t tallyBox( 0.5f, scoreboard_t::TALLY_WIDTH, box_t::anchor_e::c ); {
-                hmp::gfx::render_context_t tallyRC( tallyBox, tallyBoxColor );
-                tallyRC.render();
+            const auto digitLines = DIGIT_DISPLAY_LINES[teamScore];
+            for( uint8_t colIdx = 0, lineIdx = 0; colIdx < 3; colIdx++ ) {
+                for( uint8_t rowIdx = 0; rowIdx < 3; rowIdx++, lineIdx++ ) {
+                    const bool8_t isLineVertical = colIdx % 2 == 0;
 
-                const float32_t digitLineWidth = ( (1.0f - 4.0f * scoreboard_t::TALLY_RADIUS) / 1.0f );
-                const float32_t digitLineHeight = ( (1.0f - 6.0f * scoreboard_t::TALLY_RADIUS) / 2.0f );
-                const float32_t digitLineOffset = ( 2.0f * scoreboard_t::TALLY_RADIUS + digitLineHeight );
-                const auto digitLines = &DIGIT_DISPLAY_LINES[teamScore][0];
-                for( uint8_t colIdx = 0, lineIdx = 0; colIdx < 3; colIdx++ ) {
-                    for( uint8_t rowIdx = 0; rowIdx < 3; rowIdx++, lineIdx++ ) {
-                        const bool8_t isLineVertical = colIdx % 2 == 0;
-
-                        const float32_t lineX = scoreboard_t::TALLY_RADIUS + colIdx * (scoreboard_t::TALLY_RADIUS + digitLineWidth / 2.0f);
-                        const float32_t lineY = isLineVertical ?
-                            2.0f * scoreboard_t::TALLY_RADIUS + digitLineHeight / 2.0f + rowIdx * digitLineOffset:
-                            scoreboard_t::TALLY_RADIUS + rowIdx * digitLineOffset;
-                        const float32_t lineWidth = !isLineVertical ? digitLineWidth : scoreboard_t::TALLY_RADIUS / 2.0f;
-                        const float32_t lineHeight = isLineVertical ? digitLineHeight : scoreboard_t::TALLY_RADIUS / 2.0f;
-                        if( digitLines[colIdx][rowIdx] ) {
-                            const hmp::box_t lineBox( lineX, lineY, lineWidth, lineHeight, box_t::anchor_e::c );
-                            hmp::gfx::render_context_t lineRC( lineBox, tallyColor );
-                            lineRC.render();
-                        }
+                    const float32_t lineX = scoreboard_t::TALLY_RADIUS + colIdx * (scoreboard_t::TALLY_RADIUS + DIGIT_LINE_WIDTH / 2.0f);
+                    const float32_t lineY = isLineVertical ?
+                        2.0f * scoreboard_t::TALLY_RADIUS + DIGIT_LINE_HEIGHT / 2.0f + rowIdx * DIGIT_LINE_OFFSET:
+                        scoreboard_t::TALLY_RADIUS + rowIdx * DIGIT_LINE_OFFSET;
+                    const float32_t lineWidth = !isLineVertical ? DIGIT_LINE_WIDTH : scoreboard_t::TALLY_RADIUS;
+                    const float32_t lineHeight = isLineVertical ? DIGIT_LINE_HEIGHT : scoreboard_t::TALLY_RADIUS;
+                    if( digitLines[colIdx][rowIdx] ) {
+                        const hmp::box_t lineBox( lineX, lineY, lineWidth, lineHeight, box_t::anchor_e::c );
+                        hmp::gfx::render_context_t lineRC( lineBox, teamColor );
+                        lineRC.render();
                     }
                 }
             }
