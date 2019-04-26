@@ -194,7 +194,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
-    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::VOID_COLOR );
+    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::COLOR_VOID );
     hmpRC.render();
 
     { // Render State //

@@ -13,7 +13,7 @@ class entity_t {
 
     /// Constructors ///
 
-    entity_t( const box_t& pBBox, const color_t& pColor );
+    entity_t( const box_t& pBBox, const color_t* pColor );
     virtual ~entity_t() = 0;
 
     /// Class Functions ///

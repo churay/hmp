@@ -18,14 +18,14 @@ namespace hmp {
 /// 'hmp::team_entity_t' Functions ///
 
 team_entity_t::team_entity_t( const box_t& pBBox, const team::team_e& pTeam ) :
-        entity_t( pBBox, hmp::TEAM_COLORS[pTeam] ), mTeam( pTeam ) {
+        entity_t( pBBox, &hmp::COLOR_TEAMS[pTeam] ), mTeam( pTeam ) {
     
 }
 
 /// 'hmp::bounds_t' Functions ///
 
 bounds_t::bounds_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::BACKGROUND_COLOR ) {
+        entity_t( pBBox, &hmp::COLOR_BACKGROUND ) {
     
 }
 
@@ -111,7 +111,7 @@ void paddle_t::iupdate( const float64_t pDT ) {
 /// 'hmp::scoreboard_t' Functions ///
 
 scoreboard_t::scoreboard_t( const box_t& pBBox ) :
-        entity_t( pBBox, hmp::BORDER_COLOR ) {
+        entity_t( pBBox, &hmp::COLOR_BORDER ) {
     mScores[hmp::team::west] = hmp::WINNING_SCORE;
     mScores[hmp::team::east] = hmp::WINNING_SCORE;
 }
@@ -148,7 +148,7 @@ void scoreboard_t::irender() const {
 
     for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const uint8_t teamScore = mScores[team];
-        const color_t* teamColor = &hmp::TEAM_COLORS[team];
+        const color_t* teamColor = &hmp::COLOR_TEAMS[team];
         const bool isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
@@ -159,7 +159,7 @@ void scoreboard_t::irender() const {
             ( 2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f) );
 
         const hmp::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
-            hmp::gfx::render_context_t teamRC( teamBox, &hmp::INTERFACE_COLOR );
+            hmp::gfx::render_context_t teamRC( teamBox, &hmp::COLOR_INTERFACE );
             teamRC.render();
 
             // TODO(JRC): This segment was removed because it doesn't interact well
