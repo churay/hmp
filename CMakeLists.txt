@@ -104,6 +104,7 @@ foreach(hmp_target ${hmp_targets})
     target_include_directories(${hmp_target} PUBLIC ${hmp_dep_incs})
     target_link_libraries(${hmp_target} PUBLIC ${hmp_dep_libs})
 endforeach()
+# target_link_libraries(${hmp_exe_target} PUBLIC ${hmp_lib_target})
 # target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
 
 ###############################################################################
