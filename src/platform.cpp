@@ -62,7 +62,7 @@ bool32_t platform::deallocBuffer( bit8_t* pBuffer, uint64_t pBufferLength ) {
 
 
 void* platform::dllLoadHandle( const char8_t* pDLLPath ) {
-    void* libraryHandle = dlopen( pDLLPath, RTLD_NOW );
+    void* libraryHandle = dlopen( pDLLPath, RTLD_NOW | RTLD_GLOBAL );
     const char8_t* libraryError = dlerror();
 
     LLCE_ASSERT_INFO( libraryHandle != nullptr,

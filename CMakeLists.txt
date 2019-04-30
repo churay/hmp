@@ -20,6 +20,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLLCE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE )
@@ -42,6 +43,8 @@ file(GLOB         hmp_exe_files     src/main.cpp)
 file(GLOB         hmp_obj_files     src/*.cpp src/*.h)
 list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files})
 file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
+file(GLOB         hmp_dat_files     src/hmp/hmp_data*)
+list(REMOVE_ITEM  hmp_lib_files     ${hmp_dat_files})
 
 ###############################################################################
 ## target definitions #########################################################
@@ -68,25 +71,29 @@ set(GLM_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/glm)
 ####################################
 
 set(hmp_obj_target "hmpobj")
+set(hmp_dat_target "hmpdata")
 set(hmp_lib_target "hmp")
 set(hmp_exe_target "hmp.out")
-set(hmp_targets ${hmp_lib_target} ${hmp_exe_target})
 
 add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
+add_library(${hmp_dat_target} SHARED ${hmp_dat_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
-foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target})
+foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target})
     set_property(TARGET ${hmp_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
 endforeach()
 
-foreach(hmp_target ${hmp_obj_target} ${hmp_lib_target} ${hmp_exe_target})
+foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC src)
     add_dependencies(${hmp_target} glm)
 endforeach()
 
-target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
+add_dependencies(${hmp_lib_target} ${hmp_dat_target})
 # add_dependencies(${hmp_exe_target} ${hmp_lib_target})
+
+target_include_directories(${hmp_dat_target} PUBLIC src/hmp)
+target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
 
 ###############################################################################
 ## dependencies ###############################################################
@@ -100,11 +107,11 @@ pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
-foreach(hmp_target ${hmp_targets})
+foreach(hmp_target ${hmp_dat_target} ${hmp_lib_target} ${hmp_exe_target})
     target_include_directories(${hmp_target} PUBLIC ${hmp_dep_incs})
     target_link_libraries(${hmp_target} PUBLIC ${hmp_dep_libs})
 endforeach()
-# target_link_libraries(${hmp_exe_target} PUBLIC ${hmp_lib_target})
+target_link_libraries(${hmp_lib_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
 # target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
 
 ###############################################################################
@@ -155,6 +162,7 @@ endforeach()
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
 install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
+install(TARGETS ${hmp_dat_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(TARGETS ${hmp_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 install(TARGETS ${hmp_exe_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
