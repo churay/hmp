@@ -10,6 +10,9 @@
 
 namespace llce {
 
+// NOTE(JRC): Documentation on the buffer allocation functions on Linux can be
+// found here: http://man7.org/linux/man-pages/man2/mmap.2.html
+
 bit8_t* platform::allocBuffer( uint64_t pBufferLength, bit8_t* pBufferBase ) {
     const int64_t cPermissionFlags = PROT_READ | PROT_WRITE;
     const int64_t cAllocFlags = MAP_ANONYMOUS | MAP_PRIVATE |
@@ -60,6 +63,8 @@ bool32_t platform::deallocBuffer( bit8_t* pBuffer, uint64_t pBufferLength ) {
     return status == 0;
 }
 
+// NOTE(JRC): Documentation on Linux's dynamic-library loading functions can be
+// found here: http://man7.org/linux/man-pages/man3/dlmopen.3.html
 
 void* platform::dllLoadHandle( const char8_t* pDLLPath ) {
     void* libraryHandle = dlopen( pDLLPath, RTLD_NOW | RTLD_GLOBAL );

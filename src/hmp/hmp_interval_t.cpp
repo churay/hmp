@@ -82,6 +82,11 @@ interval_t interval_t::intersect( const interval_t& pOther ) const {
 }
 
 
+float32_t interval_t::length() const {
+    return valid() ? mMax - mMin : 0.0f;
+}
+
+
 bool32_t interval_t::empty() const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin > mMax || !valid();

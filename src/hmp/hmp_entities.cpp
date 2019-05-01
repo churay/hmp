@@ -48,17 +48,29 @@ ball_t::ball_t( const box_t& pBBox ) :
 
 
 void ball_t::ricochet( const entity_t* pSurface ) {
-    mBBox.exbed( pSurface->mBBox );
-
     glm::vec2 contactVec = mBBox.center() - pSurface->mBBox.center();
     glm::vec2 contactNormal = contactVec; {
+        interval_t ballBoundsX = mBBox.xbounds(), ballBoundsY = mBBox.ybounds();
+        interval_t surfBoundsX = pSurface->mBBox.xbounds(), surfBoundsY = pSurface->mBBox.ybounds();
+
         // TODO(JRC): If it becomes relevant, fix the case where the ball
         // is completely contained in the surface; these cases will need
         // some form of unique logic to handle.
-        bool32_t surfContainsX = pSurface->mBBox.xbounds().contains( mBBox.xbounds() );
-        bool32_t surfContainsY = pSurface->mBBox.ybounds().contains( mBBox.ybounds() );
+        bool32_t surfContainsX = surfBoundsX.contains( ballBoundsX );
+        bool32_t surfContainsY = surfBoundsY.contains( ballBoundsY );
         contactNormal.x *= ( !surfContainsX + 0.0f );
         contactNormal.y *= ( !surfContainsY + 0.0f );
+
+        // NOTE(JRC): If the ball hits the corner of a surface, choose the
+        // surface of greatest intersection for the contact normal.
+        if( !surfContainsX && !surfContainsY ) {
+            bool32_t biggerIntxX =
+                surfBoundsX.intersect( ballBoundsX ).length() <
+                surfBoundsY.intersect( ballBoundsY ).length();
+            contactNormal.x *= ( biggerIntxX + 0.0f );
+            contactNormal.y *= ( !biggerIntxX + 0.0f );
+        }
+
         contactNormal = glm::normalize( contactNormal );
     }
 
@@ -86,6 +98,7 @@ void ball_t::ricochet( const entity_t* pSurface ) {
         (ricochetAngle > +ball_t::MAX_RICOCHET_ANGLE) ? ricochetMaxNormal : (
         ricochetNormal )));
     mVel = glm::length( mVel ) * ricochetNormal;
+    mBBox.exbed( pSurface->mBBox );
 }
 
 /// 'hmp::paddle_t' Functions ///

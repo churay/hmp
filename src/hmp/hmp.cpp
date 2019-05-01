@@ -139,13 +139,6 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         dx[1] += 1;
     }
 
-    pState->scoreEnt.mScores[0] = 3;
-    pState->scoreEnt.mScores[1] = 3;
-    pState->scoreEnt.mScores[0] = 3;
-    pState->scoreEnt.mScores[0] = 3;
-    pState->scoreEnt.mScores[1] = 3;
-    pState->scoreEnt.mScores[1] = 3;
-
     // TODO(JRC): Movement along the x-axis for paddles is currently disabled;
     // inclusion of this style of movement needs to be determined.
     for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {

@@ -76,7 +76,7 @@ set(hmp_lib_target "hmp")
 set(hmp_exe_target "hmp.out")
 
 add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
-add_library(${hmp_dat_target} SHARED ${hmp_dat_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
+add_library(${hmp_dat_target} SHARED ${hmp_dat_files})
 add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
