@@ -130,9 +130,9 @@ scoreboard_t::scoreboard_t( const box_t& pBBox ) :
 }
 
 
-void scoreboard_t::tally( const uint8_t pWestDelta, const uint8_t pEastDelta ) {
-    mScores[hmp::team::west] += pWestDelta;
-    mScores[hmp::team::east] += pEastDelta;
+void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
+    mScores[hmp::team::west] = std::max( 0, mScores[hmp::team::west] + pWestDelta );
+    mScores[hmp::team::east] = std::max( 0, mScores[hmp::team::east] + pEastDelta );
 }
 
 
@@ -142,7 +142,7 @@ void scoreboard_t::irender() const {
         { {0, 0, 0}, {0, 0, 0}, {1, 1, 0} },   // 1
         { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 2
         { {0, 0, 0}, {1, 1, 1}, {1, 1, 0} },   // 3
-        { {1, 0, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
+        { {0, 1, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
         { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 5
         { {1, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 6
         { {0, 0, 0}, {0, 0, 1}, {1, 1, 0} },   // 7
@@ -159,10 +159,10 @@ void scoreboard_t::irender() const {
 
     entity_t::irender();
 
-    for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
-        const uint8_t teamScore = mScores[team];
+    for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
+        const int8_t teamScore = mScores[team];
         const color_t* teamColor = &hmp::color::TEAM[team];
-        const bool isTeamWest = team == hmp::team::west;
+        const bool8_t isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
         const auto teamAnchor = isTeamWest ? box_t::anchor_e::se : box_t::anchor_e::sw;
@@ -187,6 +187,8 @@ void scoreboard_t::irender() const {
             //     scoreRC.render();
             // }
 
+            // TODO(JRC): This code is a bit sloppy and should be improved if at
+            // all possible.
             const auto digitLines = DIGIT_DISPLAY_LINES[teamScore];
             for( uint8_t colIdx = 0, lineIdx = 0; colIdx < 3; colIdx++ ) {
                 for( uint8_t rowIdx = 0; rowIdx < 3; rowIdx++, lineIdx++ ) {

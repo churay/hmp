@@ -173,11 +173,13 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
             uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
             ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
         } if( !boundsX.contains(ballX) ) {
+            bool8_t isWestScore = ballX.contains( boundsX.mMax );
+            pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
+
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
             pState->rt = 0.0f;
             pState->roundStarted = false;
-            // pState->scoreEnt.tally();
         }
     }
 

@@ -118,7 +118,7 @@ class scoreboard_t : public entity_t {
 
     /// Class Functions ///
 
-    void tally( const uint8_t pWestDelta, const uint8_t pEastDelta );
+    void tally( const int8_t pWestDelta, const int8_t pEastDelta );
 
     /// Internal Functions ///
 
@@ -130,7 +130,7 @@ class scoreboard_t : public entity_t {
 
     public:
 
-    uint8_t mScores[2];
+    int8_t mScores[2];
 };
 
 }
