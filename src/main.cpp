@@ -15,6 +15,10 @@
 #include <cstdio>
 #include <fstream>
 
+#ifdef HMP_CAPTURE_ENABLED
+#include <png.h>
+#endif
+
 #include "hmp/hmp.h"
 #include "hmp/hmp_box_t.h"
 

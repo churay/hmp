@@ -16,7 +16,7 @@ if [[ ${CONFIG_TYPE} != Default ]]; then rm -rf build; fi
 mkdir -p build
 cd build
 
-cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} ${PROJ_PATH}
+cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DHMP_CAPTURE_ENABLED=ON ${PROJ_PATH}
 make -j${BUILD_TASKS} && make -j${BUILD_TASKS} install
 
 if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then

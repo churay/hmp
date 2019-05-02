@@ -23,17 +23,23 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE )
+    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE)
 endif()
 
 ####################################
 ## rpath options ###################
 ####################################
 
-SET(CMAKE_SKIP_BUILD_RPATH FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+set(CMAKE_SKIP_BUILD_RPATH FALSE)
+set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+####################################
+## user options ####################
+####################################
+
+option(HMP_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
 
 ###############################################################################
 ## file globbing ##############################################################
@@ -107,9 +113,19 @@ pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
-foreach(hmp_target ${hmp_dat_target} ${hmp_lib_target} ${hmp_exe_target})
-    target_include_directories(${hmp_target} PUBLIC ${hmp_dep_incs})
-    target_link_libraries(${hmp_target} PUBLIC ${hmp_dep_libs})
+if(HMP_CAPTURE_ENABLED)
+    pkg_search_module(LIBPNG REQUIRED libpng16)
+    set(hmp_exe_incs ${hmp_exe_incs} ${LIBPNG_INCLUDE_DIRS})
+    set(hmp_exe_libs ${hmp_exe_libs} ${LIBPNG_LIBRARIES})
+endif()
+
+foreach(hmp_lib_target ${hmp_dat_target} ${hmp_lib_target})
+    target_include_directories(${hmp_lib_target} PUBLIC ${hmp_dep_incs})
+    target_link_libraries(${hmp_lib_target} PUBLIC ${hmp_dep_libs})
+endforeach()
+foreach(hmp_exe_target ${hmp_exe_target})
+    target_include_directories(${hmp_exe_target} PUBLIC ${hmp_dep_incs} ${hmp_exe_incs})
+    target_link_libraries(${hmp_exe_target} PUBLIC ${hmp_dep_libs} ${hmp_exe_libs})
 endforeach()
 target_link_libraries(${hmp_lib_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
 # target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
