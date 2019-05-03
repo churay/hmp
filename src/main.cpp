@@ -15,10 +15,6 @@
 #include <cstdio>
 #include <fstream>
 
-#ifdef HMP_CAPTURE_ENABLED
-#include <png.h>
-#endif
-
 #include "hmp/hmp.h"
 #include "hmp/hmp_box_t.h"
 
@@ -37,10 +33,35 @@ typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 typedef llce::util::color_t color_t;
 
-int main() {
+int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
     const float64_t cSimFPS = 60.0;
+
+    /// Parse Input Arguments ///
+
+    if( llce::cli::exists("-v", pArgs, pArgCount) ) {
+        LLCE_ALERT_INFO( "{Version: v0.0.a, " <<
+
+            "Build: " <<
+#ifdef LLCE_DEBUG
+            "Debug, " <<
+#else
+            "Release, " <<
+#endif
+
+            "Capture*: " <<
+#if HMP_CAPTURE_ENABLED == ON
+            "Enabled, " <<
+#else
+            "Disabled, " <<
+#endif
+
+            "Loop-Live*: Enabled}" );
+    }
+
+    const char8_t* cSimState = llce::cli::value( "-r", pArgs, pArgCount );
+    const bool8_t cSimReplay = cSimState != nullptr;
 
     /// Initialize Application Memory/State ///
 
@@ -246,6 +267,8 @@ int main() {
         cGenerateTextTexture( textureIdx, textureColors[textureIdx], textureTexts[textureIdx] );
     }
 #endif
+
+    // TODO(JRC)
 
     /// Input Wrangling ///
 
