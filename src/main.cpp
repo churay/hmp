@@ -550,6 +550,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // defined at compile-time.
 #ifdef LLCE_CAPTURE
                 if( isCapturing ) {
+                    LLCE_ALERT_INFO( "Capture Slot {}" );
+
+                    // TODO(JRC): For some reason, the texture data is coming back
+                    // with all alpha values set to 0 despite the rest of the data
+                    // being completely correct; this elicits some investigation.
                     uicoord32_t textureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
                     color_t* textureData = (color_t*)malloc( sizeof(color_t) * textureDims.x * textureDims.y );
                     glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, textureData );
@@ -560,24 +565,23 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                         "Failed to open render file at path '" << texturePath << "'." );
 
                     // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
-                    png_structp texturePng = nullptr;
+                    png_struct* texturePng = nullptr;
                     LLCE_ASSERT_ERROR(
                         (texturePng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
                         "Failed to create base headers for render file at path '" << texturePath << "'." );
-                    png_infop textureInfo = nullptr;
+                    png_info* textureInfo = nullptr;
                     LLCE_ASSERT_ERROR(
                         (textureInfo = png_create_info_struct(texturePng)) != nullptr,
                         "Failed to create info headers for render file at path '" << texturePath << "'." );
 
                     png_init_io( texturePng, textureFile );
-                    png_set_filter( texturePng, 0, PNG_FILTER_NONE );
                     png_set_IHDR(
                         texturePng, textureInfo, textureDims.x, textureDims.y,
                         8, PNG_COLOR_TYPE_RGBA,
                         PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
                     png_write_info( texturePng, textureInfo );
                     for( uint32_t rowIdx = 0; rowIdx < textureDims.x; rowIdx++ ) {
-                        png_write_row( texturePng, (png_const_bytep)&textureData[rowIdx] );
+                        png_write_row( texturePng, (png_byte*)&textureData[rowIdx] );
                     }
                     png_write_end( texturePng, nullptr );
 
