@@ -25,6 +25,14 @@
 #include "util.h"
 #include "consts.h"
 
+#if HMP_CAPTURE_ENABLED == ON
+#define LLCE_CAPTURE 1
+#endif
+
+#ifdef LLCE_CAPTURE
+#include <png.h>
+#endif
+
 typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef void (*boot_f)( hmp::graphics_t* );
 typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
@@ -42,22 +50,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     if( llce::cli::exists("-v", pArgs, pArgCount) ) {
         LLCE_ALERT_INFO( "{Version: v0.0.a, " <<
-
-            "Build: " <<
-#ifdef LLCE_DEBUG
-            "Debug, " <<
-#else
-            "Release, " <<
-#endif
-
-            "Capture*: " <<
-#if HMP_CAPTURE_ENABLED == ON
-            "Enabled, " <<
-#else
-            "Disabled, " <<
-#endif
-
-            "Loop-Live*: Enabled}" );
+            "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
+            "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
     }
 
     const char8_t* cSimState = llce::cli::value( "-r", pArgs, pArgCount );
@@ -111,6 +105,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const path_t cOutputPath( 2, cInstallPath.cstr(), "out" );
     const char8_t* cStateFileFormat = "state%u.dat";
     const char8_t* cInputFileFormat = "input%u.dat";
+    // const char8_t* cRenderFileFormat = "render%u.png";
     const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
@@ -238,17 +233,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // development time, but suboptimal in terms of performance. Every time a texture
     // is generated using this function, the SDL library allocates memory into
     // dynamically allocated buffers, which are immediately freed after this data
-    // is stored in memory. Since the texture buffers are all statically sizes, it
+    // is stored in memory. Since the texture buffers are all statically sized, it
     // would be ideal if the same, statically allocated arrays were filled in this
     // method, but customizing memory allocations for SDL isn't easy to do. For a
     // performance-level texture generation method, watch the "Handmade Hero" tutorials
     // on OpenGL texturing and font APIs.
     const auto cGenerateTextTexture = [ &textureGLIDs, &font ]
-            ( const uint32_t textureID, const color_t textureColor, const char8_t* textureText ) {
-        const uint32_t& textureGLID = textureGLIDs[textureID];
+            ( const uint32_t pTextureID, const color_t pTextureColor, const char8_t* pTextureText ) {
+        const uint32_t& textureGLID = textureGLIDs[pTextureID];
 
-        SDL_Color renderColor = { textureColor.r, textureColor.g, textureColor.b, textureColor.a };
-        SDL_Surface* textSurface = TTF_RenderText_Solid( font, textureText, renderColor );
+        SDL_Color renderColor = { pTextureColor.r, pTextureColor.g, pTextureColor.b, pTextureColor.a };
+        SDL_Surface* textSurface = TTF_RenderText_Solid( font, pTextureText, renderColor );
         LLCE_ASSERT_ERROR( textSurface != nullptr,
             "SDL-TTF failed to render font; " << TTF_GetError() );
         SDL_Surface* renderSurface = SDL_ConvertSurfaceFormat( textSurface, SDL_PIXELFORMAT_RGBA8888, 0 );
@@ -267,8 +262,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         cGenerateTextTexture( textureIdx, textureColors[textureIdx], textureTexts[textureIdx] );
     }
 #endif
-
-    // TODO(JRC)
 
     /// Input Wrangling ///
 
@@ -323,6 +316,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Update/Render Loop ///
 
     bool32_t isRunning = true, isStepping = false;
+
+    bool32_t isCapturing = false;
 
     bool32_t isRecording = false, isReplaying = false;
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
@@ -385,6 +380,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( cIsKeyDown(SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
+        } if( cIsKeyDown(SDL_SCANCODE_GRAVE) ) {
+            // ` key = capture application
+            isCapturing = true;
         }
 #ifdef LLCE_DEBUG
         uint64_t backupIdx = simFrame % cBackupBufferCount;
@@ -545,6 +543,49 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
                     glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
                 } glEnd();
+
+                // NOTE(JRC): This subroutine dynamically allocates memory at the simulation level
+                // when importing data from OpenGL buffers. This isn't the worst expense, but it
+                // could be eliminated by performing a static level of compression to some maximum
+                // defined at compile-time.
+#ifdef LLCE_CAPTURE
+                if( isCapturing ) {
+                    uicoord32_t textureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+                    color_t* textureData = (color_t*)malloc( sizeof(color_t) * textureDims.x * textureDims.y );
+                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, textureData );
+
+                    FILE* textureFile = nullptr;
+                    path_t texturePath( 2, cOutputPath.cstr(), "render.png" );
+                    LLCE_ASSERT_ERROR( (textureFile = std::fopen(texturePath, "wb")) != nullptr,
+                        "Failed to open render file at path '" << texturePath << "'." );
+
+                    // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
+                    png_structp texturePng = nullptr;
+                    LLCE_ASSERT_ERROR(
+                        (texturePng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
+                        "Failed to create base headers for render file at path '" << texturePath << "'." );
+                    png_infop textureInfo = nullptr;
+                    LLCE_ASSERT_ERROR(
+                        (textureInfo = png_create_info_struct(texturePng)) != nullptr,
+                        "Failed to create info headers for render file at path '" << texturePath << "'." );
+
+                    png_init_io( texturePng, textureFile );
+                    png_set_filter( texturePng, 0, PNG_FILTER_NONE );
+                    png_set_IHDR(
+                        texturePng, textureInfo, textureDims.x, textureDims.y,
+                        8, PNG_COLOR_TYPE_RGBA,
+                        PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
+                    png_write_info( texturePng, textureInfo );
+                    for( uint32_t rowIdx = 0; rowIdx < textureDims.x; rowIdx++ ) {
+                        png_write_row( texturePng, (png_const_bytep)&textureData[rowIdx] );
+                    }
+                    png_write_end( texturePng, nullptr );
+
+                    png_destroy_write_struct( &texturePng, &textureInfo );
+                    std::fclose( textureFile );
+                    free( textureData );
+                }
+#endif
                 glBindTexture( GL_TEXTURE_2D, 0 );
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
@@ -599,6 +640,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         SDL_GL_SwapWindow( window );
+
+        isCapturing = false;
 
         simTimer.split( true );
         simDT = simTimer.ft();
