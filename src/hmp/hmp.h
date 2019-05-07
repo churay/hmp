@@ -45,6 +45,7 @@ constexpr static uint32_t GFX_BUFFER_COUNT = 3;
 struct graphics_t {
     uint32_t bufferFBOs[GFX_BUFFER_COUNT];
     uint32_t bufferTIDs[GFX_BUFFER_COUNT];
+    uint32_t bufferDIDs[GFX_BUFFER_COUNT];
     uicoord32_t bufferRess[GFX_BUFFER_COUNT];
     box_t bufferBoxs[GFX_BUFFER_COUNT];
 };

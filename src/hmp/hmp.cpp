@@ -92,6 +92,7 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
     for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
         uint32_t& bufferFBO = pGraphics->bufferFBOs[bufferIdx];
         uint32_t& bufferTID = pGraphics->bufferTIDs[bufferIdx];
+        uint32_t& bufferDID = pGraphics->bufferDIDs[bufferIdx];
         const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
 
         glGenFramebuffers( 1, &bufferFBO );
@@ -101,15 +102,22 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
         glBindTexture( GL_TEXTURE_2D, bufferTID );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
         glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-
         glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, bufferRes.x, bufferRes.y,
             0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
         glFramebufferTexture2D( GL_FRAMEBUFFER,
             GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, bufferTID, 0 );
 
+        glGenTextures( 1, &bufferDID );
+        glBindTexture( GL_TEXTURE_2D, bufferDID );
+        glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, bufferRes.x, bufferRes.y,
+            0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr );
+        glFramebufferTexture2D( GL_FRAMEBUFFER,
+            GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, bufferDID, 0 );
+
         LLCE_ASSERT_ERROR(
             glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
-            "Failed to initialize HMP frame buffer " << bufferIdx << "." );
+            "Failed to initialize HMP frame buffer " << bufferIdx << "; " <<
+            "failed with frame buffer error " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << "." );
     }
 
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );

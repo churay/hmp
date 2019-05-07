@@ -105,7 +105,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const path_t cOutputPath( 2, cInstallPath.cstr(), "out" );
     const char8_t* cStateFileFormat = "state%u.dat";
     const char8_t* cInputFileFormat = "input%u.dat";
-    // const char8_t* cRenderFileFormat = "render%u.png";
+    const char8_t* cRenderFileFormat = "render%u.png";
     const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
@@ -192,10 +192,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 
     { // Configure OpenGL Context //
+        glDepthFunc( GL_ALWAYS );
+        glEnable( GL_DEPTH_TEST );
+
         glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glEnable( GL_BLEND );
+
         glDisable( GL_LIGHTING );
         glEnable( GL_TEXTURE_2D );
+
         glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
     }
 
@@ -380,7 +385,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( cIsKeyDown(SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
-        } if( cIsKeyDown(SDL_SCANCODE_GRAVE) ) {
+        } if( cWasKeyPressed(SDL_SCANCODE_GRAVE) ) {
             // ` key = capture application
             isCapturing = true;
         }
