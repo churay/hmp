@@ -205,7 +205,6 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::VOID );
-    hmpRC.render();
 
     { // Render State //
         hmp::gfx::fbo_context_t simFBOC(
@@ -229,6 +228,7 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
         const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
         const uicoord32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
         hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+        hmpRC.render();
 
         for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
             const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];

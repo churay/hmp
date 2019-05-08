@@ -192,16 +192,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 
     { // Configure OpenGL Context //
-        glDepthFunc( GL_ALWAYS );
         glEnable( GL_DEPTH_TEST );
+        glDepthFunc( GL_ALWAYS );
 
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
         glEnable( GL_BLEND );
+        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
-        glDisable( GL_LIGHTING );
         glEnable( GL_TEXTURE_2D );
+        glDisable( GL_LIGHTING );
 
-        glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+        glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+        glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
     }
 
     /// Generate Graphics Assets ///
@@ -285,7 +286,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const auto cIsKeyDown = [ &appInput ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( appInput->keys[pKey] );
     };
-    const auto cIsKGDown = [ &appInput, &cIsKeyDown ]
+    const auto cIsKGDown = [ &cIsKeyDown ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -297,7 +298,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const auto cWasKeyPressed = [ &appInput ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_DOWN );
     };
-    const auto cWasKGPressed = [ &appInput, &cWasKeyPressed ]
+    const auto cWasKGPressed = [ &cWasKeyPressed ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -309,7 +310,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const auto cWasKeyReleased = [ &appInput ] ( const SDL_Scancode pKey ) {
         return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_UP );
     };
-    const auto cWasKGReleased = [ &appInput, &cWasKeyReleased ]
+    const auto cWasKGReleased = [ &cWasKeyReleased ]
             ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
         uint32_t firstIdx = 0;
         for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
@@ -557,12 +558,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 if( isCapturing ) {
                     LLCE_ALERT_INFO( "Capture Slot {}" );
 
-                    // TODO(JRC): For some reason, the texture data is coming back
-                    // with all alpha values set to 0 despite the rest of the data
-                    // being completely correct; this elicits some investigation.
+                    // TODO(JRC): Reversing the colors results in the proper color values,
+                    // but it's unclear why this is necessary given that they're stored
+                    // internally in the order requested. Debugging may be required in the
+                    // future when adapting this code to work on multiple platforms.
                     uicoord32_t textureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
                     color_t* textureData = (color_t*)malloc( sizeof(color_t) * textureDims.x * textureDims.y );
-                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, textureData );
+                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, textureData );
 
                     FILE* textureFile = nullptr;
                     path_t texturePath( 2, cOutputPath.cstr(), "render.png" );
@@ -585,8 +587,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                         8, PNG_COLOR_TYPE_RGBA,
                         PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
                     png_write_info( texturePng, textureInfo );
-                    for( uint32_t rowIdx = 0; rowIdx < textureDims.x; rowIdx++ ) {
-                        png_write_row( texturePng, (png_byte*)&textureData[rowIdx] );
+                    // TODO(JRC): Ultimately, it would be best if the data could just
+                    // be funneled natively into the PNG interface instead of having
+                    // to mirror it about the y-axis.
+                    for( uint32_t rowIdx = 0; rowIdx < textureDims.y; rowIdx++ ) {
+                        uint32_t rowOff = ( textureDims.y - rowIdx - 1 ) * textureDims.x;
+                        png_write_row( texturePng, (png_byte*)&textureData[rowOff] );
                     }
                     png_write_end( texturePng, nullptr );
 
