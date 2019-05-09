@@ -13,23 +13,23 @@ class timer_t {
 
     /// Class Attributes ///
 
-    enum class type_e : int8_t { fps, spf };
+    enum class ratio_e : int8_t { fps, spf };
+    enum class time_e : int8_t { real, ideal };
 
     const static uint32_t CACHE_SIZE = 10;
 
     /// Constructors ///
 
-    timer_t( float64_t pRatio = 60.0, type_e pType = type_e::fps );
+    timer_t( float64_t pRatio = 60.0, ratio_e pType = ratio_e::fps );
 
     /// Class Functions ///
 
-    void split( bool32_t pWaitFrame = false );
+    void split();
+    void wait( float64_t pTargetFrameTime = -1.0 ) const;
 
-    float64_t ft() const;
-    float64_t tt() const;
-    float64_t fps() const;
-
-    bool32_t cycled() const;
+    float64_t ft( time_e pType = time_e::real ) const;
+    float64_t tt( time_e pType = time_e::real ) const;
+    float64_t fps( time_e pType = time_e::real ) const;
 
     private:
 

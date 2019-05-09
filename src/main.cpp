@@ -330,7 +330,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     bool32_t isCapturing = false;
     uint32_t currCaptureIdx = 0;
 
-    llce::timer_t simTimer( cSimFPS, llce::timer_t::type_e::fps );
+    llce::timer_t simTimer( cSimFPS, llce::timer_t::ratio_e::fps );
     float64_t simDT = 0.0;
     // NOTE(JRC): A cursory check shows that it will take ~1e10 years of
     // uninterrupted run time for this to overflow at 60 FPS, so the fact
@@ -608,6 +608,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     std::fclose( textureFile );
                     free( textureData );
                 }
+                isCapturing = false;
 #endif
                 glBindTexture( GL_TEXTURE_2D, 0 );
             } glDisable( GL_TEXTURE_2D );
@@ -664,10 +665,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         SDL_GL_SwapWindow( window );
 
-        isCapturing = false;
-
-        simTimer.split( true );
-        simDT = simTimer.ft();
+        simTimer.split();
+        simTimer.wait();
+        simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
     }
 
