@@ -323,11 +323,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     bool32_t isRunning = true, isStepping = false;
 
-    bool32_t isCapturing = false;
-
     bool32_t isRecording = false, isReplaying = false;
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
+
+    bool32_t isCapturing = false;
+    uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( cSimFPS, llce::timer_t::type_e::fps );
     float64_t simDT = 0.0;
@@ -556,7 +557,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // defined at compile-time.
 #ifdef LLCE_CAPTURE
                 if( isCapturing ) {
-                    LLCE_ALERT_INFO( "Capture Slot {}" );
+                    LLCE_ALERT_INFO( "Capture Slot {" << currCaptureIdx << "}" );
+
+                    char8_t slotCaptureFileName[csOutputFileNameLength];
+                    std::snprintf( &slotCaptureFileName[0],
+                        csTextureTextLength,
+                        cRenderFileFormat, currCaptureIdx++ );
 
                     // TODO(JRC): Reversing the colors results in the proper color values,
                     // but it's unclear why this is necessary given that they're stored
@@ -566,8 +572,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     color_t* textureData = (color_t*)malloc( sizeof(color_t) * textureDims.x * textureDims.y );
                     glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, textureData );
 
+                    // TODO(JRC): If the C 'FILE' strcture isn't cross-platform,
+                    // its use needs to be replaced here with something more portable.
                     FILE* textureFile = nullptr;
-                    path_t texturePath( 2, cOutputPath.cstr(), "render.png" );
+                    path_t texturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
                     LLCE_ASSERT_ERROR( (textureFile = std::fopen(texturePath, "wb")) != nullptr,
                         "Failed to open render file at path '" << texturePath << "'." );
 
