@@ -115,8 +115,10 @@ set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${C
 
 if(HMP_CAPTURE_ENABLED)
     pkg_search_module(LIBPNG REQUIRED libpng16)
-    set(hmp_exe_incs ${hmp_exe_incs} ${LIBPNG_INCLUDE_DIRS})
-    set(hmp_exe_libs ${hmp_exe_libs} ${LIBPNG_LIBRARIES})
+    pkg_search_module(LIBAVCODEC REQUIRED libavcodec)
+    pkg_search_module(LIBAVUTIL REQUIRED libavutil)
+    set(hmp_exe_incs ${hmp_exe_incs} ${LIBAVCODEC_INCLUDE_DIRS} ${LIBAVUTIL_INCLUDE_DIRS} ${LIBPNG_INCLUDE_DIRS})
+    set(hmp_exe_libs ${hmp_exe_libs} ${LIBAVCODEC_LIBRARIES} ${LIBAVUTIL_LIBRARIES} ${LIBPNG_LIBRARIES})
 endif()
 
 foreach(hmp_lib_target ${hmp_dat_target} ${hmp_lib_target})

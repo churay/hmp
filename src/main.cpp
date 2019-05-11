@@ -30,6 +30,10 @@
 #endif
 
 #ifdef LLCE_CAPTURE
+#include <libavcodec/avcodec.h>
+#include <libavutil/common.h>
+#include <libavutil/opt.h>
+
 #include <png.h>
 #endif
 
@@ -680,6 +684,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     if( cIsSimulating ) {
         // TODO(JRC): If we just performed a simulation run, we now need to push
         // all of the frames through ffmpeg at the same frame rate.
+        const uint32_t cVideoCodecID = AV_CODEC_ID_PNG;
     }
 #endif
 
