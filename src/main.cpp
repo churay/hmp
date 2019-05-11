@@ -54,8 +54,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
     }
 
-    const char8_t* cSimState = llce::cli::value( "-r", pArgs, pArgCount );
-    const bool8_t cSimReplay = cSimState != nullptr;
+    const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
+    const int32_t cSimStateIdx = cSimStateArg != nullptr ? std::atoi( cSimStateArg ) : -1;
+#ifdef LLCE_DEBUG
+    bool32_t cIsSimulating = cSimStateIdx > 0;
+#else
+    bool32_t cIsSimulating = false;
+#endif
 
     /// Initialize Application Memory/State ///
 
@@ -167,13 +172,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 
     int32_t windowWidth = 640, windowHeight = 480;
+    const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+        ( cIsSimulating ? SDL_WINDOW_HIDDEN : 0 );
     SDL_Window* window = SDL_CreateWindow(
         "Handmade Pong",                            // Window Title
         SDL_WINDOWPOS_UNDEFINED,                    // Window X Position
         SDL_WINDOWPOS_UNDEFINED,                    // Window Y Position
         windowWidth,                                // Window Width
         windowHeight,                               // Window Height
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE ); // Window Flags
+        cWindowFlags );                             // Window Flags
     LLCE_ASSERT_ERROR( window != nullptr,
         "SDL failed to create window instance; " << SDL_GetError() );
 
@@ -327,7 +334,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    bool32_t isCapturing = false;
+    bool32_t isCapturing = LLCE_CAPTURE && cIsSimulating;
     uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( cSimFPS, llce::timer_t::ratio_e::fps );
@@ -341,10 +348,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     dllBoot( simGraphics );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
-        // TODO(JRC): This step is currently causing problems for the 'key up'
-        // and 'key down' events, which aren't being properly triggered in cases
-        // where the advance happens at a different time than the key press. It
-        // may be best to just avoid these events and use local data instead.
         bool32_t isStepReady = false;
         while( isStepping && !isStepReady ) {
             SDL_Event event;
@@ -403,9 +406,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             isStepping = !isStepping;
         }
 
-        if( (currSlotIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) ) {
+        if( (currSlotIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
             // function key (fx) = debug state operation
-            recSlotIdx = currSlotIdx;
+            recSlotIdx = !cIsSimulating ? currSlotIdx : cSimStateIdx;
 
             char8_t slotStateFileName[csOutputFileNameLength];
             char8_t slotInputFileName[csOutputFileNameLength];
@@ -418,7 +421,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
             path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
 
-            if( cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording ) {
+            if( (cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
                 // lshift + fx = toggle slot x replay
                 LLCE_ALERT_INFO( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
@@ -486,6 +489,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             recFrameCount++;
         } if( isReplaying ) {
             if( recInputStream.peek() == EOF || recInputStream.eof() ) {
+                isRunning = !( cIsSimulating && repFrameIdx != 0 );
                 repFrameIdx = 0;
                 recStateStream.seekg( 0 );
                 recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
@@ -561,7 +565,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
                     char8_t slotCaptureFileName[csOutputFileNameLength];
                     std::snprintf( &slotCaptureFileName[0],
-                        csTextureTextLength,
+                        sizeof(slotCaptureFileName),
                         cRenderFileFormat, currCaptureIdx++ );
 
                     // TODO(JRC): Reversing the colors results in the proper color values,
@@ -608,7 +612,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     std::fclose( textureFile );
                     free( textureData );
                 }
-                isCapturing = false;
+                isCapturing = cIsSimulating;
 #endif
                 glBindTexture( GL_TEXTURE_2D, 0 );
             } glDisable( GL_TEXTURE_2D );
@@ -666,10 +670,18 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SwapWindow( window );
 
         simTimer.split();
-        simTimer.wait();
+        simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
     }
+
+#ifdef LLCE_DEBUG
+    /// Post-Process Simulation Results ///
+    if( cIsSimulating ) {
+        // TODO(JRC): If we just performed a simulation run, we now need to push
+        // all of the frames through ffmpeg at the same frame rate.
+    }
+#endif
 
     /// Clean Up + Exit ///
 
