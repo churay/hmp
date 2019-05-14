@@ -30,11 +30,14 @@
 #endif
 
 #ifdef LLCE_CAPTURE
+extern "C" {
+#include <png.h>
+
 #include <libavcodec/avcodec.h>
 #include <libavutil/common.h>
 #include <libavutil/opt.h>
-
-#include <png.h>
+#include <libavutil/imgutils.h>
+}
 #endif
 
 typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
@@ -115,6 +118,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const char8_t* cStateFileFormat = "state%u.dat";
     const char8_t* cInputFileFormat = "input%u.dat";
     const char8_t* cRenderFileFormat = "render%u.png";
+    const char8_t* cReplayFileFormat = "replay.mp4";
     const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
@@ -679,12 +683,67 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         simFrame += 1;
     }
 
-#ifdef LLCE_DEBUG
+#ifdef LLCE_CAPTURE
     /// Post-Process Simulation Results ///
     if( cIsSimulating ) {
         // TODO(JRC): If we just performed a simulation run, we now need to push
         // all of the frames through ffmpeg at the same frame rate.
         const uint32_t cVideoCodecID = AV_CODEC_ID_PNG;
+        const AVCodec* cVideoCodec = avcodec_find_encoder( AV_CODEC_ID_PNG );
+        LLCE_ASSERT_ERROR( cVideoCodec != nullptr,
+            "Unable to load requested encoding codec in replay capture." );
+
+        AVCodecContext* videoContext = avcodec_alloc_context3( cVideoCodec );
+        LLCE_ASSERT_ERROR( videoContext != nullptr,
+            "Unable to allocate data for encoding context in replay capture." );
+
+        const uicoord32_t cVideoDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+        videoContext->bit_rate = 400000; // TODO(JRC): What should this be?
+        videoContext->width = cVideoDims.x;
+        videoContext->height = cVideoDims.y;
+        videoContext->time_base = (AVRational){1, static_cast<int32_t>(cSimFPS)};
+        videoContext->framerate = (AVRational){static_cast<int32_t>(cSimFPS), 1};
+        videoContext->gop_size = AV_PICTURE_TYPE_I;
+        videoContext->pix_fmt = AV_PIX_FMT_RGBA;
+
+        LLCE_ASSERT_ERROR( avcodec_open2(videoContext, cVideoCodec, nullptr) >= 0,
+            "Failed to open configured codec in replay capture." );
+
+        FILE* videoFile = nullptr;
+        path_t videoPath( 2, cOutputPath.cstr(), cReplayFileFormat );
+        LLCE_ASSERT_ERROR( (videoFile = std::fopen(videoPath, "wb")) != nullptr,
+            "Failed to open replay file at path '" << videoPath << "'." );
+
+        AVPacket* videoPacket = nullptr;
+        LLCE_ASSERT_ERROR( (videoPacket = av_packet_alloc()) != nullptr,
+            "Unable to allocate frame packet in replay capture." );
+        AVFrame* videoFrame = nullptr;
+        LLCE_ASSERT_ERROR( (videoFrame = av_frame_alloc()) != nullptr,
+            "Unable to allocate frame in replay capture." );
+        videoFrame->format = videoContext->pix_fmt;
+        videoFrame->width = videoContext->width;
+        videoFrame->height = videoContext->height;
+        LLCE_ASSERT_ERROR( av_frame_get_buffer(videoFrame, 32) >= 0,
+            "Unable to allocate data for frame in replay capture." );
+
+        for( uint32_t frameIdx = 0; frameIdx < recFrameCount; frameIdx++ ) {
+            av_frame_make_writable( videoFrame );
+
+            // TODO(JRC): Write data for frame (read in file, ).
+
+            videoFrame->pts = frameIdx;
+
+            // encode( videoContext, videoFrame, videoPacket, videoFile );
+        }
+        // encode( videoContext, nullptr, videoPacket, videoFile );
+
+        const uint8_t cVideoEndcode[] = { 0, 0, 1, 0xb7 };
+        std::fwrite( cVideoEndcode, 1, sizeof(cVideoEndcode), videoFile );
+        std::fclose( videoFile );
+
+        av_frame_free( &videoFrame );
+        av_packet_free( &videoPacket );
+        avcodec_free_context( &videoContext );
     }
 #endif
 
