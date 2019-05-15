@@ -686,9 +686,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #ifdef LLCE_CAPTURE
     /// Post-Process Simulation Results ///
     if( cIsSimulating ) {
-        // TODO(JRC): If we just performed a simulation run, we now need to push
-        // all of the frames through ffmpeg at the same frame rate.
-        const uint32_t cVideoCodecID = AV_CODEC_ID_PNG;
+        // NOTE(JRC): The following code is heavily based on the ffmpeg
+        // library's video encoding example:
+        // https://ffmpeg.org/doxygen/trunk/encode__video_8c_source.html
+        avcodec_register_all();
+
         const AVCodec* cVideoCodec = avcodec_find_encoder( AV_CODEC_ID_PNG );
         LLCE_ASSERT_ERROR( cVideoCodec != nullptr,
             "Unable to load requested encoding codec in replay capture." );
@@ -703,7 +705,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         videoContext->height = cVideoDims.y;
         videoContext->time_base = (AVRational){1, static_cast<int32_t>(cSimFPS)};
         videoContext->framerate = (AVRational){static_cast<int32_t>(cSimFPS), 1};
-        videoContext->gop_size = AV_PICTURE_TYPE_I;
+        videoContext->gop_size = 0;
         videoContext->pix_fmt = AV_PIX_FMT_RGBA;
 
         LLCE_ASSERT_ERROR( avcodec_open2(videoContext, cVideoCodec, nullptr) >= 0,
@@ -721,25 +723,58 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         LLCE_ASSERT_ERROR( (videoFrame = av_frame_alloc()) != nullptr,
             "Unable to allocate frame in replay capture." );
         videoFrame->format = videoContext->pix_fmt;
+        videoFrame->pict_type = AV_PICTURE_TYPE_I;
         videoFrame->width = videoContext->width;
         videoFrame->height = videoContext->height;
         LLCE_ASSERT_ERROR( av_frame_get_buffer(videoFrame, 32) >= 0,
             "Unable to allocate data for frame in replay capture." );
 
+        const auto cEncodeFrame = [ &videoContext, &videoFile ]
+                ( uint32_t pFrameIdx, AVFrame* pFrame, AVPacket* pPacket ) {
+            LLCE_ASSERT_ERROR( avcodec_send_frame(videoContext, pFrame) >= 0,
+                "Unable to send send frame " << pFrameIdx << " for encoding." );
+
+            int32_t encodeStatus = 0;
+            while( encodeStatus >= 0 ) {
+                encodeStatus = avcodec_receive_packet( videoContext, pPacket );
+                if( encodeStatus != AVERROR(EAGAIN) && encodeStatus != AVERROR_EOF ) {
+                    LLCE_ASSERT_ERROR( encodeStatus >= 0,
+                        "Unable to unpack packet for frame " << pFrameIdx << " for encoding." );
+                    std::fwrite( pPacket->data, 1, pPacket->size, videoFile );
+                    av_packet_unref( pPacket );
+                }
+            }
+        };
+
         for( uint32_t frameIdx = 0; frameIdx < recFrameCount; frameIdx++ ) {
             av_frame_make_writable( videoFrame );
 
-            // TODO(JRC): Write data for frame (read in file, ).
+            // char8_t frameFileName[csOutputFileNameLength];
+            // std::snprintf( &frameFileName[0],
+            //     sizeof(frameFileName),
+            //     cRenderFileFormat, frameIdx );
+
+            for( uint32_t yIdx = 0; yIdx < videoFrame->height; yIdx++ ) {
+                for( uint32_t xIdx = 0; xIdx < videoFrame->width; xIdx++ ) {
+                    uint32_t cIdx = yIdx * videoFrame->linesize[0] + xIdx * 4;
+                    videoFrame->data[0][cIdx + 0] = 0x00;
+                    videoFrame->data[0][cIdx + 1] = 0x2b;
+                    videoFrame->data[0][cIdx + 2] = 0x36;
+                    videoFrame->data[0][cIdx + 3] = 0xFF;
+                }
+            }
 
             videoFrame->pts = frameIdx;
 
-            // encode( videoContext, videoFrame, videoPacket, videoFile );
+            cEncodeFrame( frameIdx, videoFrame, videoPacket );
         }
-        // encode( videoContext, nullptr, videoPacket, videoFile );
+        cEncodeFrame( recFrameCount, nullptr, videoPacket );
 
         const uint8_t cVideoEndcode[] = { 0, 0, 1, 0xb7 };
         std::fwrite( cVideoEndcode, 1, sizeof(cVideoEndcode), videoFile );
         std::fclose( videoFile );
+
+        LLCE_ALERT_INFO( "Replay Capture Slot {" << recSlotIdx << "}" );
 
         av_frame_free( &videoFrame );
         av_packet_free( &videoPacket );
