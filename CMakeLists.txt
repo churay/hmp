@@ -114,11 +114,18 @@ set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_
 set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
 if(HMP_CAPTURE_ENABLED)
-    pkg_search_module(LIBPNG REQUIRED libpng16)
-    pkg_search_module(LIBAVCODEC REQUIRED libavcodec)
-    pkg_search_module(LIBAVUTIL REQUIRED libavutil)
-    set(hmp_exe_incs ${hmp_exe_incs} ${LIBAVCODEC_INCLUDE_DIRS} ${LIBAVUTIL_INCLUDE_DIRS} ${LIBPNG_INCLUDE_DIRS})
-    set(hmp_exe_libs ${hmp_exe_libs} ${LIBAVCODEC_LIBRARIES} ${LIBAVUTIL_LIBRARIES} ${LIBPNG_LIBRARIES})
+    set(hmp_capture_mods "LIBAVCODEC LIBSWSCALE LIBAVUTIL LIBPNG")
+    set(hmp_capture_libs "libavcodec libswscale libavutil libpng16")
+
+    list(LENGTH hmp_capture_mods len)
+    math(EXPR hmp_capture_len "${len} - 1")
+    foreach(hmp_capture_idx RANGE ${hmp_capture_len})
+        list(GET hmp_capture_mods ${hmp_capture_idx} hmp_capture_mod)
+        list(GET hmp_capture_libs ${hmp_capture_idx} hmp_capture_lib)
+        pkg_search_module(${hmp_capture_mod} REQUIRED ${hmp_capture_lib})
+        set(hmp_exe_incs ${hmp_exe_incs} ${${hmp_capture_mod}_INCLUDE_DIRS})
+        set(hmp_exe_libs ${hmp_exe_incs} ${${hmp_capture_mod}_LIBRARIES})
+    endforeach()
 endif()
 
 foreach(hmp_lib_target ${hmp_dat_target} ${hmp_lib_target})
