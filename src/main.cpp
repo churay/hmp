@@ -777,21 +777,45 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         };
 
+        color_t* frameData = (color_t*)malloc( sizeof(color_t) * cVideoDims.x * cVideoDims.y );
         for( uint32_t frameIdx = 0; frameIdx < recFrameCount; frameIdx++ ) {
             av_frame_make_writable( videoFrame );
 
-            // char8_t frameFileName[csOutputFileNameLength];
-            // std::snprintf( &frameFileName[0],
-            //     sizeof(frameFileName),
-            //     cRenderFileFormat, frameIdx );
+            char8_t frameFileName[csOutputFileNameLength];
+            std::snprintf( &frameFileName[0],
+                sizeof(frameFileName),
+                cRenderFileFormat, frameIdx );
+
+            FILE* frameFile = nullptr;
+            path_t framePath( 2, cOutputPath.cstr(), frameFileName );
+            LLCE_ASSERT_ERROR( (frameFile = std::fopen(framePath, "rb")) != nullptr,
+                "Failed to open replay file at path '" << framePath << "'." );
+
+            png_struct* framePng = nullptr;
+            LLCE_ASSERT_ERROR(
+                (framePng = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
+                "Failed to create base headers for render file at path '" << framePath << "'." );
+            png_info* frameInfo = nullptr;
+            LLCE_ASSERT_ERROR(
+                (frameInfo = png_create_info_struct(framePng)) != nullptr,
+                "Failed to create info headers for render file at path '" << framePath << "'." );
+
+            png_init_io( framePng, frameFile );
+            png_read_info( framePng, frameInfo );
+            png_read_update_info( framePng, frameInfo );
+            for( uint32_t rowIdx = 0; rowIdx < cVideoDims.y; rowIdx++ ) {
+                uint32_t rowOff = rowIdx * cVideoDims.x;
+                png_read_row( framePng, (png_byte*)&frameData[rowOff], nullptr );
+            }
+
+            png_destroy_read_struct( &framePng, &frameInfo, nullptr );
+            std::fclose( frameFile );
 
             for( uint32_t yIdx = 0; yIdx < rawFrame->height; yIdx++ ) {
                 for( uint32_t xIdx = 0; xIdx < rawFrame->width; xIdx++ ) {
-                    uint32_t cIdx = yIdx * rawFrame->linesize[0] + xIdx * 4;
-                    rawFrame->data[0][cIdx + 0] = 0x00;
-                    rawFrame->data[0][cIdx + 1] = 0x2b;
-                    rawFrame->data[0][cIdx + 2] = 0x36;
-                    rawFrame->data[0][cIdx + 3] = 0xFF;
+                    uint32_t fIdx = yIdx * rawFrame->linesize[0] + xIdx * 4;
+                    uint32_t dIdx = yIdx * cVideoDims.x + xIdx;
+                    std::memcpy( &rawFrame->data[0][fIdx], &frameData[dIdx], 4 );
                 }
             }
             rawFrame->pts = frameIdx;
@@ -799,6 +823,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             cEncodeFrame( frameIdx, rawFrame, videoPacket );
         }
         cEncodeFrame( recFrameCount, nullptr, videoPacket );
+        free( frameData );
 
         const uint8_t cVideoEndcode[] = { 0, 0, 1, 0xb7 };
         std::fwrite( cVideoEndcode, 1, sizeof(cVideoEndcode), videoFile );
