@@ -34,9 +34,10 @@ extern "C" {
 #include <png.h>
 
 #include <libavcodec/avcodec.h>
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
 #include <libavutil/common.h>
 #include <libavutil/opt.h>
-#include <libavutil/imgutils.h>
 }
 #endif
 
@@ -118,7 +119,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const char8_t* cStateFileFormat = "state%u.dat";
     const char8_t* cInputFileFormat = "input%u.dat";
     const char8_t* cRenderFileFormat = "render%u.png";
-    const char8_t* cReplayFileFormat = "replay.mp4";
+    const char8_t* cReplayFileFormat = "replay%u.h264";
     const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
@@ -691,7 +692,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // https://ffmpeg.org/doxygen/trunk/encode__video_8c_source.html
         avcodec_register_all();
 
-        const AVCodec* cVideoCodec = avcodec_find_encoder( AV_CODEC_ID_PNG );
+        const AVCodecID cVideoCodecFmt = AV_CODEC_ID_H264;
+        const AVPixelFormat cVideoPixFmt = AV_PIX_FMT_YUV420P;
+
+        const AVCodec* cVideoCodec = avcodec_find_encoder( cVideoCodecFmt );
         LLCE_ASSERT_ERROR( cVideoCodec != nullptr,
             "Unable to load requested encoding codec in replay capture." );
 
@@ -706,32 +710,59 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         videoContext->time_base = (AVRational){1, static_cast<int32_t>(cSimFPS)};
         videoContext->framerate = (AVRational){static_cast<int32_t>(cSimFPS), 1};
         videoContext->gop_size = 0;
-        videoContext->pix_fmt = AV_PIX_FMT_RGBA;
+        videoContext->pix_fmt = cVideoPixFmt;
+
+        if( cVideoCodecFmt == AV_CODEC_ID_H264 ) {
+            av_opt_set( videoContext->priv_data, "preset", "slow", 0 );
+        }
 
         LLCE_ASSERT_ERROR( avcodec_open2(videoContext, cVideoCodec, nullptr) >= 0,
             "Failed to open configured codec in replay capture." );
 
+        char8_t replayFileName[csOutputFileNameLength];
+        std::snprintf( &replayFileName[0],
+            sizeof(replayFileName),
+            cReplayFileFormat, recSlotIdx );
+
         FILE* videoFile = nullptr;
-        path_t videoPath( 2, cOutputPath.cstr(), cReplayFileFormat );
+        path_t videoPath( 2, cOutputPath.cstr(), replayFileName );
         LLCE_ASSERT_ERROR( (videoFile = std::fopen(videoPath, "wb")) != nullptr,
             "Failed to open replay file at path '" << videoPath << "'." );
 
         AVPacket* videoPacket = nullptr;
         LLCE_ASSERT_ERROR( (videoPacket = av_packet_alloc()) != nullptr,
             "Unable to allocate frame packet in replay capture." );
-        AVFrame* videoFrame = nullptr;
-        LLCE_ASSERT_ERROR( (videoFrame = av_frame_alloc()) != nullptr,
-            "Unable to allocate frame in replay capture." );
-        videoFrame->format = videoContext->pix_fmt;
-        videoFrame->pict_type = AV_PICTURE_TYPE_I;
-        videoFrame->width = videoContext->width;
-        videoFrame->height = videoContext->height;
-        LLCE_ASSERT_ERROR( av_frame_get_buffer(videoFrame, 32) >= 0,
-            "Unable to allocate data for frame in replay capture." );
 
-        const auto cEncodeFrame = [ &videoContext, &videoFile ]
+        AVFrame* videoFrames[2] = { nullptr, nullptr };
+        for( uint32_t frameIdx = 0; frameIdx < 2; frameIdx++ ) {
+            AVFrame*& videoFrame = videoFrames[frameIdx];
+            LLCE_ASSERT_ERROR( (videoFrame = av_frame_alloc()) != nullptr,
+                "Unable to allocate frame in replay capture." );
+
+            videoFrame->format = frameIdx ? videoContext->pix_fmt : AV_PIX_FMT_RGBA;
+            videoFrame->pict_type = AV_PICTURE_TYPE_I;
+            videoFrame->width = videoContext->width;
+            videoFrame->height = videoContext->height;
+            LLCE_ASSERT_ERROR( av_frame_get_buffer(videoFrame, 32) >= 0,
+                "Unable to allocate data for frame in replay capture." );
+        }
+        AVFrame* rawFrame = videoFrames[0], * videoFrame = videoFrames[1];
+
+        SwsContext* swsContext = sws_getContext(
+            rawFrame->width, rawFrame->height, static_cast<AVPixelFormat>(rawFrame->format),
+            videoFrame->width, videoFrame->height, static_cast<AVPixelFormat>(videoFrame->format),
+            0, nullptr, nullptr, nullptr );
+        const auto cEncodeFrame = [ &videoContext, &swsContext, &videoFile, &videoFrame ]
                 ( uint32_t pFrameIdx, AVFrame* pFrame, AVPacket* pPacket ) {
-            LLCE_ASSERT_ERROR( avcodec_send_frame(videoContext, pFrame) >= 0,
+            AVFrame* nextFrame = ( pFrame != nullptr ) ? videoFrame : nullptr;
+            if( nextFrame != nullptr ) {
+                sws_scale( swsContext,
+                    pFrame->data, pFrame->linesize, 0, pFrame->height,
+                    nextFrame->data, nextFrame->linesize );
+                nextFrame->pts = pFrame->pts;
+            }
+
+            LLCE_ASSERT_ERROR( avcodec_send_frame(videoContext, nextFrame) >= 0,
                 "Unable to send send frame " << pFrameIdx << " for encoding." );
 
             int32_t encodeStatus = 0;
@@ -754,19 +785,18 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             //     sizeof(frameFileName),
             //     cRenderFileFormat, frameIdx );
 
-            for( uint32_t yIdx = 0; yIdx < videoFrame->height; yIdx++ ) {
-                for( uint32_t xIdx = 0; xIdx < videoFrame->width; xIdx++ ) {
-                    uint32_t cIdx = yIdx * videoFrame->linesize[0] + xIdx * 4;
-                    videoFrame->data[0][cIdx + 0] = 0x00;
-                    videoFrame->data[0][cIdx + 1] = 0x2b;
-                    videoFrame->data[0][cIdx + 2] = 0x36;
-                    videoFrame->data[0][cIdx + 3] = 0xFF;
+            for( uint32_t yIdx = 0; yIdx < rawFrame->height; yIdx++ ) {
+                for( uint32_t xIdx = 0; xIdx < rawFrame->width; xIdx++ ) {
+                    uint32_t cIdx = yIdx * rawFrame->linesize[0] + xIdx * 4;
+                    rawFrame->data[0][cIdx + 0] = 0x00;
+                    rawFrame->data[0][cIdx + 1] = 0x2b;
+                    rawFrame->data[0][cIdx + 2] = 0x36;
+                    rawFrame->data[0][cIdx + 3] = 0xFF;
                 }
             }
+            rawFrame->pts = frameIdx;
 
-            videoFrame->pts = frameIdx;
-
-            cEncodeFrame( frameIdx, videoFrame, videoPacket );
+            cEncodeFrame( frameIdx, rawFrame, videoPacket );
         }
         cEncodeFrame( recFrameCount, nullptr, videoPacket );
 
@@ -774,11 +804,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::fwrite( cVideoEndcode, 1, sizeof(cVideoEndcode), videoFile );
         std::fclose( videoFile );
 
-        LLCE_ALERT_INFO( "Replay Capture Slot {" << recSlotIdx << "}" );
-
-        av_frame_free( &videoFrame );
+        for( uint32_t frameIdx = 0; frameIdx < 2; frameIdx++ ) {
+            av_frame_free( &videoFrames[frameIdx] );
+        }
         av_packet_free( &videoPacket );
         avcodec_free_context( &videoContext );
+
+        LLCE_ALERT_INFO( "Replay Capture Slot {" << recSlotIdx << "}" );
     }
 #endif
 
