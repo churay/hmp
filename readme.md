@@ -5,6 +5,10 @@ A proof of concept game application that uses the framework established by the
 The code in this repository breaks a few principles of the "handmade" framework
 by using various libraries (listed below) for better application portability.
 
+## Demo ##
+
+!['hmp' demo](https://github.com/churay/hmp/raw/master/doc/demo.gif)
+
 ## Libraries ##
 
 ### Required ###
