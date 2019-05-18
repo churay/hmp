@@ -32,12 +32,6 @@
 #ifdef LLCE_CAPTURE
 extern "C" {
 #include <png.h>
-
-#include <libavcodec/avcodec.h>
-#include <libswscale/swscale.h>
-#include <libavutil/imgutils.h>
-#include <libavutil/common.h>
-#include <libavutil/opt.h>
 }
 #endif
 
@@ -118,8 +112,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const path_t cOutputPath( 2, cInstallPath.cstr(), "out" );
     const char8_t* cStateFileFormat = "state%u.dat";
     const char8_t* cInputFileFormat = "input%u.dat";
-    const char8_t* cRenderFileFormat = "render%u.png";
-    const char8_t* cReplayFileFormat = "replay%u.h264";
+    const char8_t* cRenderFileFormat = "render%u-%u.png";
     const static int32_t csOutputFileNameLength = 20;
 
     /// Load Dynamic Shared Library ///
@@ -570,12 +563,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // defined at compile-time.
 #ifdef LLCE_CAPTURE
                 if( isCapturing ) {
-                    LLCE_ALERT_INFO( "Capture Slot {" << currCaptureIdx << "}" );
+                    LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
                     char8_t slotCaptureFileName[csOutputFileNameLength];
                     std::snprintf( &slotCaptureFileName[0],
                         sizeof(slotCaptureFileName),
-                        cRenderFileFormat, currCaptureIdx++ );
+                        cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
 
                     // TODO(JRC): Reversing the colors results in the proper color values,
                     // but it's unclear why this is necessary given that they're stored
@@ -683,161 +676,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
     }
-
-#ifdef LLCE_CAPTURE
-    /// Post-Process Simulation Results ///
-    if( cIsSimulating ) {
-        // NOTE(JRC): The following code is heavily based on the ffmpeg
-        // library's video encoding example:
-        // https://ffmpeg.org/doxygen/trunk/encode__video_8c_source.html
-        avcodec_register_all();
-
-        const AVCodecID cVideoCodecFmt = AV_CODEC_ID_H264;
-        const AVPixelFormat cVideoPixFmt = AV_PIX_FMT_YUV420P;
-
-        const AVCodec* cVideoCodec = avcodec_find_encoder( cVideoCodecFmt );
-        LLCE_ASSERT_ERROR( cVideoCodec != nullptr,
-            "Unable to load requested encoding codec in replay capture." );
-
-        AVCodecContext* videoContext = avcodec_alloc_context3( cVideoCodec );
-        LLCE_ASSERT_ERROR( videoContext != nullptr,
-            "Unable to allocate data for encoding context in replay capture." );
-
-        const uicoord32_t cVideoDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
-        videoContext->bit_rate = 400000; // TODO(JRC): What should this be?
-        videoContext->width = cVideoDims.x;
-        videoContext->height = cVideoDims.y;
-        videoContext->time_base = (AVRational){1, static_cast<int32_t>(cSimFPS)};
-        videoContext->framerate = (AVRational){static_cast<int32_t>(cSimFPS), 1};
-        videoContext->gop_size = 0;
-        videoContext->pix_fmt = cVideoPixFmt;
-
-        if( cVideoCodecFmt == AV_CODEC_ID_H264 ) {
-            av_opt_set( videoContext->priv_data, "preset", "slow", 0 );
-        }
-
-        LLCE_ASSERT_ERROR( avcodec_open2(videoContext, cVideoCodec, nullptr) >= 0,
-            "Failed to open configured codec in replay capture." );
-
-        char8_t replayFileName[csOutputFileNameLength];
-        std::snprintf( &replayFileName[0],
-            sizeof(replayFileName),
-            cReplayFileFormat, recSlotIdx );
-
-        FILE* videoFile = nullptr;
-        path_t videoPath( 2, cOutputPath.cstr(), replayFileName );
-        LLCE_ASSERT_ERROR( (videoFile = std::fopen(videoPath, "wb")) != nullptr,
-            "Failed to open replay file at path '" << videoPath << "'." );
-
-        AVPacket* videoPacket = nullptr;
-        LLCE_ASSERT_ERROR( (videoPacket = av_packet_alloc()) != nullptr,
-            "Unable to allocate frame packet in replay capture." );
-
-        AVFrame* videoFrames[2] = { nullptr, nullptr };
-        for( uint32_t frameIdx = 0; frameIdx < 2; frameIdx++ ) {
-            AVFrame*& videoFrame = videoFrames[frameIdx];
-            LLCE_ASSERT_ERROR( (videoFrame = av_frame_alloc()) != nullptr,
-                "Unable to allocate frame in replay capture." );
-
-            videoFrame->format = frameIdx ? videoContext->pix_fmt : AV_PIX_FMT_RGBA;
-            videoFrame->pict_type = AV_PICTURE_TYPE_I;
-            videoFrame->width = videoContext->width;
-            videoFrame->height = videoContext->height;
-            LLCE_ASSERT_ERROR( av_frame_get_buffer(videoFrame, 32) >= 0,
-                "Unable to allocate data for frame in replay capture." );
-        }
-        AVFrame* rawFrame = videoFrames[0], * videoFrame = videoFrames[1];
-
-        SwsContext* swsContext = sws_getContext(
-            rawFrame->width, rawFrame->height, static_cast<AVPixelFormat>(rawFrame->format),
-            videoFrame->width, videoFrame->height, static_cast<AVPixelFormat>(videoFrame->format),
-            0, nullptr, nullptr, nullptr );
-        const auto cEncodeFrame = [ &videoContext, &swsContext, &videoFile, &videoFrame ]
-                ( uint32_t pFrameIdx, AVFrame* pFrame, AVPacket* pPacket ) {
-            AVFrame* nextFrame = ( pFrame != nullptr ) ? videoFrame : nullptr;
-            if( nextFrame != nullptr ) {
-                sws_scale( swsContext,
-                    pFrame->data, pFrame->linesize, 0, pFrame->height,
-                    nextFrame->data, nextFrame->linesize );
-                nextFrame->pts = pFrame->pts;
-            }
-
-            LLCE_ASSERT_ERROR( avcodec_send_frame(videoContext, nextFrame) >= 0,
-                "Unable to send send frame " << pFrameIdx << " for encoding." );
-
-            int32_t encodeStatus = 0;
-            while( encodeStatus >= 0 ) {
-                encodeStatus = avcodec_receive_packet( videoContext, pPacket );
-                if( encodeStatus != AVERROR(EAGAIN) && encodeStatus != AVERROR_EOF ) {
-                    LLCE_ASSERT_ERROR( encodeStatus >= 0,
-                        "Unable to unpack packet for frame " << pFrameIdx << " for encoding." );
-                    std::fwrite( pPacket->data, 1, pPacket->size, videoFile );
-                    av_packet_unref( pPacket );
-                }
-            }
-        };
-
-        color_t* frameData = (color_t*)malloc( sizeof(color_t) * cVideoDims.x * cVideoDims.y );
-        for( uint32_t frameIdx = 0; frameIdx < recFrameCount; frameIdx++ ) {
-            av_frame_make_writable( videoFrame );
-
-            char8_t frameFileName[csOutputFileNameLength];
-            std::snprintf( &frameFileName[0],
-                sizeof(frameFileName),
-                cRenderFileFormat, frameIdx );
-
-            FILE* frameFile = nullptr;
-            path_t framePath( 2, cOutputPath.cstr(), frameFileName );
-            LLCE_ASSERT_ERROR( (frameFile = std::fopen(framePath, "rb")) != nullptr,
-                "Failed to open replay file at path '" << framePath << "'." );
-
-            png_struct* framePng = nullptr;
-            LLCE_ASSERT_ERROR(
-                (framePng = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
-                "Failed to create base headers for render file at path '" << framePath << "'." );
-            png_info* frameInfo = nullptr;
-            LLCE_ASSERT_ERROR(
-                (frameInfo = png_create_info_struct(framePng)) != nullptr,
-                "Failed to create info headers for render file at path '" << framePath << "'." );
-
-            png_init_io( framePng, frameFile );
-            png_read_info( framePng, frameInfo );
-            png_read_update_info( framePng, frameInfo );
-            for( uint32_t rowIdx = 0; rowIdx < cVideoDims.y; rowIdx++ ) {
-                uint32_t rowOff = rowIdx * cVideoDims.x;
-                png_read_row( framePng, (png_byte*)&frameData[rowOff], nullptr );
-            }
-
-            png_destroy_read_struct( &framePng, &frameInfo, nullptr );
-            std::fclose( frameFile );
-
-            for( uint32_t yIdx = 0; yIdx < rawFrame->height; yIdx++ ) {
-                for( uint32_t xIdx = 0; xIdx < rawFrame->width; xIdx++ ) {
-                    uint32_t fIdx = yIdx * rawFrame->linesize[0] + xIdx * 4;
-                    uint32_t dIdx = yIdx * cVideoDims.x + xIdx;
-                    std::memcpy( &rawFrame->data[0][fIdx], &frameData[dIdx], 4 );
-                }
-            }
-            rawFrame->pts = frameIdx;
-
-            cEncodeFrame( frameIdx, rawFrame, videoPacket );
-        }
-        cEncodeFrame( recFrameCount, nullptr, videoPacket );
-        free( frameData );
-
-        const uint8_t cVideoEndcode[] = { 0, 0, 1, 0xb7 };
-        std::fwrite( cVideoEndcode, 1, sizeof(cVideoEndcode), videoFile );
-        std::fclose( videoFile );
-
-        for( uint32_t frameIdx = 0; frameIdx < 2; frameIdx++ ) {
-            av_frame_free( &videoFrames[frameIdx] );
-        }
-        av_packet_free( &videoPacket );
-        avcodec_free_context( &videoContext );
-
-        LLCE_ALERT_INFO( "Replay Capture Slot {" << recSlotIdx << "}" );
-    }
-#endif
 
     /// Clean Up + Exit ///
 

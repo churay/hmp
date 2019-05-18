@@ -17,8 +17,8 @@ by using various libraries (listed below) for better application portability.
 
 ### Optional ###
 
+- [ffmpeg (v3.4.4)](https://ffmpeg.org/)
 - [libpng (v1.6.34)](http://www.libpng.org/pub/png/libpng.html)
-- [libffmpeg (v3.4.4)](https://ffmpeg.org/)
 
 ## Install ##
 
@@ -32,7 +32,7 @@ Here are the commands required to install all third-part dependencies:
 
 1. `sudo apt-get install clang-3.8 cmake`: Install build tools (i.e. a C++ compiler and a build manager).
 1. `sudo apt-get install libsdl2-2.0-0 libsdl2-dev libsdl2-ttf-2.0-0 libsdl2-ttf-dev`: Install the window management library SDL and its supplemental text library SDL-TTF.
-1. `sudo apt-get install libpng-dev libavutil-dev libavcodec-dev libswscale-dev`: (Optional) Install image/video processing libraries to facilitate in-situ application render outputs.
+1. `sudo apt-get install ffmpeg libpng-dev`: (Optional) Install image/video processing libraries to facilitate in-situ application render outputs.
 1. `./etc/build_{platform}.sh`: Build the demo application, which will be deployed to the `./build/install/` directory.
 
 
