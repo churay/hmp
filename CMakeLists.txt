@@ -39,7 +39,18 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ## user options ####################
 ####################################
 
-option(HMP_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
+option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
+set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
+
+##############################################
+## config preprocessing ######################
+##############################################
+
+# file(GLOB         hmp_cnf_files     src/*.h.in)
+# foreach(hmp_cnf_file ${hmp_cnf_files})
+#     get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME)
+#     configure_file(${hmp_cnf_file} src/${hmp_cnf_filename}.h)
+# endforeach()
 
 ###############################################################################
 ## file globbing ##############################################################

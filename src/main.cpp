@@ -25,7 +25,7 @@
 #include "util.h"
 #include "consts.h"
 
-#if HMP_CAPTURE_ENABLED == ON
+#if LLCE_CAPTURE_ENABLED == ON
 #define LLCE_CAPTURE 1
 #endif
 
@@ -276,6 +276,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     for( uint32_t textureIdx = 0; textureIdx < cTextureCount; textureIdx++ ) {
         cGenerateTextTexture( textureIdx, textureColors[textureIdx], textureTexts[textureIdx] );
     }
+#endif
+
+#ifdef LLCE_CAPTURE
+#define LLCE_MAX_RESOLUTION 1048576
+    static color_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
     /// Input Wrangling ///
@@ -557,10 +562,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
                 } glEnd();
 
-                // NOTE(JRC): This subroutine dynamically allocates memory at the simulation level
-                // when importing data from OpenGL buffers. This isn't the worst expense, but it
-                // could be eliminated by performing a static level of compression to some maximum
-                // defined at compile-time.
 #ifdef LLCE_CAPTURE
                 if( isCapturing ) {
                     LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
@@ -574,45 +575,43 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     // but it's unclear why this is necessary given that they're stored
                     // internally in the order requested. Debugging may be required in the
                     // future when adapting this code to work on multiple platforms.
-                    uicoord32_t textureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
-                    color_t* textureData = (color_t*)malloc( sizeof(color_t) * textureDims.x * textureDims.y );
-                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, textureData );
+                    uicoord32_t captureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
                     // TODO(JRC): If the C 'FILE' strcture isn't cross-platform,
                     // its use needs to be replaced here with something more portable.
-                    FILE* textureFile = nullptr;
-                    path_t texturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
-                    LLCE_ASSERT_ERROR( (textureFile = std::fopen(texturePath, "wb")) != nullptr,
-                        "Failed to open render file at path '" << texturePath << "'." );
+                    FILE* captureFile = nullptr;
+                    path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
+                    LLCE_ASSERT_ERROR( (captureFile = std::fopen(capturePath, "wb")) != nullptr,
+                        "Failed to open render file at path '" << capturePath << "'." );
 
                     // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
-                    png_struct* texturePng = nullptr;
+                    png_struct* capturePng = nullptr;
                     LLCE_ASSERT_ERROR(
-                        (texturePng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
-                        "Failed to create base headers for render file at path '" << texturePath << "'." );
-                    png_info* textureInfo = nullptr;
+                        (capturePng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
+                        "Failed to create base headers for render file at path '" << capturePath << "'." );
+                    png_info* captureInfo = nullptr;
                     LLCE_ASSERT_ERROR(
-                        (textureInfo = png_create_info_struct(texturePng)) != nullptr,
-                        "Failed to create info headers for render file at path '" << texturePath << "'." );
+                        (captureInfo = png_create_info_struct(capturePng)) != nullptr,
+                        "Failed to create info headers for render file at path '" << capturePath << "'." );
 
-                    png_init_io( texturePng, textureFile );
+                    png_init_io( capturePng, captureFile );
                     png_set_IHDR(
-                        texturePng, textureInfo, textureDims.x, textureDims.y,
+                        capturePng, captureInfo, captureDims.x, captureDims.y,
                         8, PNG_COLOR_TYPE_RGBA,
                         PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
-                    png_write_info( texturePng, textureInfo );
+                    png_write_info( capturePng, captureInfo );
                     // TODO(JRC): Ultimately, it would be best if the data could just
                     // be funneled natively into the PNG interface instead of having
                     // to mirror it about the y-axis.
-                    for( uint32_t rowIdx = 0; rowIdx < textureDims.y; rowIdx++ ) {
-                        uint32_t rowOff = ( textureDims.y - rowIdx - 1 ) * textureDims.x;
-                        png_write_row( texturePng, (png_byte*)&textureData[rowOff] );
+                    for( uint32_t rowIdx = 0; rowIdx < captureDims.y; rowIdx++ ) {
+                        uint32_t rowOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;
+                        png_write_row( capturePng, (png_byte*)&sCaptureBuffer[rowOff] );
                     }
-                    png_write_end( texturePng, nullptr );
+                    png_write_end( capturePng, nullptr );
 
-                    png_destroy_write_struct( &texturePng, &textureInfo );
-                    std::fclose( textureFile );
-                    free( textureData );
+                    png_destroy_write_struct( &capturePng, &captureInfo );
+                    std::fclose( captureFile );
                 }
                 isCapturing = cIsSimulating;
 #endif

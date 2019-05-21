@@ -1,0 +1,6 @@
+#ifndef LLCE_CONF_H
+#define LLCE_CONF_H
+
+#define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
+
+#endif
