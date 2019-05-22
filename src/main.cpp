@@ -279,7 +279,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
 #ifdef LLCE_CAPTURE
-#define LLCE_MAX_RESOLUTION 1048576
     static color_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 

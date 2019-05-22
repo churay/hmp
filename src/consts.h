@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <iostream>
 
-// #include "conf.h"
+#include "conf.h"
 
 // TODO(JRC): Figure out some way to guarantee that the floating-point types
 // will be the correct widths in a platform-independent way.

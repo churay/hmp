@@ -42,21 +42,12 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
 
-##############################################
-## config preprocessing ######################
-##############################################
-
-# file(GLOB         hmp_cnf_files     src/*.h.in)
-# foreach(hmp_cnf_file ${hmp_cnf_files})
-#     get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME)
-#     configure_file(${hmp_cnf_file} src/${hmp_cnf_filename}.h)
-# endforeach()
-
 ###############################################################################
 ## file globbing ##############################################################
 ###############################################################################
 
 file(GLOB         hmp_exe_files     src/main.cpp)
+file(GLOB         hmp_cnf_files     src/*.h.in)
 file(GLOB         hmp_obj_files     src/*.cpp src/*.h)
 list(REMOVE_ITEM  hmp_obj_files     ${hmp_exe_files})
 file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
@@ -83,6 +74,16 @@ ExternalProject_Add(glm
     LOG_DOWNLOAD ON)
 set(GLM_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/glm)
 
+########################################
+## config targets ######################
+########################################
+
+set(hmp_cnf_dir ${CMAKE_BINARY_DIR}/config)
+foreach(hmp_cnf_file ${hmp_cnf_files})
+    get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME_WE)
+    configure_file(${hmp_cnf_file} ${hmp_cnf_dir}/${hmp_cnf_filename}.h)
+endforeach()
+
 ####################################
 ## project targets #################
 ####################################
@@ -102,7 +103,7 @@ foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target})
 endforeach()
 
 foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target} ${hmp_exe_target})
-    target_include_directories(${hmp_target} PUBLIC src)
+    target_include_directories(${hmp_target} PUBLIC src ${hmp_cnf_dir})
     add_dependencies(${hmp_target} glm)
 endforeach()
 
