@@ -17,10 +17,10 @@ struct render_context_t {
 
 
 struct fbo_context_t {
-    fbo_context_t( const uint32_t pFBID, const uicoord32_t pFBRes );
+    fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes );
     ~fbo_context_t();
 
-    uicoord32_t mViewCoords, mViewRes;
+    vec2u32_t mViewCoords, mViewRes;
 };
 
 };

@@ -12,10 +12,6 @@ namespace util {
         uint8_t r, g, b, a;
     };
 
-    struct uicoord32_t {
-        uint32_t x, y;
-    };
-
     /// Namespace Functions ///
 
     // TODO(JRC): Move this function to a better location.

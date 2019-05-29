@@ -6,6 +6,10 @@
 #include <errno.h>
 #include <iostream>
 
+#include <glm/detail/type_vec2.hpp>
+#include <glm/detail/type_vec3.hpp>
+#include <glm/detail/type_vec4.hpp>
+
 #include "conf.h"
 
 // TODO(JRC): Figure out some way to guarantee that the floating-point types
@@ -17,6 +21,8 @@ typedef unsigned char uchar8_t;
 typedef uint32_t bool32_t;
 typedef float float32_t;
 typedef double float64_t;
+
+typedef glm::vec<2, uint32_t, glm::defaultp> vec2u32_t;
 
 // TODO(JRC): Abstract away the platform-specific code from this module (e.g.
 // 'exit', setting the error number, etc.).

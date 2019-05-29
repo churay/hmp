@@ -574,7 +574,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     // but it's unclear why this is necessary given that they're stored
                     // internally in the order requested. Debugging may be required in the
                     // future when adapting this code to work on multiple platforms.
-                    uicoord32_t captureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+                    vec2u32_t captureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
                     glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
                     // TODO(JRC): If the C 'FILE' strcture isn't cross-platform,

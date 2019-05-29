@@ -46,7 +46,7 @@ void render_context_t::render() const {
 
 /// 'hmp::gfx::fbo_context_t' Functions ///
 
-fbo_context_t::fbo_context_t( const uint32_t pFBID, const uicoord32_t pFBRes ) {
+fbo_context_t::fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes ) {
     int32_t viewParams[4];
     glGetIntegerv( GL_VIEWPORT, &viewParams[0] );
     mViewCoords = { static_cast<uint32_t>(viewParams[0]), static_cast<uint32_t>(viewParams[1]) };

@@ -93,7 +93,7 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
         uint32_t& bufferFBO = pGraphics->bufferFBOs[bufferIdx];
         uint32_t& bufferTID = pGraphics->bufferTIDs[bufferIdx];
         uint32_t& bufferDID = pGraphics->bufferDIDs[bufferIdx];
-        const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
+        const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
 
         glGenFramebuffers( 1, &bufferFBO );
         glBindFramebuffer( GL_FRAMEBUFFER, bufferFBO );
@@ -226,13 +226,13 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
 
     { // Render Master //
         const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-        const uicoord32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+        const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
         hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
         hmpRC.render();
 
         for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
             const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
-            const uicoord32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
+            const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
             const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
 
             glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
