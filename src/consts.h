@@ -22,7 +22,12 @@ typedef uint32_t bool32_t;
 typedef float float32_t;
 typedef double float64_t;
 
+typedef glm::vec<4, uint8_t, glm::defaultp> vec4u8_t;
 typedef glm::vec<2, uint32_t, glm::defaultp> vec2u32_t;
+typedef glm::vec<3, float32_t, glm::defaultp> vec3f32_t;
+typedef glm::vec<4, float32_t, glm::defaultp> vec4f32_t;
+
+typedef vec4u8_t color32_t;
 
 // TODO(JRC): Abstract away the platform-specific code from this module (e.g.
 // 'exit', setting the error number, etc.).

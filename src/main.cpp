@@ -41,7 +41,6 @@ typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef void (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
-typedef llce::util::color_t color_t;
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
@@ -229,7 +228,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #ifdef LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
-    color_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
+    color32_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
     char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 
@@ -254,10 +253,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // performance-level texture generation method, watch the "Handmade Hero" tutorials
     // on OpenGL texturing and font APIs.
     const auto cGenerateTextTexture = [ &textureGLIDs, &font ]
-            ( const uint32_t pTextureID, const color_t pTextureColor, const char8_t* pTextureText ) {
+            ( const uint32_t pTextureID, const color32_t pTextureColor, const char8_t* pTextureText ) {
         const uint32_t& textureGLID = textureGLIDs[pTextureID];
 
-        SDL_Color renderColor = { pTextureColor.r, pTextureColor.g, pTextureColor.b, pTextureColor.a };
+        SDL_Color renderColor = { pTextureColor.x, pTextureColor.y, pTextureColor.z, pTextureColor.w };
         SDL_Surface* textSurface = TTF_RenderText_Solid( font, pTextureText, renderColor );
         LLCE_ASSERT_ERROR( textSurface != nullptr,
             "SDL-TTF failed to render font; " << TTF_GetError() );
@@ -279,7 +278,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
 #ifdef LLCE_CAPTURE
-    static color_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
+    static color32_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
     /// Input Wrangling ///
