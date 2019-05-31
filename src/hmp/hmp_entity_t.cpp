@@ -15,7 +15,7 @@ namespace hmp {
 
 /// Class Functions ///
 
-entity_t::entity_t( const box_t& pBBox, const color_t* pColor ) :
+entity_t::entity_t( const box_t& pBBox, const color32_t* pColor ) :
         mBBox( pBBox ), mVel( 0.0f, 0.0f ), mColor( pColor ), mLifetime( 0.0f ) {
     
 }

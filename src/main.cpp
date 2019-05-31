@@ -22,7 +22,7 @@
 #include "memory_t.h"
 #include "path_t.h"
 #include "platform.h"
-#include "util.h"
+#include "cli.h"
 #include "consts.h"
 
 #if LLCE_CAPTURE_ENABLED == ON
@@ -224,6 +224,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     TTF_Font* font = TTF_OpenFont( cFontPath, cFontSize );
     LLCE_ASSERT_ERROR( font != nullptr,
         "SDL-TTF failed to create font; " << TTF_GetError() );
+
+    const static color32_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
+    const static color32_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
 
 #ifdef LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
@@ -551,7 +554,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             glEnable( GL_TEXTURE_2D ); {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?
-                glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+                glColor4ubv( (uint8_t*)&csWhiteColor );
                 glBindTexture( GL_TEXTURE_2D, simGraphics->bufferTIDs[hmp::GFX_BUFFER_MASTER] );
                 glBegin( GL_QUADS ); {
                     glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
@@ -624,7 +627,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 "FPS: %0.2f", 1.0 / simDT );
             cGenerateTextTexture( cFPSTextureID, textureColors[cFPSTextureID], textureTexts[cFPSTextureID] );
 
-            glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
+            glColor4ubv( (uint8_t*)&csWhiteColor );
             glBindTexture( GL_TEXTURE_2D, textureGLIDs[cFPSTextureID] );
             glBegin( GL_QUADS ); {
                 glTexCoord2f( 0.0f, 0.0f ); glVertex2f( -1.0f + 0.0f, -1.0f + 0.2f ); // UL

@@ -1,19 +1,9 @@
 #include <cmath>
 #include <cstring>
 
-#include "util.h"
+#include "cli.h"
 
 namespace llce {
-
-util::color_t util::brighten( const util::color_t& pColor, const float32_t pFactor ) {
-    return {
-        (uint8_t)std::min( (int32_t)255, (int32_t)(pFactor * pColor.r) ),
-        (uint8_t)std::min( (int32_t)255, (int32_t)(pFactor * pColor.g) ),
-        (uint8_t)std::min( (int32_t)255, (int32_t)(pFactor * pColor.b) ),
-        pColor.a
-    };
-}
-
 
 bool8_t cli::exists( const char8_t* pOption, const char8_t** pArgs, const int32_t pArgCount ) {
     bool8_t optionFound = false;

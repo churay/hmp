@@ -17,7 +17,7 @@ namespace gfx {
 
 /// 'hmp::gfx::render_context_t' Functions ///
 
-render_context_t::render_context_t( const box_t& pBox, const color_t* pColor ) {
+render_context_t::render_context_t( const box_t& pBox, const color32_t* pColor ) {
     glPushMatrix();
     glm::mat4 matModelWorld( 1.0f );
     matModelWorld *= glm::translate( glm::mat4(1.0f), glm::vec3(pBox.mPos.x, pBox.mPos.y, 0.0f) );

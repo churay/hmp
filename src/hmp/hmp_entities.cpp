@@ -33,7 +33,10 @@ bounds_t::bounds_t( const box_t& pBBox ) :
 void bounds_t::irender() const {
     entity_t::irender();
 
-    const color_t entityColor = llce::util::brighten( *mColor, 1.5f );
+    // TODO(JRC): This 'brighten' operation only works because the source color
+    // for the 'bounds_t' object is such that values don't overflow. In the future,
+    // we need a more proper 'brighten' function that puts a ceiling on color values.
+    const color32_t entityColor = static_cast<uint8_t>( 2 ) * *mColor;
     hmp::gfx::render_context_t entityRC(
         box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c), &entityColor );
     entityRC.render();
@@ -161,7 +164,7 @@ void scoreboard_t::irender() const {
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const int8_t teamScore = mScores[team];
-        const color_t* teamColor = &hmp::color::TEAM[team];
+        const color32_t* teamColor = &hmp::color::TEAM[team];
         const bool8_t isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
