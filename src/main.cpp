@@ -4,12 +4,8 @@
 #include <SDL2/SDL_opengl_glext.h>
 #include <SDL2/SDL_ttf.h>
 
-#include <glm/ext/vector_float2.hpp>
-#include <glm/ext/vector_float3.hpp>
-#include <glm/ext/vector_float4.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
-#include <glm/gtx/string_cast.hpp>
 
 #include <cstring>
 #include <cstdio>
@@ -548,8 +544,20 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-viewRatio)/2.0f, 0.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 0.0f) );
+            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 1.0f) );
             glMultMatrixf( &matWorldView[0][0] );
+
+            // TODO(JRC): The following is a demo of how to extract the current
+            // OpenGL model-view matrix and then invert it. This code should be
+            // removed once this demo is no longer needed.
+            //
+            // if( simFrame == 0 ) {
+            //     glm::mat4 matTest( 0.0f );
+            //     glGetFloatv( GL_MODELVIEW_MATRIX, &matTest[0][0] );
+            //     glm::mat4 matInvTest = glm::inverse( matTest );
+            //     glm::mat4 identityTest = matTest * matInvTest;
+            //     std::cout << matTest[0][0] << std::endl;
+            // }
 
             glEnable( GL_TEXTURE_2D ); {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
