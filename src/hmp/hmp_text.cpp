@@ -154,14 +154,16 @@ void render( const char8_t* pText, const color32_t* pColor ) {
     const static float64_t csDigitFillY = csDigitSpaceY - 2.0 * csDigitPaddingY;
 
     const uint32_t cTextLength = std::strlen( pText );
-    const float64_t cTextFillX = DIGIT_WIDTH / ( (DIGIT_WIDTH + 1.0) * cTextLength - 1.0 );
+    const float64_t cTextSpacingX = 2.0 * DIGIT_WIDTH;
+    const float64_t cTextSpacingY = 0.0;
+    const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
 
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
         const auto cTextDigitMap = &ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
         const uint32_t cTextIdx = pTextItr - pText;
 
-        const float64_t cTextOffsetX = ( cTextFillX + csDigitFillX / 5.0 ) * cTextIdx;
+        const float64_t cTextOffsetX = ( cTextFillX + cTextFillX / cTextSpacingX ) * cTextIdx;
         const float64_t cTextOffsetY = 0.0;
 
         const box_t cTextBBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );

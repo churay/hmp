@@ -11,6 +11,7 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_gfx.h"
+#include "hmp_text.h"
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -140,26 +141,6 @@ void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
 
 
 void scoreboard_t::irender() const {
-    const static bit8_t DIGIT_DISPLAY_LINES[10][3][3] = {
-        { {1, 1, 0}, {1, 0, 1}, {1, 1, 0} },   // 0
-        { {0, 0, 0}, {0, 0, 0}, {1, 1, 0} },   // 1
-        { {1, 0, 0}, {1, 1, 1}, {0, 1, 0} },   // 2
-        { {0, 0, 0}, {1, 1, 1}, {1, 1, 0} },   // 3
-        { {0, 1, 0}, {0, 1, 0}, {1, 1, 0} },   // 4
-        { {0, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 5
-        { {1, 1, 0}, {1, 1, 1}, {1, 0, 0} },   // 6
-        { {0, 0, 0}, {0, 0, 1}, {1, 1, 0} },   // 7
-        { {1, 1, 0}, {1, 1, 1}, {1, 1, 0} },   // 8
-        { {0, 1, 0}, {1, 1, 1}, {1, 1, 0} }    // 9
-    };
-
-    const static float32_t DIGIT_LINE_WIDTH =
-        ( (1.0f - 4.0f * scoreboard_t::TALLY_RADIUS) / 1.0f );
-    const static float32_t DIGIT_LINE_HEIGHT =
-        ( (1.0f - 6.0f * scoreboard_t::TALLY_RADIUS) / 2.0f );
-    const static float32_t DIGIT_LINE_OFFSET =
-        ( 2.0f * scoreboard_t::TALLY_RADIUS + DIGIT_LINE_HEIGHT );
-
     entity_t::irender();
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
@@ -190,26 +171,11 @@ void scoreboard_t::irender() const {
             //     scoreRC.render();
             // }
 
-            // TODO(JRC): This code is a bit sloppy and should be improved if at
-            // all possible.
-            const auto digitLines = DIGIT_DISPLAY_LINES[teamScore];
-            for( uint8_t colIdx = 0, lineIdx = 0; colIdx < 3; colIdx++ ) {
-                for( uint8_t rowIdx = 0; rowIdx < 3; rowIdx++, lineIdx++ ) {
-                    const bool8_t isLineVertical = colIdx % 2 == 0;
-
-                    const float32_t lineX = scoreboard_t::TALLY_RADIUS + colIdx * (scoreboard_t::TALLY_RADIUS + DIGIT_LINE_WIDTH / 2.0f);
-                    const float32_t lineY = isLineVertical ?
-                        2.0f * scoreboard_t::TALLY_RADIUS + DIGIT_LINE_HEIGHT / 2.0f + rowIdx * DIGIT_LINE_OFFSET:
-                        scoreboard_t::TALLY_RADIUS + rowIdx * DIGIT_LINE_OFFSET;
-                    const float32_t lineWidth = !isLineVertical ? DIGIT_LINE_WIDTH : scoreboard_t::TALLY_RADIUS;
-                    const float32_t lineHeight = isLineVertical ? DIGIT_LINE_HEIGHT : scoreboard_t::TALLY_RADIUS;
-                    if( digitLines[colIdx][rowIdx] ) {
-                        const hmp::box_t lineBox( lineX, lineY, lineWidth, lineHeight, box_t::anchor_e::c );
-                        hmp::gfx::render_context_t lineRC( lineBox, teamColor );
-                        lineRC.render();
-                    }
-                }
-            }
+            char teamScoreBuffer[2];
+            std::snprintf( &teamScoreBuffer[0],
+                sizeof(teamScoreBuffer),
+                "%d", teamScore );
+            hmp::text::render( &teamScoreBuffer[0], teamColor );
         }
     }
 }
