@@ -9,6 +9,7 @@ namespace color {
 
 const extern color32_t VOID;
 const extern color32_t BACKGROUND;
+const extern color32_t HIGHLIGHT;
 const extern color32_t INTERFACE;
 const extern color32_t BORDER;
 const extern color32_t TEAM[3];

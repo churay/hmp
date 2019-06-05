@@ -12,7 +12,6 @@
 #include <fstream>
 
 #include "hmp/hmp.h"
-#include "hmp/hmp_box_t.h"
 
 #include "timer_t.h"
 #include "memory_t.h"

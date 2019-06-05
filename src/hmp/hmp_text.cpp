@@ -1,14 +1,9 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_opengl_glext.h>
-
-#include <glm/geometric.hpp>
-#include <glm/ext/vector_float2.hpp>
-#include <glm/ext/vector_float3.hpp>
-#include <glm/ext/vector_float4.hpp>
-#include <glm/ext/matrix_float4x4.hpp>
+#include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include <cstring>
+
+#include "hmp_gfx.h"
 #include "hmp_text.h"
 
 namespace hmp {
@@ -62,11 +57,11 @@ const bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH] = {
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // ')'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '*'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '+'
-    { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // ','
+    { {0, 1, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // ','
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '-'
-    { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '.'
+    { {0, 0, 0, 0, 0}, {0, 1, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '.'
     { {1, 1, 0, 0, 0}, {1, 1, 0, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 1, 1, 0}, {0, 0, 0, 1, 1}, {0, 0, 0, 1, 1} }, // '/'
-    { {0, 1, 1, 1, 0}, {1, 1, 0, 0, 1}, {1, 1, 1, 0, 1}, {1, 0, 1, 0, 1}, {1, 0, 1, 1, 1}, {1, 0, 0, 1, 1}, {0, 1, 1, 1, 0} }, // '0'
+    { {0, 1, 1, 1, 0}, {1, 0, 0, 0, 1}, {1, 0, 0, 0, 1}, {1, 0, 1, 0, 1}, {1, 0, 0, 0, 1}, {1, 0, 0, 0, 1}, {0, 1, 1, 1, 0} }, // '0'
     { {1, 1, 1, 1, 1}, {0, 0, 1, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 1, 0, 0}, {1, 0, 1, 0, 0}, {0, 1, 1, 0, 0}, {0, 0, 1, 0, 0} }, // '1'
     { {1, 1, 1, 1, 1}, {1, 0, 0, 0, 0}, {0, 1, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 0, 1, 0}, {0, 0, 0, 0, 1}, {1, 1, 1, 1, 1} }, // '2'
     { {1, 1, 1, 1, 0}, {0, 0, 0, 0, 1}, {0, 0, 0, 0, 1}, {0, 1, 1, 1, 0}, {0, 0, 0, 0, 1}, {0, 0, 0, 0, 1}, {1, 1, 1, 1, 0} }, // '3'
@@ -151,7 +146,41 @@ const bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH] = {
 /// 'hmp::text' Functions ///
 
 void render( const char8_t* pText, const color32_t* pColor ) {
-    // TODO(JRC)
+    const static float64_t csDigitSpaceX = 1.0 / DIGIT_WIDTH;
+    const static float64_t csDigitSpaceY = 1.0 / DIGIT_HEIGHT;
+    const static float64_t csDigitPaddingX = csDigitSpaceX / 10.0;
+    const static float64_t csDigitPaddingY = csDigitSpaceY / 10.0;
+    const static float64_t csDigitFillX = csDigitSpaceX - 2.0 * csDigitPaddingX;
+    const static float64_t csDigitFillY = csDigitSpaceY - 2.0 * csDigitPaddingY;
+
+    const uint32_t cTextLength = std::strlen( pText );
+    const float64_t cTextFillX = DIGIT_WIDTH / ( (DIGIT_WIDTH + 1.0) * cTextLength - 1.0 );
+    const float64_t cTextFillY = 1.0;
+
+    for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
+        const auto cTextDigitMap = &ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
+        const uint32_t cTextIdx = pTextItr - pText;
+
+        const float64_t cTextOffsetX = ( cTextFillX + csDigitFillX / 5.0 ) * cTextIdx;
+        const float64_t cTextOffsetY = 0.0;
+
+        const box_t cTextBBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );
+        gfx::render_context_t trc( cTextBBox, pColor );
+        for( uint32_t yIdx = 0; yIdx < DIGIT_HEIGHT; yIdx++ ) {
+            for( uint32_t xIdx = 0; xIdx < DIGIT_WIDTH; xIdx++ ) {
+                const float64_t cDigitOffsetX = csDigitPaddingX + csDigitSpaceX * xIdx;
+                const float64_t cDigitOffsetY = csDigitPaddingY + csDigitSpaceY * yIdx;
+
+                if( cTextDigitMap[yIdx][xIdx] ) {
+                    const box_t cDigitBBox(
+                        cDigitOffsetX, cDigitOffsetY,
+                        csDigitFillX, csDigitFillY );
+                    gfx::render_context_t drc( cDigitBBox, pColor );
+                    drc.render();
+                }
+            }
+        }
+    }
 }
 
 };
