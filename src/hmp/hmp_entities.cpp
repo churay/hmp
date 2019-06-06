@@ -11,7 +11,6 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_gfx.h"
-#include "hmp_text.h"
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -175,7 +174,7 @@ void scoreboard_t::irender() const {
             std::snprintf( &teamScoreBuffer[0],
                 sizeof(teamScoreBuffer),
                 "%d", teamScore );
-            hmp::text::render( &teamScoreBuffer[0], teamColor );
+            hmp::gfx::text::render( &teamScoreBuffer[0], teamColor );
         }
     }
 }

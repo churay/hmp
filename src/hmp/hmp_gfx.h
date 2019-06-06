@@ -23,6 +23,16 @@ struct fbo_context_t {
     vec2u32_t mViewCoords, mViewRes;
 };
 
+namespace text {
+
+constexpr static uint32_t DIGIT_WIDTH = 5, DIGIT_HEIGHT = 7;
+constexpr static float64_t DIGIT_ASPECT = ( DIGIT_WIDTH + 0.0 ) / ( DIGIT_HEIGHT + 0.0 );
+const extern bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH];
+
+void render( const char8_t* pText, const color32_t* pColor );
+
+};
+
 };
 
 };
