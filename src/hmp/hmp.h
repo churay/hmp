@@ -4,6 +4,7 @@
 #include <SDL2/SDL.h>
 
 #include "hmp_entities.h"
+#include "hmp_rng_t.h"
 #include "hmp_consts.h"
 #include "consts.h"
 
@@ -17,6 +18,7 @@ constexpr static float32_t ROUND_START_TIME = 1.0f;
 struct state_t {
     float64_t dt, rt, tt;
     bool32_t roundStarted;
+    rng_t rng;
 
     entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;

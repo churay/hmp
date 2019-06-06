@@ -5,6 +5,8 @@
 
 namespace hmp {
 
+const extern uint32_t RNG_SEED;
+
 namespace color {
 
 const extern color32_t VOID;

@@ -2,6 +2,8 @@
 
 namespace hmp {
 
+const uint32_t RNG_SEED = 1234;
+
 namespace color {
 
 const color32_t VOID = { 0xFF, 0xFF, 0xFF, 0xFF };

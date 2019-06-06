@@ -13,6 +13,7 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include "hmp_gfx.h"
+#include "hmp_data.h"
 #include "hmp.h"
 
 
@@ -23,6 +24,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->rt = 0.0; // round time
     pState->tt = 0.0; // total time
     pState->roundStarted = false;
+    pState->rng = hmp::rng_t( hmp::RNG_SEED );
 
     // Initialize Entities //
 
@@ -163,9 +165,11 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         pState->entities[entityIdx]->update( pState->dt );
     }
 
-    if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
-        // TODO(JRC): Randomize this vector.
-        pState->ballEnt.mVel = glm::normalize( glm::vec2(1.0f, 1.0f) ) * hmp::ball_t::MOVE_VEL;
+    if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
+        glm::vec2 ballDir( pState->rng.next(), pState->rng.next() );
+        pState->ballEnt.mVel = glm::normalize( ballDir ) * hmp::ball_t::HINT_VEL;
+    } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
+        pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
     }
 
