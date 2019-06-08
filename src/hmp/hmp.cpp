@@ -24,6 +24,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->rt = 0.0; // round time
     pState->tt = 0.0; // total time
     pState->roundStarted = false;
+    pState->roundServer = 1;
+
+    // Initialize State Variables //
+
     pState->rng = hmp::rng_t( hmp::RNG_SEED );
 
     // Initialize Entities //
@@ -166,12 +170,15 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     }
 
     if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
+        const float64_t ballMaxTheta = hmp::ball_t::MAX_RICOCHET_ANGLE;
+
         // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
         // for the random number to bring it into a reasonable floating point range,
         // but slightly lower fidelity won't be too important at the scale of this sim.
         float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
-        float64_t ballTheta = 2 * hmp::ball_t::MAX_RICOCHET_ANGLE * ballThetaSeed - hmp::ball_t::MAX_RICOCHET_ANGLE;
-        pState->ballEnt.mVel = hmp::ball_t::HINT_VEL * glm::vec2( glm::cos(ballTheta), glm::sin(ballTheta) );
+        float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
+        pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
+            glm::vec2( pState->roundServer * glm::cos(ballTheta), glm::sin(ballTheta) );
     } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
@@ -191,6 +198,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         } if( !boundsX.contains(ballX) ) {
             bool8_t isWestScore = ballX.contains( boundsX.mMax );
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
+            pState->roundServer = isWestScore ? 1 : -1;
 
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
@@ -203,6 +211,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
         if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
             ballEnt.ricochet( &paddleEnt );
+            ballEnt.change( static_cast<hmp::team::team_e>(paddleEnt.mTeam) );
             ballEnt.mVel *= 1.1f;
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );

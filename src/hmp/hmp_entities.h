@@ -19,6 +19,10 @@ class team_entity_t : public entity_t {
 
     team_entity_t( const box_t& pBBox, const team::team_e& pTeam );
 
+    /// Class Functions ///
+
+    virtual void change( const team::team_e& pTeam );
+
     /// Class Fields ///
 
     public:
@@ -55,7 +59,7 @@ class ball_t : public team_entity_t {
     /// Class Attributes ///
 
     constexpr static float32_t MOVE_VEL = 5.0e-1f; // units: world / seconds
-    constexpr static float32_t HINT_VEL = MOVE_VEL / 1.0e1f; // units: world / seconds
+    constexpr static float32_t HINT_VEL = MOVE_VEL / 5.0e1f; // units: world / seconds
     constexpr static float32_t MAX_RICOCHET_ANGLE = ( 3.0f / 5.0f ) * ( M_PI / 2.0f ); // units: radians
 
     /// Constructors ///

@@ -22,6 +22,11 @@ team_entity_t::team_entity_t( const box_t& pBBox, const team::team_e& pTeam ) :
     
 }
 
+
+void team_entity_t::change( const team::team_e& pTeam ) {
+    mColor = &hmp::color::TEAM[(mTeam = pTeam)];
+}
+
 /// 'hmp::bounds_t' Functions ///
 
 bounds_t::bounds_t( const box_t& pBBox ) :

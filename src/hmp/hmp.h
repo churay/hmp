@@ -18,6 +18,8 @@ constexpr static float32_t ROUND_START_TIME = 1.0f;
 struct state_t {
     float64_t dt, rt, tt;
     bool32_t roundStarted;
+    int8_t roundServer;
+
     rng_t rng;
 
     entity_t* entities[hmp::MAX_ENTITIES];
