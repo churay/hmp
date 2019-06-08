@@ -2,7 +2,7 @@
 
 namespace hmp {
 
-const uint32_t RNG_SEED = 1234;
+const uint32_t RNG_SEED = 12345678;
 
 namespace color {
 

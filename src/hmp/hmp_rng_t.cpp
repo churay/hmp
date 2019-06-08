@@ -2,13 +2,14 @@
 
 namespace hmp {
 
-rng_t::rng_t( const uint64_t pSeed) : mSeed( pSeed ) {
+rng_t::rng_t( const uint64_t pSeed) : mRand( pSeed ), mSeed( pSeed ) {
     
 }
 
 
 uint64_t rng_t::next() {
-    return 1;
+    mRand = ( rng_t::MULTIPLIER * mRand + rng_t::INCREMENT ) % rng_t::PERIOD;
+    return mRand;
 }
 
 };

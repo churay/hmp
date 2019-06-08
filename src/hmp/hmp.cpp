@@ -166,8 +166,12 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     }
 
     if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
-        glm::vec2 ballDir( pState->rng.next(), pState->rng.next() );
-        pState->ballEnt.mVel = glm::normalize( ballDir ) * hmp::ball_t::HINT_VEL;
+        // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
+        // for the random number to bring it into a reasonable floating point range,
+        // but slightly lower fidelity won't be too important at the scale of this sim.
+        float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
+        float64_t ballTheta = 2 * hmp::ball_t::MAX_RICOCHET_ANGLE * ballThetaSeed - hmp::ball_t::MAX_RICOCHET_ANGLE;
+        pState->ballEnt.mVel = hmp::ball_t::HINT_VEL * glm::vec2( glm::cos(ballTheta), glm::sin(ballTheta) );
     } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
