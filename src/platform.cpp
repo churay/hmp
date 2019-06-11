@@ -8,6 +8,12 @@
 
 #include "platform.h"
 
+#ifdef LLCE_CAPTURE
+extern "C" {
+#include <png.h>
+}
+#endif
+
 namespace llce {
 
 // NOTE(JRC): Documentation on the buffer allocation functions on Linux can be
@@ -97,5 +103,54 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
 
     return symbolFunction;
 }
+
+#ifdef LLCE_CAPTURE
+
+bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uint32_t pPNGWidth, uint32_t pPNGHeight ) {
+    bool32_t saveSuccessful = false;
+
+    FILE* pngFile = nullptr;
+    LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "wb")) != nullptr,
+        "Failed to open render file at path '" << pPNGPath << "'." );
+
+    // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
+    png_struct* pngBase = nullptr;
+    LLCE_ASSERT_INFO(
+        (pngBase = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
+        "Failed to create base headers for render file at path '" << pPNGPath << "'." );
+    png_info* pngInfo = nullptr;
+    LLCE_ASSERT_INFO(
+        (pngInfo = png_create_info_struct(pngBase)) != nullptr,
+        "Failed to create info headers for render file at path '" << pPNGPath << "'." );
+
+    if( pngFile != nullptr && pngBase != nullptr && pngInfo != nullptr ) {
+        png_init_io( pngBase, pngFile );
+        png_set_IHDR(
+            pngBase, pngInfo, pPNGWidth, pPNGHeight,
+            8, PNG_COLOR_TYPE_RGBA,
+            PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
+
+        png_write_info( pngBase, pngInfo );
+        for( uint32_t rowIdx = 0; rowIdx < pPNGHeight; rowIdx++ ) {
+            png_write_row( pngBase, (png_byte*)&pPNGData[rowIdx * pPNGWidth * 4] );
+        }
+        png_write_end( pngBase, nullptr );
+
+        png_destroy_write_struct( &pngBase, &pngInfo );
+        fclose( pngFile );
+
+        saveSuccessful = true;
+    }
+
+    return saveSuccessful;
+}
+
+
+bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData ) {
+    // TODO(JRC)
+    return false;
+}
+
+#endif
 
 }

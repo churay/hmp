@@ -20,16 +20,6 @@
 #include "cli.h"
 #include "consts.h"
 
-#if LLCE_CAPTURE_ENABLED == ON
-#define LLCE_CAPTURE 1
-#endif
-
-#ifdef LLCE_CAPTURE
-extern "C" {
-#include <png.h>
-}
-#endif
-
 typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef void (*boot_f)( hmp::graphics_t* );
 typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
@@ -210,8 +200,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Generate Graphics Assets ///
 
+    const path_t cAssetPath( 2, cInstallPath.cstr(), "dat" );
+
     const char8_t* cFontFileName = "dejavu_mono.ttf";
-    const path_t cFontPath( 3, cInstallPath.cstr(), "dat", cFontFileName );
+    const path_t cFontPath( 2, cAssetPath.cstr(), cFontFileName );
     LLCE_ASSERT_ERROR( cFontPath.exists(),
         "Failed to locate font with file name '" << cFontFileName << "'." );
 
@@ -578,6 +570,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     std::snprintf( &slotCaptureFileName[0],
                         sizeof(slotCaptureFileName),
                         cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
+                    path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
 
                     // TODO(JRC): Reversing the colors results in the proper color values,
                     // but it's unclear why this is necessary given that they're stored
@@ -586,40 +579,20 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     vec2u32_t captureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
                     glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
-                    // TODO(JRC): If the C 'FILE' strcture isn't cross-platform,
-                    // its use needs to be replaced here with something more portable.
-                    FILE* captureFile = nullptr;
-                    path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
-                    LLCE_ASSERT_ERROR( (captureFile = std::fopen(capturePath, "wb")) != nullptr,
-                        "Failed to open render file at path '" << capturePath << "'." );
-
-                    // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
-                    png_struct* capturePng = nullptr;
-                    LLCE_ASSERT_ERROR(
-                        (capturePng = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
-                        "Failed to create base headers for render file at path '" << capturePath << "'." );
-                    png_info* captureInfo = nullptr;
-                    LLCE_ASSERT_ERROR(
-                        (captureInfo = png_create_info_struct(capturePng)) != nullptr,
-                        "Failed to create info headers for render file at path '" << capturePath << "'." );
-
-                    png_init_io( capturePng, captureFile );
-                    png_set_IHDR(
-                        capturePng, captureInfo, captureDims.x, captureDims.y,
-                        8, PNG_COLOR_TYPE_RGBA,
-                        PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT );
-                    png_write_info( capturePng, captureInfo );
                     // TODO(JRC): Ultimately, it would be best if the data could just
                     // be funneled natively into the PNG interface instead of having
                     // to mirror it about the y-axis.
-                    for( uint32_t rowIdx = 0; rowIdx < captureDims.y; rowIdx++ ) {
-                        uint32_t rowOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;
-                        png_write_row( capturePng, (png_byte*)&sCaptureBuffer[rowOff] );
+                    color32_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
+                    uint32_t bufferByteCount = captureDims.x * sizeof( color32_t );
+                    for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
+                        uint32_t rowOff = rowIdx * captureDims.x;
+                        uint32_t oppOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;
+                        std::memcpy( tempBuffer, &sCaptureBuffer[rowOff], bufferByteCount );
+                        std::memcpy( &sCaptureBuffer[rowOff], &sCaptureBuffer[oppOff], bufferByteCount );
+                        std::memcpy( &sCaptureBuffer[oppOff], tempBuffer, bufferByteCount );
                     }
-                    png_write_end( capturePng, nullptr );
 
-                    png_destroy_write_struct( &capturePng, &captureInfo );
-                    std::fclose( captureFile );
+                    llce::platform::pngSave( capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y );
                 }
                 isCapturing = cIsSimulating;
 #endif
