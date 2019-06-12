@@ -163,34 +163,13 @@ void scoreboard_t::irender() const {
             hmp::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
             teamRC.render();
 
-            // NOTE(JRC): The following code ensures that the score text is rendered
-            // at a 1:1 ratio relative to screen space.
-            glm::mat4 mvMatrix( 0.0f );
-            glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
-            glm::mat4 imvMatrix = glm::inverse( mvMatrix );
-            glm::vec4 screenDims = imvMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
-            float32_t screenRatio = screenDims.x / screenDims.y;
+            const hmp::box_t scoreBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
+                hmp::gfx::render_context_t scoreRC( scoreBox, 1.0f, &hmp::color::INTERFACE );
 
-            // TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
-            // type that so happens to work... I need to reason this out again
-            // to figure out how this algorithm works.
-            hmp::box_t scoreBox( 0.0f, 0.0f, 1.0f, 1.0f );
-            float32_t wscaled = 1.0f * scoreBox.mDims.y / screenRatio;
-            float32_t hscaled = screenRatio * scoreBox.mDims.x / 1.0f;
-            if( wscaled < scoreBox.mDims.x ) {
-                scoreBox.mPos.x += ( scoreBox.mDims.x - wscaled ) / 2.0f;
-                scoreBox.mDims.x = wscaled;
-            } else {
-                scoreBox.mPos.y += ( scoreBox.mDims.y - hscaled ) / 2.0f;
-                scoreBox.mDims.y = hscaled;
+                char teamScoreBuffer[2];
+                std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
+                hmp::gfx::text::render( &teamScoreBuffer[0], teamColor );
             }
-
-            hmp::gfx::render_context_t scoreRC( scoreBox, &hmp::color::INTERFACE );
-            char teamScoreBuffer[2];
-            std::snprintf( &teamScoreBuffer[0],
-                sizeof(teamScoreBuffer),
-                "%d", teamScore );
-            hmp::gfx::text::render( &teamScoreBuffer[0], teamColor );
         }
     }
 }

@@ -10,6 +10,7 @@ namespace gfx {
 
 struct render_context_t {
     render_context_t( const hmp::box_t& pBox, const color32_t* pColor );
+    render_context_t( const hmp::box_t& pBox, const float32_t pScreenRatio, const color32_t* pColor );
     ~render_context_t();
 
     void render() const;

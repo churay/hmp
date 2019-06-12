@@ -94,6 +94,9 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
     buffBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( 0.0f, 0.0f, 1.0f, 0.85f );
     buffBoxs[hmp::GFX_BUFFER_UI] = hmp::box_t( 0.0f, 0.85f, 1.0f, 0.15f );
 
+    // NOTE(JRC): The following code ensures that buffers have consistent aspect
+    // ratios relative to their output spaces in screen space. This fact is crucial
+    // in making code work in 'hmp::gfx' related to fixing aspect ratios.
     buffRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
     for( uint32_t bufferIdx = hmp::GFX_BUFFER_MASTER + 1; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
         buffRess[bufferIdx] = {

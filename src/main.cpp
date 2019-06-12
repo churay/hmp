@@ -538,18 +538,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 1.0f) );
             glMultMatrixf( &matWorldView[0][0] );
 
-            // TODO(JRC): The following is a demo of how to extract the current
-            // OpenGL model-view matrix and then invert it. This code should be
-            // removed once this demo is no longer needed.
-            //
-            // if( simFrame == 0 ) {
-            //     glm::mat4 matTest( 0.0f );
-            //     glGetFloatv( GL_MODELVIEW_MATRIX, &matTest[0][0] );
-            //     glm::mat4 matInvTest = glm::inverse( matTest );
-            //     glm::mat4 identityTest = matTest * matInvTest;
-            //     std::cout << matTest[0][0] << std::endl;
-            // }
-
             glEnable( GL_TEXTURE_2D ); {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?

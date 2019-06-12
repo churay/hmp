@@ -27,6 +27,39 @@ render_context_t::render_context_t( const box_t& pBox, const color32_t* pColor )
 }
 
 
+// TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
+// type that so happens to work... I need to reason this out again
+// to figure out how this algorithm works.
+// TODO(JRC): This could be made to be more efficient by somehow storing
+// hierarchical ratios for rendering contexts, but its unclear how to
+// make this solution both general and lightweight.
+render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color32_t* pColor ) :
+        render_context_t( pBox, pColor ) {
+    glm::mat4 xformMatrix( 0.0f );
+    glGetFloatv( GL_MODELVIEW_MATRIX, &xformMatrix[0][0] );
+    glm::mat4 ixformMatrix = glm::inverse( xformMatrix );
+
+    glm::vec4 currScreenDims = ixformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
+    float32_t currScreenRatio = currScreenDims.x / currScreenDims.y;
+
+    box_t ratioBox( 0.0f, 0.0f, 1.0f, 1.0f );
+    float32_t wscaled = pScreenRatio * ratioBox.mDims.y / currScreenRatio;
+    float32_t hscaled = currScreenRatio * ratioBox.mDims.x / pScreenRatio;
+    if( wscaled < ratioBox.mDims.x ) {
+        ratioBox.mPos.x += ( ratioBox.mDims.x - wscaled ) / 2.0f;
+        ratioBox.mDims.x = wscaled;
+    } else {
+        ratioBox.mPos.y += ( ratioBox.mDims.y - hscaled ) / 2.0f;
+        ratioBox.mDims.y = hscaled;
+    }
+
+    glm::mat4 matRatio( 1.0f );
+    matRatio *= glm::translate( glm::mat4(1.0f), glm::vec3(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
+    matRatio *= glm::scale( glm::mat4(1.0f), glm::vec3(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
+    glMultMatrixf( &matRatio[0][0] );
+}
+
+
 render_context_t::~render_context_t() {
     glPopAttrib();
     glPopMatrix();
