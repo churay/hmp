@@ -24,7 +24,7 @@ typedef double float64_t;
 
 typedef glm::vec<4, uint8_t, glm::defaultp> vec4u8_t;
 typedef glm::vec<2, uint32_t, glm::defaultp> vec2u32_t;
-typedef glm::vec<2, int32_t, glm::defaultp> vec2i32_t;
+typedef glm::vec<2, float32_t, glm::defaultp> vec2f32_t;
 typedef glm::vec<3, float32_t, glm::defaultp> vec3f32_t;
 typedef glm::vec<4, float32_t, glm::defaultp> vec4f32_t;
 

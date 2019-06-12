@@ -47,6 +47,7 @@ class box_t {
     glm::vec2 min() const;
     glm::vec2 max() const;
     glm::vec2 center() const;
+    float32_t ratio() const;
     interval_t xbounds() const;
     interval_t ybounds() const;
 

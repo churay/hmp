@@ -163,18 +163,29 @@ void scoreboard_t::irender() const {
             hmp::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
             teamRC.render();
 
-            // TODO(JRC): This segment was removed because it doesn't interact well
-            // with a digit overlay, but it could be reintroduced at some point.
-            //
-            // const float32_t teamScoreFrac = teamScore / (hmp::WINNING_SCORE + 0.0f);
-            // const glm::vec2 scoreBasePos = glm::vec2( isTeamWest ? 1.0f : 0.0f, 0.0f ) +
-            //     teamOrient * glm::vec2( 1.0f - teamScoreFrac, 0.0f );
-            // const glm::vec2 scoreBaseDims = glm::vec2( teamScoreFrac, 1.0f );
-            // const hmp::box_t scoreBox( scoreBasePos, scoreBaseDims, teamAnchor ); {
-            //     hmp::gfx::render_context_t scoreRC( scoreBox, teamColor );
-            //     scoreRC.render();
-            // }
+            // NOTE(JRC): The following code ensures that the score text is rendered
+            // at a 1:1 ratio relative to screen space.
+            glm::mat4 mvMatrix( 0.0f );
+            glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
+            glm::mat4 imvMatrix = glm::inverse( mvMatrix );
+            glm::vec4 screenDims = imvMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
+            float32_t screenRatio = screenDims.x / screenDims.y;
 
+            // TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
+            // type that so happens to work... I need to reason this out again
+            // to figure out how this algorithm works.
+            hmp::box_t scoreBox( 0.0f, 0.0f, 1.0f, 1.0f );
+            float32_t wscaled = 1.0f * scoreBox.mDims.y / screenRatio;
+            float32_t hscaled = screenRatio * scoreBox.mDims.x / 1.0f;
+            if( wscaled < scoreBox.mDims.x ) {
+                scoreBox.mPos.x += ( scoreBox.mDims.x - wscaled ) / 2.0f;
+                scoreBox.mDims.x = wscaled;
+            } else {
+                scoreBox.mPos.y += ( scoreBox.mDims.y - hscaled ) / 2.0f;
+                scoreBox.mDims.y = hscaled;
+            }
+
+            hmp::gfx::render_context_t scoreRC( scoreBox, &hmp::color::INTERFACE );
             char teamScoreBuffer[2];
             std::snprintf( &teamScoreBuffer[0],
                 sizeof(teamScoreBuffer),

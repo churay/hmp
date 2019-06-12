@@ -122,6 +122,11 @@ glm::vec2 box_t::center() const {
 }
 
 
+float32_t box_t::ratio() const {
+    return mDims.x / mDims.y;
+}
+
+
 interval_t box_t::xbounds() const {
     return interval_t( mPos[0], mPos[0] + mDims[0] );
 }

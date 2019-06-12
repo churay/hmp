@@ -87,13 +87,20 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 extern "C" void boot( hmp::graphics_t* pGraphics ) {
     // Initialize Graphics //
 
-    pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
-    pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] = { 512, 512 };
-    pGraphics->bufferRess[hmp::GFX_BUFFER_UI] = { 512, 64 };
+    vec2u32_t* buffRess = &pGraphics->bufferRess[0];
+    hmp::box_t* buffBoxs = &pGraphics->bufferBoxs[0];
 
-    pGraphics->bufferBoxs[hmp::GFX_BUFFER_MASTER] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 1.0f) );
-    pGraphics->bufferBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( glm::vec2(0.0f, 0.0f), glm::vec2(1.0f, 0.85f) );
-    pGraphics->bufferBoxs[hmp::GFX_BUFFER_UI] = hmp::box_t( glm::vec2(0.0f, 0.85f), glm::vec2(1.0f, 0.15f) );
+    buffBoxs[hmp::GFX_BUFFER_MASTER] = hmp::box_t( 0.0f, 0.0f, 1.0f, 1.0f );
+    buffBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( 0.0f, 0.0f, 1.0f, 0.85f );
+    buffBoxs[hmp::GFX_BUFFER_UI] = hmp::box_t( 0.0f, 0.85f, 1.0f, 0.15f );
+
+    buffRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
+    for( uint32_t bufferIdx = hmp::GFX_BUFFER_MASTER + 1; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
+        buffRess[bufferIdx] = {
+            (buffBoxs[bufferIdx].mDims.x / buffBoxs[hmp::GFX_BUFFER_MASTER].mDims.x) * buffRess[hmp::GFX_BUFFER_MASTER].x,
+            (buffBoxs[bufferIdx].mDims.y / buffBoxs[hmp::GFX_BUFFER_MASTER].mDims.y) * buffRess[hmp::GFX_BUFFER_MASTER].y
+        };
+    }
 
     for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
         uint32_t& bufferFBO = pGraphics->bufferFBOs[bufferIdx];
