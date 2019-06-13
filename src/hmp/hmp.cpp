@@ -212,6 +212,8 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
+            ballEnt.change( hmp::team::team_e::neutral );
+
             pState->rt = 0.0f;
             pState->roundStarted = false;
         }

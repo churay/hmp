@@ -30,16 +30,27 @@ render_context_t::render_context_t( const box_t& pBox, const color32_t* pColor )
 // TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
 // type that so happens to work... I need to reason this out again
 // to figure out how this algorithm works.
-// TODO(JRC): This could be made to be more efficient by somehow storing
-// hierarchical ratios for rendering contexts, but its unclear how to
-// make this solution both general and lightweight.
 render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color32_t* pColor ) :
         render_context_t( pBox, pColor ) {
-    glm::mat4 xformMatrix( 0.0f );
-    glGetFloatv( GL_MODELVIEW_MATRIX, &xformMatrix[0][0] );
-    glm::mat4 ixformMatrix = glm::inverse( xformMatrix );
+    glm::mat4 xformMatrix( 0.0f ); {
+        glm::mat4 mvMatrix( 0.0f );
+        glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
 
-    glm::vec4 currScreenDims = ixformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
+        vec2u32_t vpCoords, vpRes; {
+            int32_t viewParams[4];
+            glGetIntegerv( GL_VIEWPORT, &viewParams[0] );
+            vpCoords = { static_cast<uint32_t>(viewParams[0]), static_cast<uint32_t>(viewParams[1]) };
+            vpRes = { static_cast<uint32_t>(viewParams[2]), static_cast<uint32_t>(viewParams[3]) };
+        }
+
+        glm::mat4 vpMatrix( 1.0f );
+        vpMatrix = glm::translate( vpMatrix, glm::vec3((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
+        vpMatrix = glm::scale( vpMatrix, glm::vec3(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
+
+        xformMatrix = vpMatrix * mvMatrix;
+    }
+
+    glm::vec4 currScreenDims = xformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
     float32_t currScreenRatio = currScreenDims.x / currScreenDims.y;
 
     box_t ratioBox( 0.0f, 0.0f, 1.0f, 1.0f );
@@ -240,6 +251,9 @@ void text::render( const char8_t* pText, const color32_t* pColor ) {
     const float64_t cTextSpacingY = 0.0;
     const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
+
+    // TODO(JRC): Add a render context here to ensure aspect ratio is roughly 1:1
+    // for each character to be rendered.
 
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
         const auto cTextDigitMap = &ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
