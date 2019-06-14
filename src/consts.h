@@ -29,9 +29,9 @@ typedef glm::vec<3, float32_t, glm::defaultp> vec3f32_t;
 typedef glm::vec<4, float32_t, glm::defaultp> vec4f32_t;
 
 // NOTE(JRC): These can only be passed directly to OpenGL's color array functions
-// using '(uint8_t*)&color32_t', but this is only because 'GLM_FORCE_XYZW_ONLY' is enabled.
-typedef vec4u8_t color32_t;
-typedef vec4f32_t color128_t;
+// using '(uint8_t*)&color4u8_t', but this is only because 'GLM_FORCE_XYZW_ONLY' is enabled.
+typedef vec4u8_t color4u8_t;
+typedef vec4f32_t color4f32_t;
 
 // TODO(JRC): Abstract away the platform-specific code from this module (e.g.
 // 'exit', setting the error number, etc.).

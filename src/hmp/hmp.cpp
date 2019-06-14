@@ -259,7 +259,7 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
         hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
         hmpRC.render();
 
-        // hmp::gfx::text::render( "00", &hmp::color::BACKGROUND );
+        // hmp::gfx::text::render( "ABCDEFGHIJ", &hmp::color::BACKGROUND );
 
         for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
             const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];

@@ -9,12 +9,12 @@ const extern uint32_t RNG_SEED;
 
 namespace color {
 
-const extern color32_t VOID;
-const extern color32_t BACKGROUND;
-const extern color32_t HIGHLIGHT;
-const extern color32_t INTERFACE;
-const extern color32_t BORDER;
-const extern color32_t TEAM[3];
+const extern color4u8_t VOID;
+const extern color4u8_t BACKGROUND;
+const extern color4u8_t HIGHLIGHT;
+const extern color4u8_t INTERFACE;
+const extern color4u8_t BORDER;
+const extern color4u8_t TEAM[3];
 
 };
 

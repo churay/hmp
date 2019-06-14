@@ -212,13 +212,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     LLCE_ASSERT_ERROR( font != nullptr,
         "SDL-TTF failed to create font; " << TTF_GetError() );
 
-    const static color32_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
-    const static color32_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
+    const static color4u8_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
+    const static color4u8_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
 
 #ifdef LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
-    color32_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
+    color4u8_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
     char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 
@@ -243,7 +243,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // performance-level texture generation method, watch the "Handmade Hero" tutorials
     // on OpenGL texturing and font APIs.
     const auto cGenerateTextTexture = [ &textureGLIDs, &font ]
-            ( const uint32_t pTextureID, const color32_t pTextureColor, const char8_t* pTextureText ) {
+            ( const uint32_t pTextureID, const color4u8_t pTextureColor, const char8_t* pTextureText ) {
         const uint32_t& textureGLID = textureGLIDs[pTextureID];
 
         SDL_Color renderColor = { pTextureColor.x, pTextureColor.y, pTextureColor.z, pTextureColor.w };
@@ -268,7 +268,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
 #ifdef LLCE_CAPTURE
-    static color32_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
+    static color4u8_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
     /// Input Wrangling ///
@@ -570,8 +570,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     // TODO(JRC): Ultimately, it would be best if the data could just
                     // be funneled natively into the PNG interface instead of having
                     // to mirror it about the y-axis.
-                    color32_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
-                    uint32_t bufferByteCount = captureDims.x * sizeof( color32_t );
+                    color4u8_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
+                    uint32_t bufferByteCount = captureDims.x * sizeof( color4u8_t );
                     for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
                         uint32_t rowOff = rowIdx * captureDims.x;
                         uint32_t oppOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;

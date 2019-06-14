@@ -13,7 +13,7 @@ class entity_t {
 
     /// Constructors ///
 
-    entity_t( const box_t& pBBox, const color32_t* pColor );
+    entity_t( const box_t& pBBox, const color4u8_t* pColor );
     virtual ~entity_t() = 0;
 
     /// Class Functions ///
@@ -34,7 +34,7 @@ class entity_t {
 
     box_t mBBox; // units: world
     glm::vec2 mVel; // units: world / second
-    const color32_t* mColor; // units: (r,g,b,a)
+    const color4u8_t* mColor; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds
 };
 

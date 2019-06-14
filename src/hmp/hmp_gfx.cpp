@@ -15,7 +15,7 @@ namespace gfx {
 
 /// 'hmp::gfx::render_context_t' Functions ///
 
-render_context_t::render_context_t( const box_t& pBox, const color32_t* pColor ) {
+render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor ) {
     glPushMatrix();
     glm::mat4 matModelWorld( 1.0f );
     matModelWorld *= glm::translate( glm::mat4(1.0f), glm::vec3(pBox.mPos.x, pBox.mPos.y, 0.0f) );
@@ -30,11 +30,16 @@ render_context_t::render_context_t( const box_t& pBox, const color32_t* pColor )
 // TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
 // type that so happens to work... I need to reason this out again
 // to figure out how this algorithm works.
-render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color32_t* pColor ) :
+render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor ) :
         render_context_t( pBox, pColor ) {
+    // TODO(JRC): It would probably be a good idea to ultimately abstract out
+    // this functionality into its own function (e.g. 'getOGLMatrix').
     glm::mat4 xformMatrix( 0.0f ); {
         glm::mat4 mvMatrix( 0.0f );
         glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
+
+        glm::mat4 projMatrix( 0.0f );
+        glGetFloatv( GL_PROJECTION_MATRIX, &projMatrix[0][0] );
 
         vec2u32_t vpCoords, vpRes; {
             int32_t viewParams[4];
@@ -47,7 +52,7 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
         vpMatrix = glm::translate( vpMatrix, glm::vec3((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
         vpMatrix = glm::scale( vpMatrix, glm::vec3(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
 
-        xformMatrix = vpMatrix * mvMatrix;
+        xformMatrix = vpMatrix * projMatrix * mvMatrix;
     }
 
     glm::vec4 currScreenDims = xformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
@@ -238,7 +243,7 @@ const bool8_t text::ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH] = {
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // ''
 };
 
-void text::render( const char8_t* pText, const color32_t* pColor ) {
+void text::render( const char8_t* pText, const color4u8_t* pColor ) {
     const static float64_t csDigitSpaceX = 1.0 / DIGIT_WIDTH;
     const static float64_t csDigitSpaceY = 1.0 / DIGIT_HEIGHT;
     const static float64_t csDigitPaddingX = csDigitSpaceX / 10.0;
@@ -252,9 +257,8 @@ void text::render( const char8_t* pText, const color32_t* pColor ) {
     const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
 
-    // TODO(JRC): Add a render context here to ensure aspect ratio is roughly 1:1
-    // for each character to be rendered.
-
+    const box_t cRenderBox( 0.0f, 0.0f, 1.0f, 1.0f );
+    gfx::render_context_t rrc( cRenderBox, DIGIT_ASPECT * cTextLength, pColor );
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
         const auto cTextDigitMap = &ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
         const uint32_t cTextIdx = pTextItr - pText;
@@ -262,18 +266,18 @@ void text::render( const char8_t* pText, const color32_t* pColor ) {
         const float64_t cTextOffsetX = ( cTextFillX + cTextFillX / cTextSpacingX ) * cTextIdx;
         const float64_t cTextOffsetY = 0.0;
 
-        const box_t cTextBBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );
-        gfx::render_context_t trc( cTextBBox, pColor );
+        const box_t cTextBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );
+        gfx::render_context_t trc( cTextBox, pColor );
         for( uint32_t yIdx = 0; yIdx < DIGIT_HEIGHT; yIdx++ ) {
             for( uint32_t xIdx = 0; xIdx < DIGIT_WIDTH; xIdx++ ) {
                 const float64_t cDigitOffsetX = csDigitPaddingX + csDigitSpaceX * xIdx;
                 const float64_t cDigitOffsetY = csDigitPaddingY + csDigitSpaceY * yIdx;
 
                 if( cTextDigitMap[yIdx][xIdx] ) {
-                    const box_t cDigitBBox(
+                    const box_t cDigitBox(
                         cDigitOffsetX, cDigitOffsetY,
                         csDigitFillX, csDigitFillY );
-                    gfx::render_context_t drc( cDigitBBox, pColor );
+                    gfx::render_context_t drc( cDigitBox, pColor );
                     drc.render();
                 }
             }
