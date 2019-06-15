@@ -11,7 +11,7 @@ namespace color {
 
 const extern color4u8_t VOID;
 const extern color4u8_t BACKGROUND;
-const extern color4u8_t HIGHLIGHT;
+const extern color4u8_t BACKGROUND2;
 const extern color4u8_t INTERFACE;
 const extern color4u8_t BORDER;
 const extern color4u8_t TEAM[3];

@@ -12,15 +12,27 @@ namespace hmp {
 
 /// State Types/Variables ///
 
+namespace mode { enum mode_e { start, game, pause, restart }; };
+
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
-struct state_t {
-    float64_t dt, rt, tt;
-    bool32_t roundStarted;
-    int8_t roundServer;
 
-    rng_t rng;
+constexpr static char8_t MENU_ITEM_TEXT[][32] = { "START", "EXIT " };
+constexpr static uint32_t MENU_ITEM_COUNT = ARRAY_LEN( MENU_ITEM_TEXT );
+
+
+struct state_t {
+    // Global State //
+    float64_t dt; // frame time
+    float64_t tt; // total time
+    mode::mode_e mode; // game state
+    rng_t rng; // random number generator
+
+    // Game State //
+    float64_t rt; // round time
+    bool32_t roundStarted; // round flag
+    team::team_e roundServer; // round starter flag
 
     entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
@@ -28,6 +40,9 @@ struct state_t {
     scoreboard_t scoreEnt;
     ball_t ballEnt;
     paddle_t paddleEnts[2];
+
+    // Menu State //
+    uint8_t menuIdx;
 };
 
 /// Input Types/Variables ///

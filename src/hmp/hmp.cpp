@@ -18,19 +18,18 @@
 
 
 extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
-    // Initialize Simulation //
+    // Initialize Global Variables //
 
-    pState->dt = 0.0; // frame delta time
-    pState->rt = 0.0; // round time
-    pState->tt = 0.0; // total time
-    pState->roundStarted = false;
-    pState->roundServer = 1;
-
-    // Initialize State Variables //
-
+    pState->dt = 0.0;
+    pState->tt = 0.0;
+    pState->mode = hmp::mode::game;
     pState->rng = hmp::rng_t( hmp::RNG_SEED );
 
-    // Initialize Entities //
+    // Initialize Game Variables //
+
+    pState->rt = 0.0; 
+    pState->roundStarted = false;
+    pState->roundServer = hmp::team::east;
 
     // TODO(JRC): This should be more automated if possible (iterate over
     // the state variables after 'entities' array, perhaps?).
@@ -163,6 +162,19 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         dx[1] += 1;
     }
 
+    /*
+    int32_t mdy[2] = { 0, 0 };
+    if( pInput->keys[SDL_SCANCODE_W] && pInput->diffs[SDL_SCANCODE_W] == hmp::KEY_DIFF_DOWN ) {
+        mdy[0] += 1;
+    } if( pInput->keys[SDL_SCANCODE_S] && pInput->diffs[SDL_SCANCODE_S] == hmp::KEY_DIFF_DOWN ) {
+        mdy[0] -= 1;
+    } if( pInput->keys[SDL_SCANCODE_I] && pInput->diffs[SDL_SCANCODE_I] == hmp::KEY_DIFF_DOWN ) {
+        mdy[1] += 1;
+    } if( pInput->keys[SDL_SCANCODE_K] && pInput->diffs[SDL_SCANCODE_K] == hmp::KEY_DIFF_DOWN ) {
+        mdy[1] -= 1;
+    }
+    */
+
     // TODO(JRC): Movement along the x-axis for paddles is currently disabled;
     // inclusion of this style of movement needs to be determined.
     for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
@@ -172,14 +184,16 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     // Update State //
 
     pState->dt = pDT;
-    pState->rt += pDT;
     pState->tt += pDT;
+
+    pState->rt += pDT;
 
     for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
         pState->entities[entityIdx]->update( pState->dt );
     }
 
     if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
+        const int8_t roundDir = ( pState->roundServer == hmp::team::west ) ? -1 : 1;
         const float64_t ballMaxTheta = hmp::ball_t::MAX_RICOCHET_ANGLE;
 
         // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
@@ -188,7 +202,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
         float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
         pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
-            glm::vec2( pState->roundServer * glm::cos(ballTheta), glm::sin(ballTheta) );
+            glm::vec2( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
     } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
@@ -208,7 +222,7 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         } if( !boundsX.contains(ballX) ) {
             bool8_t isWestScore = ballX.contains( boundsX.mMax );
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
-            pState->roundServer = isWestScore ? 1 : -1;
+            pState->roundServer = isWestScore ? hmp::team::east : hmp::team::west;
 
             ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
             ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
@@ -229,11 +243,17 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
     }
+
+    // Update Menu //
+
+    /*
+    pState->menuIdx = ( pState->menuIdx + mdy[0] + mdy[1] ) % hmp::MENU_ITEM_COUNT;
+    */
 }
 
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
-    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::VOID );
+    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
 
     { // Render State //
         hmp::gfx::fbo_context_t simFBOC(
@@ -259,8 +279,6 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
         hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
         hmpRC.render();
 
-        // hmp::gfx::text::render( "ABCDEFGHIJ", &hmp::color::BACKGROUND );
-
         for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
             const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
             const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
@@ -277,4 +295,39 @@ extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, 
             }
         }
     }
+
+    /*
+    { // Render Menu //
+        const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
+        const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+        hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+        hmpRC.render();
+
+        { // Header //
+            const float32_t cHeaderPadding = 0.05f;
+            const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
+            const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
+
+            hmp::gfx::render_context_t headerRC(
+                hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
+            hmp::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
+        }
+
+        { // Items //
+            const float32_t cItemPadding = 0.05f;
+            const vec2f32_t cItemDims = { 1.0f, 0.10f };
+            const vec2f32_t cItemBase = { 0.0f, 0.50f };
+
+            for( uint32_t itemIdx = 0; itemIdx < hmp::MENU_ITEM_COUNT; itemIdx++ ) {
+                vec2f32_t itemPos = cItemBase -
+                    static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
+                hmp::gfx::render_context_t itemRC(
+                    hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+
+                if( itemIdx == pState->menuIdx ) { itemRC.render(); }
+                hmp::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
+            }
+        }
+    }
+    */
 }

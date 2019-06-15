@@ -8,7 +8,7 @@ namespace color {
 
 const color4u8_t VOID = { 0xFF, 0xFF, 0xFF, 0xFF };
 const color4u8_t BACKGROUND = { 0x00, 0x2b, 0x36, 0xFF };
-const color4u8_t HIGHLIGHT = { 0x00, 0x00, 0x00, 0x00 };
+const color4u8_t BACKGROUND2 = static_cast<uint8_t>( 2 ) * hmp::color::BACKGROUND;
 const color4u8_t INTERFACE = { 0x58, 0x58, 0x58, 0xFF };
 const color4u8_t BORDER = { 0x26, 0x26, 0x26, 0xFF };
 const color4u8_t TEAM[3] = {
