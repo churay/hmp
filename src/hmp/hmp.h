@@ -13,7 +13,7 @@ namespace hmp {
 
 /// State Types/Variables ///
 
-namespace mode { enum mode_e { menu, game, pause, restart }; };
+namespace mode { enum mode_e { game, menu, pause, restart }; };
 
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;

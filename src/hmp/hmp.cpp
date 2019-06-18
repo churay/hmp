@@ -76,6 +76,10 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::team::east );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
 
+    // Initialize Menu Variables //
+
+    pState->menuIdx = 0;
+
     // Initialize Input //
 
     std::memset( pInput, 0, sizeof(hmp::input_t) );
@@ -174,159 +178,157 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         }
     }
 
-    // TODO(JRC): Movement along the x-axis for paddles is currently disabled;
-    // inclusion of this style of movement needs to be determined.
-    for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
-        pState->paddleEnts[paddleIdx].move( 0, dy[paddleIdx] );
-    }
-
     // Update State //
 
     pState->dt = pDT;
     pState->tt += pDT;
 
-    pState->rt += pDT;
+    if( pState->mode == hmp::mode::game ) {
+        pState->rt += pDT;
 
-    for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-        pState->entities[entityIdx]->update( pState->dt );
-    }
-
-    if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
-        const int8_t roundDir = ( pState->roundServer == hmp::team::west ) ? -1 : 1;
-        const float64_t ballMaxTheta = hmp::ball_t::MAX_RICOCHET_ANGLE;
-
-        // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
-        // for the random number to bring it into a reasonable floating point range,
-        // but slightly lower fidelity won't be too important at the scale of this sim.
-        float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
-        float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
-        pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
-            glm::vec2( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
-    } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
-        pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
-        pState->roundStarted = true;
-    }
-
-    // Resolve Collisions //
-
-    hmp::bounds_t& boundsEnt = pState->boundsEnt;
-    hmp::ball_t& ballEnt = pState->ballEnt;
-
-    if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
-        hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
-        hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
-        if( !boundsY.contains(ballY) ) {
-            uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
-            ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
-        } if( !boundsX.contains(ballX) ) {
-            bool8_t isWestScore = ballX.contains( boundsX.mMax );
-            pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
-            pState->roundServer = isWestScore ? hmp::team::east : hmp::team::west;
-
-            ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
-            ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
-            ballEnt.change( hmp::team::team_e::neutral );
-
-            pState->rt = 0.0f;
-            pState->roundStarted = false;
+        // TODO(JRC): Movement along the x-axis for paddles is currently disabled;
+        // inclusion of this style of movement needs to be determined.
+        for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
+            pState->paddleEnts[paddleIdx].move( 0, dy[paddleIdx] );
         }
-    }
 
-    for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
-        hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
-        if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
-            ballEnt.ricochet( &paddleEnt );
-            ballEnt.change( static_cast<hmp::team::team_e>(paddleEnt.mTeam) );
-            ballEnt.mVel *= 1.1f;
-        } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
-            paddleEnt.mBBox.embed( boundsEnt.mBBox );
+        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+            pState->entities[entityIdx]->update( pState->dt );
         }
+
+        if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
+            const int8_t roundDir = ( pState->roundServer == hmp::team::west ) ? -1 : 1;
+            const float64_t ballMaxTheta = hmp::ball_t::MAX_RICOCHET_ANGLE;
+
+            // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
+            // for the random number to bring it into a reasonable floating point range,
+            // but slightly lower fidelity won't be too important at the scale of this sim.
+            float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
+            float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
+            pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
+                glm::vec2( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
+        } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
+            pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
+            pState->roundStarted = true;
+        }
+
+        // Resolve Collisions //
+
+        hmp::bounds_t& boundsEnt = pState->boundsEnt;
+        hmp::ball_t& ballEnt = pState->ballEnt;
+
+        if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
+            hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
+            hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
+            if( !boundsY.contains(ballY) ) {
+                uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
+                ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
+            } if( !boundsX.contains(ballX) ) {
+                bool8_t isWestScore = ballX.contains( boundsX.mMax );
+                pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
+                pState->roundServer = isWestScore ? hmp::team::east : hmp::team::west;
+
+                ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
+                ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
+                ballEnt.change( hmp::team::team_e::neutral );
+
+                pState->rt = 0.0f;
+                pState->roundStarted = false;
+            }
+        }
+
+        for( uint8_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
+            hmp::paddle_t& paddleEnt = pState->paddleEnts[paddleIdx];
+            if( paddleEnt.mBBox.overlaps(ballEnt.mBBox) ) {
+                ballEnt.ricochet( &paddleEnt );
+                ballEnt.change( static_cast<hmp::team::team_e>(paddleEnt.mTeam) );
+                ballEnt.mVel *= 1.1f;
+            } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
+                paddleEnt.mBBox.embed( boundsEnt.mBBox );
+            }
+        }
+    } else if( pState->mode == hmp::mode::menu ) {
+        pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
     }
-
-    // Update Menu //
-
-    /*
-    pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
-    */
 }
 
 
 extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
 
-    { // Render State //
-        hmp::gfx::fbo_context_t simFBOC(
-            pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
-            pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] );
+    if( pState->mode == hmp::mode::game ) {
+        { // Render State //
+            hmp::gfx::fbo_context_t simFBOC(
+                pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
+                pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] );
 
-        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-            pState->entities[entityIdx]->render();
+            for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
+                pState->entities[entityIdx]->render();
+            }
         }
-    }
 
-    { // Render UI //
-        hmp::gfx::fbo_context_t simFBOC(
-            pGraphics->bufferFBOs[hmp::GFX_BUFFER_UI],
-            pGraphics->bufferRess[hmp::GFX_BUFFER_UI] );
+        { // Render UI //
+            hmp::gfx::fbo_context_t simFBOC(
+                pGraphics->bufferFBOs[hmp::GFX_BUFFER_UI],
+                pGraphics->bufferRess[hmp::GFX_BUFFER_UI] );
 
-        pState->scoreEnt.render();
-    }
+            pState->scoreEnt.render();
+        }
 
-    { // Render Master //
-        const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-        const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
-        hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
-        hmpRC.render();
+        { // Render Master //
+            const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
+            const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+            hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+            hmpRC.render();
 
-        for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
-            const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
-            const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
-            const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
+            for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
+                const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
+                const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
+                const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
 
-            glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
-            glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
-            for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
-                glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
-                    bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
-                    bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
-                    bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
-                    bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
+                glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
+                glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
+                for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
+                    glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
+                        bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
+                        bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
+                        bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
+                        bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
+                }
+            }
+        }
+    } else if( pState->mode == hmp::mode::menu ) {
+        { // Render Menu //
+            const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
+            const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+            hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+            hmpRC.render();
+
+            { // Header //
+                const float32_t cHeaderPadding = 0.05f;
+                const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
+                const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
+
+                hmp::gfx::render_context_t headerRC(
+                    hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
+                hmp::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
+            }
+
+            { // Items //
+                const float32_t cItemPadding = 0.05f;
+                const vec2f32_t cItemDims = { 1.0f, 0.10f };
+                const vec2f32_t cItemBase = { 0.0f, 0.50f };
+
+                for( uint32_t itemIdx = 0; itemIdx < hmp::MENU_ITEM_COUNT; itemIdx++ ) {
+                    vec2f32_t itemPos = cItemBase -
+                        static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
+                    hmp::gfx::render_context_t itemRC(
+                        hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+
+                    if( itemIdx == pState->menuIdx ) { itemRC.render(); }
+                    hmp::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
+                }
             }
         }
     }
-
-    /*
-    { // Render Menu //
-        const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-        const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
-        hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
-        hmpRC.render();
-
-        { // Header //
-            const float32_t cHeaderPadding = 0.05f;
-            const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
-            const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
-
-            hmp::gfx::render_context_t headerRC(
-                hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
-            hmp::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
-        }
-
-        { // Items //
-            const float32_t cItemPadding = 0.05f;
-            const vec2f32_t cItemDims = { 1.0f, 0.10f };
-            const vec2f32_t cItemBase = { 0.0f, 0.50f };
-
-            for( uint32_t itemIdx = 0; itemIdx < hmp::MENU_ITEM_COUNT; itemIdx++ ) {
-                vec2f32_t itemPos = cItemBase -
-                    static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-                hmp::gfx::render_context_t itemRC(
-                    hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
-
-                if( itemIdx == pState->menuIdx ) { itemRC.render(); }
-                hmp::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
-            }
-        }
-    }
-    */
 }
