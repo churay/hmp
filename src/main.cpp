@@ -17,6 +17,7 @@
 #include "memory_t.h"
 #include "path_t.h"
 #include "platform.h"
+#include "input.h"
 #include "cli.h"
 #include "consts.h"
 
@@ -26,6 +27,9 @@ typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef void (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
+
+typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
+typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
@@ -285,41 +289,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     };
     const uint32_t cFXKeyGroupSize = ARRAY_LEN( cFXKeyGroup );
 
-    const auto cIsKeyDown = [ &appInput ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( appInput->keys[pKey] );
-    };
-    const auto cIsKGDown = [ &cIsKeyDown ]
-            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-        uint32_t firstIdx = 0;
-        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-            firstIdx = cIsKeyDown( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-        }
-        return firstIdx;
-    };
-
-    const auto cWasKeyPressed = [ &appInput ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_DOWN );
-    };
-    const auto cWasKGPressed = [ &cWasKeyPressed ]
-            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-        uint32_t firstIdx = 0;
-        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-            firstIdx = cWasKeyPressed( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-        }
-        return firstIdx;
-    };
-
-    const auto cWasKeyReleased = [ &appInput ] ( const SDL_Scancode pKey ) {
-        return (bool32_t)( appInput->keys[pKey] && appInput->diffs[pKey] == hmp::KEY_DIFF_UP );
-    };
-    const auto cWasKGReleased = [ &cWasKeyReleased ]
-            ( const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-        uint32_t firstIdx = 0;
-        for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-            firstIdx = cWasKeyReleased( pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-        }
-        return firstIdx;
-    };
+    kscheck_f isKeyDown = llce::input::isKeyDown;
+    kgcheck_f isKGDown = llce::input::isKGDown;
+    kscheck_f isKeyPressed = llce::input::isKeyPressed;
+    kgcheck_f isKGPressed = llce::input::isKGPressed;
+    kscheck_f isKeyReleased = llce::input::isKeyReleased;
+    kgcheck_f isKGReleased = llce::input::isKGReleased;
 
     /// Update/Render Loop ///
 
@@ -358,17 +333,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
         simTimer.split();
 
-        const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
-        for( uint32_t keyIdx = 0; keyIdx < sizeof(appInput->keys); keyIdx++ ) {
-            const bool8_t wasKeyDown = appInput->keys[keyIdx];
-            const bool8_t isKeyDown = keyboardState[keyIdx];
-
-            appInput->keys[keyIdx] = isKeyDown;
-            appInput->diffs[keyIdx] = (
-                (!wasKeyDown && isKeyDown) ? hmp::KEY_DIFF_DOWN : (
-                (wasKeyDown && !isKeyDown) ? hmp::KEY_DIFF_UP : (
-                hmp::KEY_DIFF_NONE)) );
-        }
+        llce::input::readKeyboard( appInput->keyboard );
         std::memcpy( simInput, appInput, sizeof(hmp::input_t) );
 
         SDL_Event event;
@@ -382,10 +347,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        if( cIsKeyDown(SDL_SCANCODE_Q) ) {
+        if( isKeyDown(appInput->keyboard, SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
-        } if( cWasKeyPressed(SDL_SCANCODE_GRAVE) ) {
+        } if( isKeyPressed(appInput->keyboard, SDL_SCANCODE_GRAVE) ) {
             // ` key = capture application
             isCapturing = true;
         }
@@ -394,14 +359,14 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(hmp::input_t) );
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(hmp::state_t) );
 
-        if( (!isStepping && cWasKeyPressed(SDL_SCANCODE_SPACE)) ||
-                (isStepping && cIsKeyDown(SDL_SCANCODE_SPACE)) ) {
+        if( (!isStepping && isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE)) ||
+                (isStepping && isKeyDown(appInput->keyboard, SDL_SCANCODE_SPACE)) ) {
             // space key = toggle frame advance mode
             LLCE_ALERT_INFO( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
         }
 
-        if( (currSlotIdx = cWasKGPressed(&cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
+        if( (currSlotIdx = isKGPressed(appInput->keyboard, &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
             // function key (fx) = debug state operation
             recSlotIdx = !cIsSimulating ? currSlotIdx : cSimStateIdx;
 
@@ -416,7 +381,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
             path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
 
-            if( (cIsKeyDown(SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
+            if( (isKeyDown(appInput->keyboard, SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
                 // lshift + fx = toggle slot x replay
                 LLCE_ALERT_INFO( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
@@ -434,7 +399,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     recInputStream.close();
                 }
                 isReplaying = !isReplaying;
-            } else if( cIsKeyDown(SDL_SCANCODE_RSHIFT) && !isRecording ) {
+            } else if( isKeyDown(appInput->keyboard, SDL_SCANCODE_RSHIFT) && !isRecording ) {
                 // rshift + fx = hotload slot x state (reset replay)
                 LLCE_ALERT_INFO( "Hotload Slot {" << recSlotIdx << "}" );
                 if( isReplaying ) {

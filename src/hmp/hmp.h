@@ -6,21 +6,20 @@
 #include "hmp_entities.h"
 #include "hmp_rng_t.h"
 #include "hmp_consts.h"
+#include "input.h"
 #include "consts.h"
 
 namespace hmp {
 
 /// State Types/Variables ///
 
-namespace mode { enum mode_e { start, game, pause, restart }; };
+namespace mode { enum mode_e { menu, game, pause, restart }; };
 
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
-
 constexpr static char8_t MENU_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t MENU_ITEM_COUNT = ARRAY_LEN( MENU_ITEM_TEXT );
-
 
 struct state_t {
     // Global State //
@@ -47,13 +46,8 @@ struct state_t {
 
 /// Input Types/Variables ///
 
-constexpr static uint8_t KEY_DIFF_NONE = 0;
-constexpr static uint8_t KEY_DIFF_DOWN = 1;
-constexpr static uint8_t KEY_DIFF_UP = 2;
-
 struct input_t {
-    uint8_t keys[SDL_Scancode::SDL_NUM_SCANCODES];
-    uint8_t diffs[SDL_Scancode::SDL_NUM_SCANCODES];
+    llce::input::keyboard_t keyboard;
 };
 
 /// Graphics Types/Variables ///
