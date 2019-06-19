@@ -191,6 +191,13 @@ void update_game( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pD
 
 void update_menu( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     int32_t dy[2] = { 0, 0 };
+    bool32_t dselect = false;
+
+    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_D) ) {
+        dselect = true;
+    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_L) ) {
+        dselect = true;
+    }
 
     if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_W) ) {
         dy[0] += 1;
@@ -202,7 +209,15 @@ void update_menu( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pD
         dy[1] -= 1;
     }
 
-    pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
+    if( dselect ) {
+        if( pState->menuIdx == 0 ) {
+            pState->pmode = hmp::mode::game;
+        } else if( pState->menuIdx == 1 ) {
+            pState->pmode = hmp::mode::exit;
+        }
+    } else {
+        pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
+    }
 }
 
 
@@ -381,7 +396,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->tt = 0.0;
 
     pState->mode = hmp::mode::boot;
-    pState->pmode = hmp::mode::game;
+    pState->pmode = hmp::mode::menu;
 
     pState->rng = hmp::rng_t( hmp::RNG_SEED );
 
@@ -399,6 +414,7 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
 extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     if( pState->mode != pState->pmode ) {
+        // if( pState->pmode < 0 ) { TODO(JRC): Exit game }
         MODE_INIT_FUNS[pState->pmode]( pState );
         pState->mode = pState->pmode;
     }
