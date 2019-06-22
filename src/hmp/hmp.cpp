@@ -19,9 +19,9 @@
 
 /// Global Declarations ///
 
-typedef void (*init_f)( hmp::state_t* );
-typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
-typedef void (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
+typedef bool32_t (*init_f)( hmp::state_t* );
+typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
+typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
 
 /// Per-Mode Tables ///
 
@@ -35,7 +35,7 @@ constexpr static uint32_t MODE_COUNT = ARRAY_LEN( MODE_INIT_FUNS );
 
 /// Interface Functions ///
 
-extern "C" void boot( hmp::graphics_t* pGraphics ) {
+extern "C" bool32_t boot( hmp::graphics_t* pGraphics ) {
     // Initialize Graphics //
 
     vec2u32_t* buffRess = &pGraphics->bufferRess[0];
@@ -89,10 +89,12 @@ extern "C" void boot( hmp::graphics_t* pGraphics ) {
 
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );
     glBindTexture( GL_TEXTURE_2D, 0 );
+
+    return true;
 }
 
 
-extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
+extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Initialize Global Variables //
 
     pState->dt = 0.0;
@@ -109,15 +111,19 @@ extern "C" void init( hmp::state_t* pState, hmp::input_t* pInput ) {
 
     // Initialize Per-Mode Variables //
 
+    bool32_t initStatus = true;
+
     for( uint32_t modeIdx = 0; modeIdx < MODE_COUNT; modeIdx++ ) {
-        MODE_INIT_FUNS[modeIdx]( pState );
+        initStatus &= MODE_INIT_FUNS[modeIdx]( pState );
     }
+
+    return initStatus;
 }
 
 
-extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     if( pState->mid != pState->pmid ) {
-        // if( pState->pmid < 0 ) { TODO(JRC): Exit game }
+        if( pState->pmid < 0 ) { return false; }
         MODE_INIT_FUNS[pState->pmid]( pState );
         pState->mid = pState->pmid;
     }
@@ -125,13 +131,13 @@ extern "C" void update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     pState->dt = pDT;
     pState->tt += pDT;
 
-    MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
+    return MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
 }
 
 
-extern "C" void render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
     hmpRC.render();
 
-    MODE_RENDER_FUNS[pState->mid]( pState, pInput, pGraphics );
+    return MODE_RENDER_FUNS[pState->mid]( pState, pInput, pGraphics );
 }

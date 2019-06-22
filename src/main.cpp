@@ -21,10 +21,10 @@
 #include "cli.h"
 #include "consts.h"
 
-typedef void (*init_f)( hmp::state_t*, hmp::input_t* );
-typedef void (*boot_f)( hmp::graphics_t* );
-typedef void (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
-typedef void (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
+typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
+typedef bool32_t (*boot_f)( hmp::graphics_t* );
+typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
+typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 
@@ -314,8 +314,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // that this increments very quickly over time isn't a big concern.
     uint64_t simFrame = 0;
 
-    dllInit( simState, simInput );
-    dllBoot( simGraphics );
+    isRunning &= dllInit( simState, simInput );
+    isRunning &= dllBoot( simGraphics );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
         bool32_t isStepReady = false;
@@ -490,8 +490,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         glMatrixMode( GL_MODELVIEW );
         glLoadIdentity();
 
-        dllUpdate( simState, simInput, simDT );
-        dllRender( simState, simInput, simGraphics );
+        isRunning &= dllUpdate( simState, simInput, simDT );
+        isRunning &= dllRender( simState, simInput, simGraphics );
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {

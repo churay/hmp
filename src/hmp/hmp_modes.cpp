@@ -19,7 +19,7 @@ namespace mode {
 
 /// 'hmp::mode::game' Functions  ///
 
-void game::init( hmp::state_t* pState ) {
+bool32_t game::init( hmp::state_t* pState ) {
     pState->rt = 0.0;
     pState->roundStarted = false;
     pState->roundServer = hmp::team::east;
@@ -68,10 +68,12 @@ void game::init( hmp::state_t* pState ) {
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::team::east );
     std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
+
+    return true;
 }
 
 
-void game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     // Process Inputs //
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
@@ -163,10 +165,12 @@ void game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t p
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
     }
+
+    return true;
 }
 
 
-void game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     { // Render State //
         hmp::gfx::fbo_context_t simFBOC(
             pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
@@ -209,16 +213,20 @@ void game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const
             }
         }
     }
+
+    return true;
 }
 
 /// 'hmp::mode::menu' Functions  ///
 
-void menu::init( hmp::state_t* pState ) {
+bool32_t menu::init( hmp::state_t* pState ) {
     pState->menuIdx = 0;
+
+    return true;
 }
 
 
-void menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
 
@@ -247,9 +255,11 @@ void menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t p
     } else {
         pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
     }
+
+    return true;
 }
 
-void menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
     const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
     hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
@@ -282,38 +292,46 @@ void menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const
             hmp::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
         }
     }
+
+    return true;
 }
 
 /// 'hmp::mode::pause' Functions  ///
 
-void pause::init( hmp::state_t* pState ) {
+bool32_t pause::init( hmp::state_t* pState ) {
     // TODO(JRC)
+    return true;
 }
 
 
-void pause::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+bool32_t pause::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     // TODO(JRC)
+    return true;
 }
 
 
-void pause::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t pause::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     // TODO(JRC)
+    return true;
 }
 
 /// 'hmp::mode::reset' Functions  ///
 
-void reset::init( hmp::state_t* pState ) {
+bool32_t reset::init( hmp::state_t* pState ) {
     // TODO(JRC)
+    return true;
 }
 
 
-void reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     // TODO(JRC)
+    return true;
 }
 
 
-void reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
     // TODO(JRC)
+    return true;
 }
 
 }

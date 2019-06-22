@@ -23,8 +23,8 @@ struct state_t {
     // Global State //
     float64_t dt; // frame time
     float64_t tt; // total time
-    mode::mode_e mid; // game state
-    mode::mode_e pmid; // pending state
+    mode::mode_e mid; // game mode
+    mode::mode_e pmid; // pending mode
     rng_t rng; // random number generator
 
     // Game State //
