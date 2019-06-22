@@ -5,6 +5,7 @@
 
 namespace hmp {
 
+namespace mode { enum mode_e { boot_id = -1, exit_id = -2, game_id = 0, menu_id, pause_id, reset_id }; };
 namespace team { enum team_e { west, east, neutral }; };
 
 constexpr static int8_t WINNING_SCORE = 3;

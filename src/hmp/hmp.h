@@ -13,8 +13,6 @@ namespace hmp {
 
 /// State Types/Variables ///
 
-namespace mode { enum mode_e { boot = -1, exit = -2, game = 0, menu, pause, restart }; };
-
 constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
@@ -25,8 +23,8 @@ struct state_t {
     // Global State //
     float64_t dt; // frame time
     float64_t tt; // total time
-    mode::mode_e mode; // game state
-    mode::mode_e pmode; // pending state
+    mode::mode_e mid; // game state
+    mode::mode_e pmid; // pending state
     rng_t rng; // random number generator
 
     // Game State //
