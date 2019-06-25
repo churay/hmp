@@ -3,6 +3,7 @@
 #include <SDL2/SDL_opengl_glext.h>
 
 #include <glm/glm.hpp>
+#include <glm/gtx/vector_angle.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
 #include <cstring>
@@ -283,6 +284,47 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
             }
         }
     }
+}
+
+void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor ) {
+    const static float64_t csHeadRatio = 2.5 / 10.0;
+    const static float64_t csTailRatio = 1.0 - csHeadRatio;
+    const static float64_t csWidthRatio = 1.0 / 10.0;
+    const static vec2f32_t csAxisI( 1.0f, 0.0f ), csAxisJ( 0.0f, 1.0f );
+
+    const vec2f32_t cDirNorm = glm::normalize( pDir );
+    const float32_t cDirAngle = glm::orientedAngle( csAxisI, cDirNorm );
+
+    // GFX Environment Setup //
+
+    glPushMatrix();
+    glm::mat4 matVecSpace( 1.0f );
+    matVecSpace *= glm::translate( glm::mat4(1.0f), glm::vec3(pOrigin.x, pOrigin.y, 0.0f) );
+    matVecSpace *= glm::rotate( glm::mat4(1.0f), cDirAngle, glm::vec3(0.0f, 0.0f, 1.0f) );
+    glMultMatrixf( &matVecSpace[0][0] );
+
+    glPushAttrib( GL_CURRENT_BIT );
+    glColor4ubv( (uint8_t*)pColor );
+
+    { // Rendering //
+        glBegin( GL_QUADS ); {
+            glVertex2f( 0.0f, (-csWidthRatio / 2.0f) * pLength );
+            glVertex2f( csTailRatio * pLength, (-csWidthRatio / 2.0f) * pLength );
+            glVertex2f( csTailRatio * pLength, (csWidthRatio / 2.0f) * pLength );
+            glVertex2f( 0.0f, (csWidthRatio / 2.0f) * pLength );
+        } glEnd();
+
+        glBegin( GL_TRIANGLES ); {
+            glVertex2f( csTailRatio * pLength, (-csHeadRatio / 2.0f) * pLength );
+            glVertex2f( (csTailRatio + csHeadRatio) * pLength, 0.0f );
+            glVertex2f( csTailRatio * pLength, (csHeadRatio / 2.0f) * pLength );
+        } glEnd();
+    }
+
+    // GFX Environment Teardown //
+    
+    glPopAttrib();
+    glPopMatrix();
 }
 
 };

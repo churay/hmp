@@ -25,13 +25,15 @@ struct fbo_context_t {
 };
 
 namespace text {
+    constexpr static uint32_t DIGIT_WIDTH = 5, DIGIT_HEIGHT = 7;
+    constexpr static float64_t DIGIT_ASPECT = ( DIGIT_WIDTH + 0.0 ) / ( DIGIT_HEIGHT + 0.0 );
+    const extern bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH];
 
-constexpr static uint32_t DIGIT_WIDTH = 5, DIGIT_HEIGHT = 7;
-constexpr static float64_t DIGIT_ASPECT = ( DIGIT_WIDTH + 0.0 ) / ( DIGIT_HEIGHT + 0.0 );
-const extern bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH];
+    void render( const char8_t* pText, const color4u8_t* pColor );
+};
 
-void render( const char8_t* pText, const color4u8_t* pColor );
-
+namespace vector {
+    void render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor );
 };
 
 };

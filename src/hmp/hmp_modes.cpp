@@ -179,6 +179,11 @@ bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
         for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
             pState->entities[entityIdx]->render();
         }
+
+        if( !pState->roundStarted ) {
+            const hmp::ball_t& ball = pState->ballEnt;
+            hmp::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
+        }
     }
 
     { // Render UI //
