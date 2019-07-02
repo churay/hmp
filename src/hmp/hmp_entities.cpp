@@ -35,16 +35,17 @@ bounds_t::bounds_t( const box_t& pBBox ) :
 }
 
 
-void bounds_t::irender() const {
-    entity_t::irender();
+void bounds_t::render() const {
+    hmp::gfx::render_context_t baseRC( mBBox, mColor );
+    baseRC.render();
 
     // TODO(JRC): This 'brighten' operation only works because the source color
     // for the 'bounds_t' object is such that values don't overflow. In the future,
     // we need a more proper 'brighten' function that puts a ceiling on color values.
     const color4u8_t entityColor = static_cast<uint8_t>( 2 ) * *mColor;
-    hmp::gfx::render_context_t entityRC(
+    hmp::gfx::render_context_t lineRC(
         box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c), &entityColor );
-    entityRC.render();
+    lineRC.render();
 }
 
 /// 'hmp::ball_t' Functions ///
@@ -123,10 +124,12 @@ void paddle_t::move( const int32_t pDX, const int32_t pDY ) {
 }
 
 
-void paddle_t::iupdate( const float64_t pDT ) {
+void paddle_t::update( const float64_t pDT ) {
     mVel.x = mDX * paddle_t::MOVE_VEL;
     mVel.y = mDY * paddle_t::MOVE_VEL;
-    entity_t::iupdate( pDT );
+
+    mLifetime += pDT;
+    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
 
 /// 'hmp::scoreboard_t' Functions ///
@@ -144,8 +147,9 @@ void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
 }
 
 
-void scoreboard_t::irender() const {
-    entity_t::irender();
+void scoreboard_t::render() const {
+    hmp::gfx::render_context_t entityRC( mBBox, mColor );
+    entityRC.render();
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const int8_t teamScore = mScores[team];

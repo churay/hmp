@@ -21,35 +21,15 @@ entity_t::entity_t( const box_t& pBBox, const color4u8_t* pColor ) :
 }
 
 
-entity_t::~entity_t() {
-    
-}
-
-
 void entity_t::update( const float64_t pDT ) {
     mLifetime += pDT;
-    iupdate( pDT );
+    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
 }
 
 
 void entity_t::render() const {
     hmp::gfx::render_context_t entityRC( mBBox, mColor );
-    irender();
-}
-
-
-void entity_t::iupdate( const float64_t pDT ) {
-    mBBox.mPos += static_cast<float32_t>( pDT ) * mVel;
-}
-
-
-void entity_t::irender() const {
-    glBegin( GL_QUADS ); {
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
+    entityRC.render();
 }
 
 }

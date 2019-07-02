@@ -13,7 +13,6 @@ namespace hmp {
 
 /// State Types/Variables ///
 
-constexpr static uint32_t MAX_ENTITIES = 16;
 constexpr static float32_t ROUND_START_TIME = 1.0f;
 
 constexpr static char8_t MENU_ITEM_TEXT[][32] = { "START", "EXIT " };
@@ -32,7 +31,6 @@ struct state_t {
     bool32_t roundStarted; // round flag
     team::team_e roundServer; // round starter flag
 
-    entity_t* entities[hmp::MAX_ENTITIES];
     bounds_t boundsEnt;
     bounds_t ricochetEnts[2];
     scoreboard_t scoreEnt;

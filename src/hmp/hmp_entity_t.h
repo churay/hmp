@@ -14,19 +14,11 @@ class entity_t {
     /// Constructors ///
 
     entity_t( const box_t& pBBox, const color4u8_t* pColor );
-    virtual ~entity_t() = 0;
 
     /// Class Functions ///
 
     void update( const float64_t pDT );
     void render() const;
-
-    /// Internal Functions ///
-
-    protected:
-
-    virtual void iupdate( const float64_t pDT );
-    virtual void irender() const;
 
     /// Class Fields ///
 

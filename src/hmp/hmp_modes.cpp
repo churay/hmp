@@ -24,50 +24,26 @@ bool32_t game::init( hmp::state_t* pState ) {
     pState->roundStarted = false;
     pState->roundServer = hmp::team::east;
 
-    // TODO(JRC): This should be more automated if possible (iterate over
-    // the state variables after 'entities' array, perhaps?).
-    uint32_t entityIdx = 0;
-    pState->entities[entityIdx++] = &pState->boundsEnt;
-    // pState->entities[entityIdx++] = &pState->scoreEnt;
-    pState->entities[entityIdx++] = &pState->ballEnt;
-    for( uint32_t paddleIdx = 0; paddleIdx < 2; paddleIdx++ ) {
-        pState->entities[entityIdx++] = &pState->paddleEnts[paddleIdx];
-    } for( ; entityIdx < hmp::MAX_ENTITIES; ) {
-        pState->entities[entityIdx++] = nullptr;
-    }
-
-    // NOTE(JRC): For the virtual types below, a memory copy needs to be performed
-    // instead of invoking the copy constructor in order to ensure that the v-table
-    // is copied to the state entity, which is initialized to 'null' by default.
-
     const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
-    const hmp::bounds_t boundsEnt( hmp::box_t(boundsBasePos, boundsDims) );
-    std::memcpy( (void*)&pState->boundsEnt, (void*)&boundsEnt, sizeof(hmp::bounds_t) );
+    pState->boundsEnt = hmp::bounds_t( hmp::box_t(boundsBasePos, boundsDims) );
 
     for( uint32_t ricochetIdx = 0; ricochetIdx < 2; ricochetIdx++ ) {
         const glm::vec2 boundsPos = boundsBasePos + glm::vec2( 0.0f, (ricochetIdx != 0) ? 1.0f : -1.0f );
-        hmp::bounds_t ricochetEnt( hmp::box_t(boundsPos, boundsDims) );
-        std::memcpy( (void*)&pState->ricochetEnts[ricochetIdx], (void*)&ricochetEnt, sizeof(hmp::bounds_t) );
+        pState->ricochetEnts[ricochetIdx] = hmp::bounds_t( hmp::box_t(boundsPos, boundsDims) );
     }
 
     const glm::vec2 scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f );
-    const hmp::scoreboard_t scoreEnt( hmp::box_t(scoreBasePos, scoreDims) );
-    std::memcpy( (void*)&pState->scoreEnt, (void*)&scoreEnt, sizeof(hmp::scoreboard_t) );
+    pState->scoreEnt = hmp::scoreboard_t( hmp::box_t(scoreBasePos, scoreDims) );
 
     const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
     const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
-    const hmp::ball_t ballEnt( hmp::box_t(ballPos, ballDims) );
-    std::memcpy( (void*)&pState->ballEnt, (void*)&ballEnt, sizeof(hmp::ball_t) );
+    pState->ballEnt = hmp::ball_t( hmp::box_t(ballPos, ballDims) );
 
     const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
-
     const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t westEnt( hmp::box_t(westPos, paddleDims), hmp::team::west );
-    std::memcpy( (void*)&pState->paddleEnts[0], (void*)&westEnt, sizeof(hmp::paddle_t) );
-
+    pState->paddleEnts[hmp::team::west] = hmp::paddle_t( hmp::box_t(westPos, paddleDims), hmp::team::west );
     const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    const hmp::paddle_t eastEnt( hmp::box_t(eastPos, paddleDims), hmp::team::east );
-    std::memcpy( (void*)&pState->paddleEnts[1], (void*)&eastEnt, sizeof(hmp::paddle_t) );
+    pState->paddleEnts[hmp::team::east] = hmp::paddle_t( hmp::box_t(eastPos, paddleDims), hmp::team::east );
 
     return true;
 }
@@ -106,8 +82,14 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         pState->paddleEnts[paddleIdx].move( 0, dy[paddleIdx] );
     }
 
-    for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-        pState->entities[entityIdx]->update( pState->dt );
+    { // Entity Updates //
+        pState->boundsEnt.update( pState->dt );
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+            pState->ricochetEnts[sideIdx].update( pState->dt );
+        pState->scoreEnt.update( pState->dt );
+        pState->ballEnt.update( pState->dt );
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+            pState->paddleEnts[sideIdx].update( pState->dt );
     }
 
     if( !pState->roundStarted && glm::length(pState->ballEnt.mVel) == 0.0f ) {
@@ -176,8 +158,13 @@ bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
             pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
             pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] );
 
-        for( uint32_t entityIdx = 0; pState->entities[entityIdx] != nullptr; entityIdx++ ) {
-            pState->entities[entityIdx]->render();
+        { // Entity Renders //
+            pState->boundsEnt.render();
+            for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+                pState->ricochetEnts[sideIdx].render();
+            pState->ballEnt.render();
+            for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+                pState->paddleEnts[sideIdx].render();
         }
 
         if( !pState->roundStarted ) {

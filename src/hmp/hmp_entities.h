@@ -21,7 +21,7 @@ class team_entity_t : public entity_t {
 
     /// Class Functions ///
 
-    virtual void change( const team::team_e& pTeam );
+    void change( const team::team_e& pTeam );
 
     /// Class Fields ///
 
@@ -41,11 +41,9 @@ class bounds_t : public entity_t {
 
     bounds_t( const box_t& pBBox );
 
-    /// Internal Functions ///
+    /// Class Functions ///
 
-    protected:
-
-    virtual void irender() const;
+    void render() const;
 
     /// Class Fields ///
 
@@ -70,10 +68,6 @@ class ball_t : public team_entity_t {
 
     void ricochet( const entity_t* pSurface );
 
-    /// Internal Functions ///
-
-    protected:
-
     /// Class Fields ///
 
     public:
@@ -93,13 +87,9 @@ class paddle_t : public team_entity_t {
 
     /// Class Functions ///
 
+    void update( const float64_t pDT );
     void move( const int32_t pDX, const int32_t pDY );
 
-    /// Internal Functions ///
-
-    protected:
-
-    virtual void iupdate( const float64_t pDT );
 
     /// Class Fields ///
 
@@ -123,13 +113,8 @@ class scoreboard_t : public entity_t {
 
     /// Class Functions ///
 
+    void render() const;
     void tally( const int8_t pWestDelta, const int8_t pEastDelta );
-
-    /// Internal Functions ///
-
-    protected:
-
-    virtual void irender() const;
 
     /// Class Fields ///
 
