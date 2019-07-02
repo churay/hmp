@@ -108,7 +108,7 @@ foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target} ${hmp_e
 endforeach()
 
 add_dependencies(${hmp_lib_target} ${hmp_dat_target})
-# add_dependencies(${hmp_exe_target} ${hmp_lib_target})
+# add_dependencies(${hmp_exe_target} ${hmp_dat_target})
 
 target_include_directories(${hmp_dat_target} PUBLIC src/hmp)
 target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
@@ -140,7 +140,7 @@ foreach(hmp_exe_target ${hmp_exe_target})
     target_link_libraries(${hmp_exe_target} PUBLIC ${hmp_dep_libs} ${hmp_exe_libs})
 endforeach()
 target_link_libraries(${hmp_lib_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
-# target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
+# target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
 
 ###############################################################################
 ## testing ####################################################################
