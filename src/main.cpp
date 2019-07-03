@@ -21,15 +21,22 @@
 #include "cli.h"
 #include "consts.h"
 
+typedef std::ios_base::openmode ioflag_t;
+typedef llce::platform::path_t path_t;
+
+typedef bool32_t (*compare_f)( const int64_t&, const int64_t& );
+
 typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef bool32_t (*boot_f)( hmp::graphics_t* );
 typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
-typedef std::ios_base::openmode ioflag_t;
-typedef llce::platform::path_t path_t;
 
 typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
 typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
+
+// TODO(JRC): Clean this up using lambdas if possible.
+bool32_t isLess( const int64_t& pV1, const int64_t& pV2 ){ return pV1 < pV2; }
+bool32_t isMore( const int64_t& pV1, const int64_t& pV2 ){ return pV1 > pV2; }
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
@@ -103,49 +110,74 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const char8_t* cRenderFileFormat = "render%u-%u.png";
     const static int32_t csOutputFileNameLength = 20;
 
-    /// Load Dynamic Shared Library ///
+    /// Load Dynamic Shared Libraries ///
 
-    const char8_t* cDLLDataFileName = "libhmpdata.so";
-    const path_t cDLLDataPath = llce::platform::libFindDLLPath( cDLLDataFileName );
-    LLCE_ASSERT_ERROR( cDLLDataPath.exists(),
-        "Failed to find library " << cDLLDataFileName << " in dynamic path." );
+    const static char8_t* csDLLFileNames[] = { "libhmpdata.so", "libhmp.so" };
+    const static uint32_t csDLLCount = ARRAY_LEN( csDLLFileNames );
+    const uint32_t cDataDLLID = 0, cCodeDLLID = 1;
 
-    const char8_t* cDLLFileName = "libhmp.so";
-    const path_t cDLLPath = llce::platform::libFindDLLPath( cDLLFileName );
-    LLCE_ASSERT_ERROR( cDLLPath.exists(),
-        "Failed to find library " << cDLLFileName << " in dynamic path." );
+    path_t dllFilePaths[csDLLCount];
+    void* dllHandles[csDLLCount];
+    for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
+        const char8_t* cDLLFileName = csDLLFileNames[dllIdx];
+        path_t& dllFilePath = dllFilePaths[dllIdx];
 
-    void* dllDataHandle = nullptr;
-    void* dllHandle = nullptr;
+        dllFilePath = llce::platform::libFindDLLPath( cDLLFileName );
+        LLCE_ASSERT_ERROR( dllFilePath.exists(),
+            "Failed to find library '" << cDLLFileName << "' in dynamic path." );
+    }
+
     init_f dllInit = nullptr;
     boot_f dllBoot = nullptr;
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
-    const auto cDLLReload = [ &cDLLDataPath, &dllDataHandle, &cDLLPath, &dllHandle, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
-        if( dllHandle != nullptr ) {
-            llce::platform::dllUnloadHandle( dllDataHandle, cDLLDataPath );
-            llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
+    const auto cDLLReload = [ &dllFilePaths, &dllHandles, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
+        bool32_t dllLoadSuccess = true;
+
+        // NOTE(JRC): This needs to happen in two stages to ensure that libraries
+        // with dynamic dependencies fully reload new symbol values during this process.
+        for( uint32_t dllIdx = 0; dllIdx < csDLLCount && dllLoadSuccess; dllIdx++ ) {
+            void*& dllHandle = dllHandles[dllIdx];
+            if( dllHandle != nullptr ) {
+                llce::platform::dllUnloadHandle( dllHandle, dllFilePaths[dllIdx] );
+            }
+        } for( uint32_t dllIdx = 0; dllIdx < csDLLCount && dllLoadSuccess; dllIdx++ ) {
+            void*& dllHandle = dllHandles[dllIdx];
+            dllHandle = llce::platform::dllLoadHandle( dllFilePaths[dllIdx] );
+            dllLoadSuccess &= dllHandle != nullptr;
         }
 
-        dllDataHandle = llce::platform::dllLoadHandle( cDLLDataPath );
-        dllHandle = llce::platform::dllLoadHandle( cDLLPath );
-        dllInit = (init_f)llce::platform::dllLoadSymbol( dllHandle, "init" );
-        dllBoot = (boot_f)llce::platform::dllLoadSymbol( dllHandle, "boot" );
-        dllUpdate = (update_f)llce::platform::dllLoadSymbol( dllHandle, "update" );
-        dllRender = (render_f)llce::platform::dllLoadSymbol( dllHandle, "render" );
+        if( dllLoadSuccess ) {
+            void* dllHandle = dllHandles[cCodeDLLID];
+            dllInit = (init_f)llce::platform::dllLoadSymbol( dllHandle, "init" );
+            dllBoot = (boot_f)llce::platform::dllLoadSymbol( dllHandle, "boot" );
+            dllUpdate = (update_f)llce::platform::dllLoadSymbol( dllHandle, "update" );
+            dllRender = (render_f)llce::platform::dllLoadSymbol( dllHandle, "render" );
+        }
 
-        return dllDataHandle != nullptr && dllHandle != nullptr &&
+        return dllLoadSuccess &&
             dllInit != nullptr && dllBoot != nullptr &&
             dllUpdate != nullptr && dllRender != nullptr;
     };
 
+    const auto cDLLModTime = [ &dllFilePaths ] ( compare_f pCompare ) {
+        int64_t maxModTime = -1;
+
+        for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
+            int64_t dllModTime = dllFilePaths[dllIdx].modtime();
+            maxModTime = ( maxModTime < 0 || pCompare(dllModTime, maxModTime) ) ? dllModTime : maxModTime;
+        }
+
+        return maxModTime;
+    };
+
     LLCE_ASSERT_ERROR( cDLLReload(),
-        "Couldn't load library `" << cDLLFileName << "` symbols on initialize." );
+        "Couldn't load dynamic library symbols on initialize." );
 
     int64_t prevDylibModTime, currDylibModTime;
     LLCE_ASSERT_ERROR(
-        prevDylibModTime = currDylibModTime = cDLLPath.modtime(),
-        "Couldn't load library `" << cDLLFileName << "` stat data on initialize." );
+        prevDylibModTime = currDylibModTime = cDLLModTime(isLess),
+        "Couldn't load dynamic library stat data on initialize." );
 
     /// Initialize Windows/Graphics ///
 
@@ -468,8 +500,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         LLCE_ASSERT_ERROR(
-            currDylibModTime = cDLLPath.modtime(),
-            "Couldn't load library `" << cDLLFileName << "` stat data on step." );
+            currDylibModTime = cDLLModTime(isMore),
+            "Couldn't load dynamic library stat data on step." );
         if( currDylibModTime != prevDylibModTime ) {
             // TODO(JRC): This isn't ideal since spinning in this way can really
             // ramp up processing time, but it's a permissible while there aren't
@@ -482,7 +514,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 "while waiting for DLL install; consider transitioning to file locks." );
 
             LLCE_ASSERT_ERROR( cDLLReload(),
-                "Couldn't load library `" << cDLLFileName << "` symbols at " <<
+                "Couldn't load dynamic library symbols at " <<
                 "simulation time " << simTimer.tt() << "." );
 
             LLCE_ALERT_INFO( "DLL Reload {" << simFrame << "}" );
@@ -620,8 +652,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Clean Up + Exit ///
 
-    if( dllHandle != nullptr ) {
-        llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
+    for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
+        if( dllHandles[dllIdx] != nullptr ) {
+            llce::platform::dllUnloadHandle( dllHandles[dllIdx], dllFilePaths[dllIdx] );
+        }
     }
 
     recStateStream.close();
