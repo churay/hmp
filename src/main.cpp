@@ -105,28 +105,36 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Load Dynamic Shared Library ///
 
+    const char8_t* cDLLDataFileName = "libhmpdata.so";
+    const path_t cDLLDataPath = llce::platform::libFindDLLPath( cDLLDataFileName );
+    LLCE_ASSERT_ERROR( cDLLDataPath.exists(),
+        "Failed to find library " << cDLLDataFileName << " in dynamic path." );
+
     const char8_t* cDLLFileName = "libhmp.so";
     const path_t cDLLPath = llce::platform::libFindDLLPath( cDLLFileName );
     LLCE_ASSERT_ERROR( cDLLPath.exists(),
         "Failed to find library " << cDLLFileName << " in dynamic path." );
 
+    void* dllDataHandle = nullptr;
     void* dllHandle = nullptr;
     init_f dllInit = nullptr;
     boot_f dllBoot = nullptr;
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
-    const auto cDLLReload = [ &cDLLPath, &dllHandle, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
+    const auto cDLLReload = [ &cDLLDataPath, &dllDataHandle, &cDLLPath, &dllHandle, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
         if( dllHandle != nullptr ) {
+            llce::platform::dllUnloadHandle( dllDataHandle, cDLLDataPath );
             llce::platform::dllUnloadHandle( dllHandle, cDLLPath );
         }
 
+        dllDataHandle = llce::platform::dllLoadHandle( cDLLDataPath );
         dllHandle = llce::platform::dllLoadHandle( cDLLPath );
         dllInit = (init_f)llce::platform::dllLoadSymbol( dllHandle, "init" );
         dllBoot = (boot_f)llce::platform::dllLoadSymbol( dllHandle, "boot" );
         dllUpdate = (update_f)llce::platform::dllLoadSymbol( dllHandle, "update" );
         dllRender = (render_f)llce::platform::dllLoadSymbol( dllHandle, "render" );
 
-        return dllHandle != nullptr &&
+        return dllDataHandle != nullptr && dllHandle != nullptr &&
             dllInit != nullptr && dllBoot != nullptr &&
             dllUpdate != nullptr && dllRender != nullptr;
     };
