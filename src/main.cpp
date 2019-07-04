@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
+#include <cmath>
 #include <cstring>
 #include <cstdio>
 #include <fstream>
@@ -24,7 +25,7 @@
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 
-typedef bool32_t (*compare_f)( const int64_t&, const int64_t& );
+typedef const int64_t& (*reduce_f)( const int64_t&, const int64_t& );
 
 typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef bool32_t (*boot_f)( hmp::graphics_t* );
@@ -33,10 +34,6 @@ typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hm
 
 typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
 typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
-
-// TODO(JRC): Clean this up using lambdas if possible.
-bool32_t isLess( const int64_t& pV1, const int64_t& pV2 ){ return pV1 < pV2; }
-bool32_t isMore( const int64_t& pV1, const int64_t& pV2 ){ return pV1 > pV2; }
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
@@ -160,15 +157,16 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             dllUpdate != nullptr && dllRender != nullptr;
     };
 
-    const auto cDLLModTime = [ &dllFilePaths ] ( compare_f pCompare ) {
-        int64_t maxModTime = -1;
-
+    // NOTE(JRC): Reduces all DLL modification times to a single value based
+    // on the given function (e.g. std::min for earliest, std::max for latest).
+    const auto cDLLModTime = [ &dllFilePaths ] ( reduce_f pReduce ) {
+        int64_t reducedModTime = -1;
         for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
             int64_t dllModTime = dllFilePaths[dllIdx].modtime();
-            maxModTime = ( maxModTime < 0 || pCompare(dllModTime, maxModTime) ) ? dllModTime : maxModTime;
+            reducedModTime = ( reducedModTime < 0 ) ?
+                dllModTime : pReduce( dllModTime, reducedModTime );
         }
-
-        return maxModTime;
+        return reducedModTime;
     };
 
     LLCE_ASSERT_ERROR( cDLLReload(),
@@ -176,7 +174,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     int64_t prevDylibModTime, currDylibModTime;
     LLCE_ASSERT_ERROR(
-        prevDylibModTime = currDylibModTime = cDLLModTime(isLess),
+        prevDylibModTime = currDylibModTime = cDLLModTime(std::min<int64_t>),
         "Couldn't load dynamic library stat data on initialize." );
 
     /// Initialize Windows/Graphics ///
@@ -500,7 +498,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         LLCE_ASSERT_ERROR(
-            currDylibModTime = cDLLModTime(isMore),
+            currDylibModTime = cDLLModTime(std::max<int64_t>),
             "Couldn't load dynamic library stat data on step." );
         if( currDylibModTime != prevDylibModTime ) {
             // TODO(JRC): This isn't ideal since spinning in this way can really
