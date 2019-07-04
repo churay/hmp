@@ -258,12 +258,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
+    SDL_AudioDeviceID audioDeviceID;
     LLCE_ASSERT_ERROR(
-        SDL_OpenAudio(&tempAudioConfig, &realAudioConfig) >= 0,
+        (audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &tempAudioConfig, &realAudioConfig, SDL_AUDIO_ALLOW_ANY_CHANGE)) >= 0,
         "SDL failed to initialize audio device; " << SDL_GetError() );
     LLCE_ASSERT_ERROR(
         wantAudioConfig.format == realAudioConfig.format,
-        "SDL failed to initialize audio device w/ correct format." );
+        "SDL failed to initialize audio device with correct format." );
 
     SDL_PauseAudio( 0 );
 
@@ -689,7 +690,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     TTF_CloseFont( font );
     TTF_Quit();
 
-    SDL_CloseAudio();
+    SDL_CloseAudioDevice( audioDeviceID );
 
     SDL_GL_DeleteContext( glcontext );
     SDL_DestroyWindow( window );
