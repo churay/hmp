@@ -182,7 +182,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // TODO(JRC): Include 'SDL_INIT_GAMECONTROLLER' when it's needed; it causes
     // extra one-time leaks so it has been excluded to aid in memory error tracking.
     LLCE_ASSERT_ERROR(
-        SDL_Init(SDL_INIT_VIDEO) >= 0,
+        SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) >= 0,
         "SDL failed to initialize; " << SDL_GetError() );
 
     LLCE_ASSERT_ERROR(
@@ -239,6 +239,33 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
         glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
     }
+
+    /// Initialize Audio ///
+
+    const static auto csAudioCleanup = [] ( void* pUserData, uint8_t* pAudioData, int32_t pLength ) {
+        std::memset( pAudioData, 0, pLength );
+    };
+
+    SDL_AudioSpec tempAudioConfig; {
+        std::memset( &tempAudioConfig, 0, sizeof(SDL_AudioSpec) );
+        tempAudioConfig.freq = 48000;                 // number of sample frames / second
+        tempAudioConfig.format = AUDIO_S16LSB;        // size and type of samples
+        tempAudioConfig.channels = 2;                 // number of audio channels (2: stereo)
+        tempAudioConfig.samples = 4096;               // size of audio buffer in sample frames
+        tempAudioConfig.callback = csAudioCleanup;    // callback for cleaning up used samples
+    }
+
+    const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
+    SDL_AudioSpec realAudioConfig;
+
+    LLCE_ASSERT_ERROR(
+        SDL_OpenAudio(&tempAudioConfig, &realAudioConfig) >= 0,
+        "SDL failed to initialize audio device; " << SDL_GetError() );
+    LLCE_ASSERT_ERROR(
+        wantAudioConfig.format == realAudioConfig.format,
+        "SDL failed to initialize audio device w/ correct format." );
+
+    SDL_PauseAudio( 0 );
 
     /// Generate Graphics Assets ///
 
@@ -661,6 +688,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     TTF_CloseFont( font );
     TTF_Quit();
+
+    SDL_CloseAudio();
 
     SDL_GL_DeleteContext( glcontext );
     SDL_DestroyWindow( window );
