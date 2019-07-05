@@ -242,19 +242,24 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Initialize Audio ///
 
-    const static auto csAudioCleanup = [] ( void* pUserData, uint8_t* pAudioData, int32_t pLength ) {
-        std::memset( pAudioData, 0, pLength );
-    };
+    const static uint32_t csAudioFrequency = 48000;                         // audio samples / second
+    const static SDL_AudioFormat csAudioFormat = AUDIO_S16SYS;              // audio sample data format
+    const static uint32_t csAudioChannelCount = 2;                          // audio channels (2: stereo)
+    const static uint32_t csAudioSampleBytes = 2 * csAudioChannelCount;     // audio bytes / sample
+    const static uint32_t csAudioSampleCount = csAudioFrequency / cSimFPS;  // audio samples / frame
+
+    const static uint32_t csAudioWaveFrequency = 256;                       // audio wave cycles / second
+    const static uint32_t csAudioWavePeriod = csAudioFrequency / csAudioWaveFrequency; // samples / cycle
+    const static uint32_t csAudioWaveAmplitude = 3000;                      // audio wave volume
 
     SDL_AudioSpec tempAudioConfig; {
         std::memset( &tempAudioConfig, 0, sizeof(SDL_AudioSpec) );
-        tempAudioConfig.freq = 48000;                 // number of sample frames / second
-        tempAudioConfig.format = AUDIO_S16LSB;        // size and type of samples
-        tempAudioConfig.channels = 2;                 // number of audio channels (2: stereo)
-        tempAudioConfig.samples = 4096;               // size of audio buffer in sample frames
-        tempAudioConfig.callback = csAudioCleanup;    // callback for cleaning up used samples
+        tempAudioConfig.freq = csAudioFrequency;
+        tempAudioConfig.format = csAudioFormat;
+        tempAudioConfig.channels = csAudioChannelCount;
+        tempAudioConfig.samples = csAudioSampleCount;
+        tempAudioConfig.callback = nullptr;
     }
-
     const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
@@ -263,10 +268,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         (audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &tempAudioConfig, &realAudioConfig, SDL_AUDIO_ALLOW_ANY_CHANGE)) >= 0,
         "SDL failed to initialize audio device; " << SDL_GetError() );
     LLCE_ASSERT_ERROR(
-        wantAudioConfig.format == realAudioConfig.format,
+        wantAudioConfig.channels == realAudioConfig.channels && wantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
 
-    SDL_PauseAudio( 0 );
+    int16_t audioBuffer[csAudioChannelCount * csAudioSampleCount];         // audio frame buffer
+    uint64_t audioWaveIndex = 0;                                           // audio wave index
 
     /// Generate Graphics Assets ///
 
@@ -667,6 +673,23 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         } glDisable( GL_TEXTURE_2D );
 #endif
+
+        { // Play Filler Audio //
+            const uint32_t cFrameAudioLength = sizeof( audioBuffer ) - SDL_GetQueuedAudioSize( audioDeviceID );
+            if( cFrameAudioLength ) {
+                std::memset( audioBuffer, 0, sizeof(audioBuffer) );
+
+                const uint32_t cFrameSampleCount = cFrameAudioLength / csAudioSampleBytes;
+                for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cFrameSampleCount; sampleIdx++ ) {
+                    int16_t sampleValue = csAudioWaveAmplitude * (((audioWaveIndex++ / (csAudioWavePeriod / 2)) % 2) ? 1 : -1);
+                    for( uint32_t channelIdx = 0; channelIdx < csAudioChannelCount; channelIdx++, bufferIdx++ ) {
+                        audioBuffer[bufferIdx] = sampleValue;
+                    }
+                }
+
+                SDL_QueueAudio( audioDeviceID, &audioBuffer[0], cFrameAudioLength );
+            }
+        }
 
         SDL_GL_SwapWindow( window );
 
