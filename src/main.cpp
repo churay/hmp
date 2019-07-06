@@ -243,17 +243,16 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Audio ///
 
     const static uint32_t csAudioFrequency = 48000;                         // audio samples / second
-    const static SDL_AudioFormat csAudioFormat = AUDIO_S16SYS;              // audio sample data format
+    const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;              // audio sample data format
     const static uint32_t csAudioChannelCount = 2;                          // audio channels (2: stereo)
     const static uint32_t csAudioSampleBytes = 2 * csAudioChannelCount;     // audio bytes / sample
-    const static uint32_t csAudioSampleCount = csAudioFrequency / cSimFPS;  // audio samples / frame
+    const static uint32_t csAudioSampleCount = ( csAudioFrequency * csAudioSampleBytes ) / cSimFPS;
 
     const static uint32_t csAudioWaveFrequency = 256;                       // audio wave cycles / second
     const static uint32_t csAudioWavePeriod = csAudioFrequency / csAudioWaveFrequency; // samples / cycle
-    const static uint32_t csAudioWaveAmplitude = 3000;                      // audio wave volume
+    const static uint32_t csAudioWaveAmplitude = 1000;                      // audio wave volume
 
-    SDL_AudioSpec tempAudioConfig; {
-        std::memset( &tempAudioConfig, 0, sizeof(SDL_AudioSpec) );
+    SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
         tempAudioConfig.format = csAudioFormat;
         tempAudioConfig.channels = csAudioChannelCount;
@@ -263,16 +262,20 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
-    SDL_AudioDeviceID audioDeviceID;
+    int16_t audioBuffer[csAudioFrequency * csAudioChannelCount];           // audio frame buffer
+    uint64_t audioWaveIndex = 0;                                           // audio wave index
+
+    SDL_AudioDeviceID audioDeviceID = 1;
     LLCE_ASSERT_ERROR(
-        (audioDeviceID = SDL_OpenAudioDevice(nullptr, 0, &tempAudioConfig, &realAudioConfig, SDL_AUDIO_ALLOW_ANY_CHANGE)) >= 0,
+        (audioDeviceID = SDL_OpenAudioDevice(
+            nullptr, 0, &tempAudioConfig, &realAudioConfig, SDL_AUDIO_ALLOW_ANY_CHANGE)) >= 0,
         "SDL failed to initialize audio device; " << SDL_GetError() );
     LLCE_ASSERT_ERROR(
         wantAudioConfig.channels == realAudioConfig.channels && wantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
 
-    int16_t audioBuffer[csAudioChannelCount * csAudioSampleCount];         // audio frame buffer
-    uint64_t audioWaveIndex = 0;                                           // audio wave index
+    // NOTE(JRC): Set the parameter of the function below to 'false' to enable sound.
+    SDL_PauseAudioDevice( audioDeviceID, true );
 
     /// Generate Graphics Assets ///
 
@@ -675,19 +678,19 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         { // Play Filler Audio //
-            const uint32_t cFrameAudioLength = sizeof( audioBuffer ) - SDL_GetQueuedAudioSize( audioDeviceID );
-            if( cFrameAudioLength ) {
+            const uint32_t cAudioBytesToWrite = sizeof( audioBuffer ) - SDL_GetQueuedAudioSize( audioDeviceID );
+            if( cAudioBytesToWrite > 0 ) {
                 std::memset( audioBuffer, 0, sizeof(audioBuffer) );
 
-                const uint32_t cFrameSampleCount = cFrameAudioLength / csAudioSampleBytes;
-                for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cFrameSampleCount; sampleIdx++ ) {
+                const uint32_t cSamplesToWrite = cAudioBytesToWrite / csAudioSampleBytes;
+                for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cSamplesToWrite; sampleIdx++ ) {
                     int16_t sampleValue = csAudioWaveAmplitude * (((audioWaveIndex++ / (csAudioWavePeriod / 2)) % 2) ? 1 : -1);
                     for( uint32_t channelIdx = 0; channelIdx < csAudioChannelCount; channelIdx++, bufferIdx++ ) {
                         audioBuffer[bufferIdx] = sampleValue;
                     }
                 }
 
-                SDL_QueueAudio( audioDeviceID, &audioBuffer[0], cFrameAudioLength );
+                SDL_QueueAudio( audioDeviceID, &audioBuffer[0], cAudioBytesToWrite );
             }
         }
 
