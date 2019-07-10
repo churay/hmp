@@ -38,7 +38,7 @@ typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancod
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
-    const float64_t cSimFPS = 60.0;
+    const float64_t csSimFPS = 60.0;
 
     /// Parse Input Arguments ///
 
@@ -62,7 +62,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // in the 'doc/static_address.md' documentation file.
 #ifdef LLCE_DEBUG
     bit8_t* const cBufferAddress = (bit8_t*)0x0000100000000000;
-    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 2.0 * cSimFPS );
+    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 2.0 * csSimFPS );
 #else
     bit8_t* const cBufferAddress = nullptr;
     const uint64_t cBackupBufferCount = 0;
@@ -246,7 +246,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;              // audio sample data format
     const static uint32_t csAudioChannelCount = 2;                          // audio channels (2: stereo)
     const static uint32_t csAudioSampleBytes = 2 * csAudioChannelCount;     // audio bytes / sample
-    const static uint32_t csAudioSampleCount = ( csAudioFrequency * csAudioSampleBytes ) / cSimFPS;
+    const static uint32_t csAudioSampleCount = ( csAudioFrequency * csAudioSampleBytes ) / csSimFPS;
 
     const static uint32_t csAudioWaveFrequency = 256;                       // audio wave cycles / second
     const static uint32_t csAudioWavePeriod = csAudioFrequency / csAudioWaveFrequency; // samples / cycle
@@ -262,7 +262,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
-    int16_t audioBuffer[csAudioFrequency * csAudioChannelCount];           // audio frame buffer
+    int16_t audioBuffer[csAudioSampleCount * csAudioChannelCount];         // audio frame buffer
     uint64_t audioWaveIndex = 0;                                           // audio wave index
 
     SDL_AudioDeviceID audioDeviceID = 1;
@@ -382,7 +382,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     bool32_t isCapturing = LLCE_CAPTURE && cIsSimulating;
     uint32_t currCaptureIdx = 0;
 
-    llce::timer_t simTimer( cSimFPS, llce::timer_t::ratio_e::fps );
+    llce::timer_t simTimer( csSimFPS, llce::timer_t::ratio_e::fps );
     float64_t simDT = 0.0;
     // NOTE(JRC): A cursory check shows that it will take ~1e10 years of
     // uninterrupted run time for this to overflow at 60 FPS, so the fact

@@ -5,6 +5,8 @@
 
 #include "hmp_entities.h"
 #include "hmp_rng_t.h"
+#include "hmp_gfx.h"
+#include "hmp_sfx.h"
 #include "hmp_consts.h"
 #include "input.h"
 #include "consts.h"
@@ -22,9 +24,12 @@ struct state_t {
     // Global State //
     float64_t dt; // frame time
     float64_t tt; // total time
+
     mode::mode_e mid; // game mode
     mode::mode_e pmid; // pending mode
+
     rng_t rng; // random number generator
+    sfx::synth_t synth; // sound effect synthesizer
 
     // Game State //
     float64_t rt; // round time
