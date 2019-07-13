@@ -21,27 +21,27 @@ struct waveform_t {
 };
 
 struct synth_t {
-    constexpr static uint32_t MAX_CHANNEL_COUNT = 4;
+    constexpr static uint32_t MAX_WAVE_COUNT = 4;
 
     synth_t( const bool32_t pRunning = true );
 
     void update( const float64_t pDT );
-    void render();
+    void render( const SDL_AudioSpec* pAudioSpec, bit8_t* pAudioBuffer );
 
     void play( const waveform_t* pWaveform, const float64_t pWaveDuration );
     void toggle();
 
-    const waveform_t* mWaveforms[MAX_CHANNEL_COUNT];
-    float64_t mWaveformPositions[MAX_CHANNEL_COUNT];
-    float64_t mWaveformDurations[MAX_CHANNEL_COUNT];
+    const waveform_t* mWaveforms[MAX_WAVE_COUNT];
+    float64_t mWaveformPositions[MAX_WAVE_COUNT];
+    float64_t mWaveformDurations[MAX_WAVE_COUNT];
 
     bool32_t mRunning;
     float64_t mUpdateDT;
 };
 
 namespace wave {
-    float64_t square( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
     float64_t sine( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
+    float64_t square( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
     float64_t triangle( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
     float64_t sawtooth( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
 };
