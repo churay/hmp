@@ -247,10 +247,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const static uint32_t csAudioChannelCount = 2;                          // audio channels (2: stereo)
     const static uint32_t csAudioSampleBytes = 2 * csAudioChannelCount;     // audio bytes / sample
     const static uint32_t csAudioSampleCount = ( csAudioFrequency * csAudioSampleBytes ) / csSimFPS;
-
-    const static uint32_t csAudioWaveFrequency = 256;                       // audio wave cycles / second
-    const static uint32_t csAudioWavePeriod = csAudioFrequency / csAudioWaveFrequency; // samples / cycle
-    const static uint32_t csAudioWaveAmplitude = 1000;                      // audio wave volume
+    int16_t audioBuffer[csAudioSampleCount * csAudioChannelCount];          // audio frame buffer
 
     SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
@@ -262,9 +259,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
-    int16_t audioBuffer[csAudioSampleCount * csAudioChannelCount];         // audio frame buffer
-    uint64_t audioWaveIndex = 0;                                           // audio wave index
-
     SDL_AudioDeviceID audioDeviceID = 1;
     LLCE_ASSERT_ERROR(
         (audioDeviceID = SDL_OpenAudioDevice(
@@ -274,8 +268,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         wantAudioConfig.channels == realAudioConfig.channels && wantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
 
-    // NOTE(JRC): Set the parameter of the function below to 'false' to enable sound.
-    SDL_PauseAudioDevice( audioDeviceID, true );
+    SDL_PauseAudioDevice( audioDeviceID, false );
 
     /// Generate Graphics Assets ///
 
@@ -565,6 +558,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         glMatrixMode( GL_MODELVIEW );
         glLoadIdentity();
 
+        std::memset( audioBuffer, 0, sizeof(audioBuffer) );
+
         isRunning &= dllUpdate( simState, simInput, simDT );
         isRunning &= dllRender( simState, simInput, simGraphics );
 
@@ -677,22 +672,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         } glDisable( GL_TEXTURE_2D );
 #endif
 
-        { // Play Filler Audio //
-            const uint32_t cAudioBytesToWrite = sizeof( audioBuffer ) - SDL_GetQueuedAudioSize( audioDeviceID );
-            if( cAudioBytesToWrite > 0 ) {
-                std::memset( audioBuffer, 0, sizeof(audioBuffer) );
-
-                const uint32_t cSamplesToWrite = cAudioBytesToWrite / csAudioSampleBytes;
-                for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cSamplesToWrite; sampleIdx++ ) {
-                    int16_t sampleValue = csAudioWaveAmplitude * (((audioWaveIndex++ / (csAudioWavePeriod / 2)) % 2) ? 1 : -1);
-                    for( uint32_t channelIdx = 0; channelIdx < csAudioChannelCount; channelIdx++, bufferIdx++ ) {
-                        audioBuffer[bufferIdx] = sampleValue;
-                    }
-                }
-
-                SDL_QueueAudio( audioDeviceID, &audioBuffer[0], cAudioBytesToWrite );
-            }
-        }
+        // TODO(JRC): Improve accounting for currently buffered sound data. There
+        // shouldn't be any since we fill the entire buffer every frame, but lag
+        // and backfill may occur in high memory/compute load situations.
+        // SDL_QueueAudio( audioDeviceID, pGraphics->..., sizeof(audioBuffer) );
 
         SDL_GL_SwapWindow( window );
 

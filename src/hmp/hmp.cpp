@@ -14,6 +14,7 @@
 
 #include "hmp_modes.h"
 #include "hmp_gfx.h"
+#include "hmp_sfx.h"
 #include "hmp_data.h"
 #include "hmp.h"
 
@@ -104,6 +105,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->pmid = hmp::mode::menu_id;
 
     pState->rng = hmp::rng_t( hmp::RNG_SEED );
+    pState->synth = hmp::sfx::synth_t();
 
     // Initialize Input //
 
@@ -131,7 +133,9 @@ extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const fl
     pState->dt = pDT;
     pState->tt += pDT;
 
-    return MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
+    bool32_t updateStatus = MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
+    pState->synth.update( pDT );
+    return updateStatus;
 }
 
 
@@ -139,5 +143,7 @@ extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInp
     hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
     hmpRC.render();
 
-    return MODE_RENDER_FUNS[pState->mid]( pState, pInput, pGraphics );
+    bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pGraphics );
+    // pState->synth.render();
+    return renderStatus;
 }

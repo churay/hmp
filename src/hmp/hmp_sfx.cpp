@@ -47,7 +47,7 @@ void synth_t::update( const float64_t pDT ) {
 }
 
 
-void synth_t::render( const SDL_AudioSpec* pAudioSpec, bit8_t* pAudioBuffer ) {
+void synth_t::render( const SDL_AudioSpec* pAudioSpec, bit8_t* pAudioBuffer ) const {
     const uint32_t cAudioFormatBytes = SDL_AUDIO_BITSIZE( pAudioSpec->format ) / 8;
     const uint32_t cAudioSampleBytes = cAudioFormatBytes * pAudioSpec->channels;
     const uint32_t cAudioBufferBytes = pAudioSpec->samples * cAudioSampleBytes;

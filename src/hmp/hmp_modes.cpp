@@ -11,6 +11,7 @@
 
 #include "hmp_modes.h"
 #include "hmp_gfx.h"
+#include "hmp_sfx.h"
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -219,6 +220,8 @@ bool32_t menu::init( hmp::state_t* pState ) {
 
 
 bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+    const static hmp::sfx::waveform_t csChangeWave( hmp::sfx::wave::square, 1.301, 1000.0, 0.0 );
+
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
 
@@ -236,6 +239,10 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         dy[1] += 1;
     } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_K) ) {
         dy[1] -= 1;
+    }
+
+    if( dy[0] + dy[1] != 0 ) {
+        pState->synth.play( &csChangeWave, 1.0 );
     }
 
     if( dselect ) {
