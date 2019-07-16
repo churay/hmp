@@ -28,9 +28,9 @@ typedef llce::platform::path_t path_t;
 typedef const int64_t& (*reduce_f)( const int64_t&, const int64_t& );
 
 typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
-typedef bool32_t (*boot_f)( hmp::graphics_t* );
+typedef bool32_t (*boot_f)( hmp::output_t* );
 typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
-typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::graphics_t* );
+typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::output_t* );
 
 typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
 typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
@@ -76,7 +76,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     hmp::state_t* simState = (hmp::state_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::state_t) );
     hmp::input_t* simInput = &inputs[0];
-    hmp::graphics_t* simGraphics = (hmp::graphics_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::graphics_t) );
+    hmp::output_t* simOutput = (hmp::output_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::output_t) );
 
 #ifdef LLCE_DEBUG
     hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
@@ -383,7 +383,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint64_t simFrame = 0;
 
     isRunning &= dllInit( simState, simInput );
-    isRunning &= dllBoot( simGraphics );
+    isRunning &= dllBoot( simOutput );
     while( isRunning ) {
 #ifdef LLCE_DEBUG
         bool32_t isStepReady = false;
@@ -561,7 +561,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::memset( audioBuffer, 0, sizeof(audioBuffer) );
 
         isRunning &= dllUpdate( simState, simInput, simDT );
-        isRunning &= dllRender( simState, simInput, simGraphics );
+        isRunning &= dllRender( simState, simInput, simOutput );
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
@@ -577,7 +577,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?
                 glColor4ubv( (uint8_t*)&csWhiteColor );
-                glBindTexture( GL_TEXTURE_2D, simGraphics->bufferTIDs[hmp::GFX_BUFFER_MASTER] );
+                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
                 glBegin( GL_QUADS ); {
                     glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
                     glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
@@ -599,7 +599,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     // but it's unclear why this is necessary given that they're stored
                     // internally in the order requested. Debugging may be required in the
                     // future when adapting this code to work on multiple platforms.
-                    vec2u32_t captureDims = simGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+                    vec2u32_t captureDims = simOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
                     glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
                     // TODO(JRC): Ultimately, it would be best if the data could just
@@ -675,7 +675,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): Improve accounting for currently buffered sound data. There
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
-        // SDL_QueueAudio( audioDeviceID, pGraphics->..., sizeof(audioBuffer) );
+        // SDL_QueueAudio( audioDeviceID, pOutput->..., sizeof(audioBuffer) );
 
         SDL_GL_SwapWindow( window );
 

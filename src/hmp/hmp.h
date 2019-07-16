@@ -52,17 +52,23 @@ struct input_t {
     llce::input::keyboard_t keyboard;
 };
 
-/// Graphics Types/Variables ///
+/// Output Types/Variables ///
 
 constexpr static uint32_t GFX_BUFFER_MASTER = 0, GFX_BUFFER_SIM = 1, GFX_BUFFER_UI = 2;
 constexpr static uint32_t GFX_BUFFER_COUNT = 3;
 
-struct graphics_t {
-    uint32_t bufferFBOs[GFX_BUFFER_COUNT];
-    uint32_t bufferTIDs[GFX_BUFFER_COUNT];
-    uint32_t bufferDIDs[GFX_BUFFER_COUNT];
-    vec2u32_t bufferRess[GFX_BUFFER_COUNT];
-    box_t bufferBoxs[GFX_BUFFER_COUNT];
+struct output_t {
+    // Graphics Output //
+    uint32_t gfxBufferFBOs[GFX_BUFFER_COUNT];   // frame buffers
+    uint32_t gfxBufferCBOs[GFX_BUFFER_COUNT];   // color buffers
+    uint32_t gfxBufferDBOs[GFX_BUFFER_COUNT];   // depth buffers
+    vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
+    box_t gfxBufferBoxs[GFX_BUFFER_COUNT];      // buffer locations
+
+    // TODO(JRC): Figure out a good implementation for the audio part of this.
+
+    // Audio Output //
+    // int16_t sfxBuffer[];
 };
 
 }

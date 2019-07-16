@@ -153,11 +153,11 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 }
 
 
-bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     { // Render State //
         hmp::gfx::fbo_context_t simFBOC(
-            pGraphics->bufferFBOs[hmp::GFX_BUFFER_SIM],
-            pGraphics->bufferRess[hmp::GFX_BUFFER_SIM] );
+            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
+            pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
 
         { // Entity Renders //
             pState->boundsEnt.render();
@@ -176,31 +176,31 @@ bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
     { // Render UI //
         hmp::gfx::fbo_context_t simFBOC(
-            pGraphics->bufferFBOs[hmp::GFX_BUFFER_UI],
-            pGraphics->bufferRess[hmp::GFX_BUFFER_UI] );
+            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI],
+            pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI] );
 
         pState->scoreEnt.render();
     }
 
     { // Render Master //
-        const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-        const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+        const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
+        const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
         hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
         hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
         hmpRC.render();
 
-        for( uint32_t bufferIdx = 0; bufferIdx < hmp::GFX_BUFFER_COUNT; bufferIdx++ ) {
-            const uint32_t bufferFBO = pGraphics->bufferFBOs[bufferIdx];
-            const vec2u32_t& bufferRes = pGraphics->bufferRess[bufferIdx];
-            const hmp::box_t& bufferBox = pGraphics->bufferBoxs[bufferIdx];
+        for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
+            const uint32_t gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];
+            const vec2u32_t& gfxBufferRes = pOutput->gfxBufferRess[gfxBufferIdx];
+            const hmp::box_t& gfxBufferBox = pOutput->gfxBufferBoxs[gfxBufferIdx];
 
-            glBindFramebuffer( GL_READ_FRAMEBUFFER, bufferFBO );
+            glBindFramebuffer( GL_READ_FRAMEBUFFER, gfxBufferFBO );
             glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
             for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
-                glBlitFramebuffer( 0, 0, bufferRes.x, bufferRes.y,
-                    bufferBox.min().x * masterRes.x, bufferBox.min().y * masterRes.y,
-                    bufferBox.max().x * masterRes.x, bufferBox.max().y * masterRes.y,
+                glBlitFramebuffer( 0, 0, gfxBufferRes.x, gfxBufferRes.y,
+                    gfxBufferBox.min().x * masterRes.x, gfxBufferBox.min().y * masterRes.y,
+                    gfxBufferBox.max().x * masterRes.x, gfxBufferBox.max().y * masterRes.y,
                     bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
                     bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
             }
@@ -258,9 +258,9 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
     return true;
 }
 
-bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
-    const uint32_t masterFBO = pGraphics->bufferFBOs[hmp::GFX_BUFFER_MASTER];
-    const vec2u32_t masterRes = pGraphics->bufferRess[hmp::GFX_BUFFER_MASTER];
+bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
+    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
     hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
     hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
@@ -309,7 +309,7 @@ bool32_t pause::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 }
 
 
-bool32_t pause::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t pause::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     // TODO(JRC)
     return true;
 }
@@ -328,7 +328,7 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 }
 
 
-bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::graphics_t* pGraphics ) {
+bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     // TODO(JRC)
     return true;
 }
