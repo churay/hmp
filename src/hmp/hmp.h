@@ -57,6 +57,9 @@ struct input_t {
 constexpr static uint32_t GFX_BUFFER_MASTER = 0, GFX_BUFFER_SIM = 1, GFX_BUFFER_UI = 2;
 constexpr static uint32_t GFX_BUFFER_COUNT = 3;
 
+constexpr static uint32_t SFX_BUFFER_MASTER = 0;
+constexpr static uint32_t SFX_BUFFER_COUNT = 1;
+
 struct output_t {
     // Graphics Output //
     uint32_t gfxBufferFBOs[GFX_BUFFER_COUNT];   // frame buffers
@@ -65,10 +68,9 @@ struct output_t {
     vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
     box_t gfxBufferBoxs[GFX_BUFFER_COUNT];      // buffer locations
 
-    // TODO(JRC): Figure out a good implementation for the audio part of this.
-
     // Audio Output //
-    // int16_t sfxBuffer[];
+    SDL_AudioSpec sfxConfig;
+    bit8_t* sfxBuffers[SFX_BUFFER_COUNT];
 };
 
 }

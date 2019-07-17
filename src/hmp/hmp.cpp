@@ -144,6 +144,6 @@ extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInp
     hmpRC.render();
 
     bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pOutput );
-    // pState->synth.render();
+    pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] );
     return renderStatus;
 }

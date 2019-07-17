@@ -384,6 +384,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     isRunning &= dllInit( simState, simInput );
     isRunning &= dllBoot( simOutput );
+
+    // TODO(JRC): This isn't a great solution and it should be improved
+    // if at all possible to be less 'raw'.
+    simOutput->sfxConfig = realAudioConfig;
+    simOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
+
     while( isRunning ) {
 #ifdef LLCE_DEBUG
         bool32_t isStepReady = false;
@@ -675,7 +681,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): Improve accounting for currently buffered sound data. There
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
-        // SDL_QueueAudio( audioDeviceID, pOutput->..., sizeof(audioBuffer) );
+        SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
 
         SDL_GL_SwapWindow( window );
 
