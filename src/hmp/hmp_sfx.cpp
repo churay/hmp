@@ -123,7 +123,7 @@ float64_t wave::sine( const float64_t pTime, const float64_t pWavelength, const 
 
 
 float64_t wave::square( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude * ( std::fmod(pTime - pPhase, pWavelength) <= 0.5 ? 1.0 : -1.0 );
+    return pAmplitude * ( std::fmod(pTime - pPhase, pWavelength) <= (pWavelength / 2.0) ? 1.0 : -1.0 );
 }
 
 

@@ -220,7 +220,7 @@ bool32_t menu::init( hmp::state_t* pState ) {
 
 
 bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const static hmp::sfx::waveform_t csChangeWave( hmp::sfx::wave::square, 1.301, 1000.0, 0.0 );
+    const static hmp::sfx::waveform_t csChangeWave( hmp::sfx::wave::square, 1.0 / 256.0, 1000.0, 0.0 );
 
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
