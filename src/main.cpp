@@ -681,7 +681,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): Improve accounting for currently buffered sound data. There
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
-        SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
+        SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
+            sizeof(audioBuffer) - SDL_GetQueuedAudioSize(audioDeviceID) );
 
         SDL_GL_SwapWindow( window );
 
