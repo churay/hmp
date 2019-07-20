@@ -52,6 +52,13 @@ bool32_t game::init( hmp::state_t* pState ) {
 
 
 bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+    const static hmp::sfx::waveform_t csPaddleRicochetSFX(
+        hmp::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 5.0, hmp::sfx::VOLUME, 0.0 );
+    const static hmp::sfx::waveform_t csWallRicochetSFX(
+        hmp::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 4.0, hmp::sfx::VOLUME, 0.0 );
+    const static hmp::sfx::waveform_t csScoreSFX(
+        hmp::sfx::wave::triangle, hmp::sfx::MID_F_FREQ * 8.0, hmp::sfx::VOLUME, 0.0 );
+
     // Process Inputs //
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
@@ -121,6 +128,8 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         if( !boundsY.contains(ballY) ) {
             uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
             ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
+
+            pState->synth.play( &csWallRicochetSFX, hmp::sfx::BLIP_TIME );
         } if( !boundsX.contains(ballX) ) {
             bool8_t isWestScore = ballX.contains( boundsX.mMax );
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
@@ -136,6 +145,8 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             if( pState->scoreEnt.mScores[0] <= 0 || pState->scoreEnt.mScores[1] <= 0 ) {
                 pState->pmid = hmp::mode::menu_id;
             }
+
+            pState->synth.play( &csScoreSFX, hmp::sfx::BLIP_TIME );
         }
     }
 
@@ -145,6 +156,8 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             ballEnt.ricochet( &paddleEnt );
             ballEnt.change( static_cast<hmp::team::team_e>(paddleEnt.mTeam) );
             ballEnt.mVel *= 1.1f;
+
+            pState->synth.play( &csPaddleRicochetSFX, hmp::sfx::BLIP_TIME );
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
