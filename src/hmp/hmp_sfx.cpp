@@ -9,8 +9,8 @@ namespace sfx {
 
 /// 'hmp::sfx::waveform_t' Functions ///
 
-waveform_t::waveform_t( const wave_f pWaveFun, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) :
-        mWaveFun( pWaveFun ), mWavelength( pWavelength ), mAmplitude( pAmplitude ), mPhase( pPhase ) {
+waveform_t::waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) :
+        mWaveFun( pWaveFun ), mWavelength( pFrequency ), mAmplitude( pAmplitude ), mPhase( pPhase ) {
     
 }
 
@@ -129,23 +129,28 @@ void synth_t::toggle() {
 
 /// 'hmp::sfx::wave' Functions ///
 
-float64_t wave::sine( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude * std::sin( (2 * M_PI * pTime - pPhase) / pWavelength );
+// TODO(JRC): Figure out why all trigonometric wave functions (i.e. all but 'square')
+// need to have 2*f as a modifier to achieve the correct sound when they should just
+// need f in theory.
+
+float64_t wave::sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+    return pAmplitude * std::sin( 4 * M_PI * pFrequency * pTime - pPhase );
 }
 
 
-float64_t wave::square( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude * ( std::fmod(pTime - pPhase, pWavelength) <= (pWavelength / 2.0) ? 1.0 : -1.0 );
+float64_t wave::square( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+    const float64_t pPeriod = 1.0 / pFrequency;
+    return pAmplitude * ( std::fmod(pTime - pPhase, pPeriod) <= (pPeriod / 2.0) ? 1.0 : -1.0 );
 }
 
 
-float64_t wave::triangle( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) {
-    return 2.0 * pAmplitude / M_PI * std::asin( std::sin((2 * M_PI * pTime - pPhase) / pWavelength) );
+float64_t wave::triangle( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+    return pAmplitude / M_PI_2 * std::asin( std::sin(4 * M_PI * pFrequency * pTime - pPhase) );
 }
 
 
-float64_t wave::sawtooth( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase ) {
-    return 2.0 * pAmplitude / M_PI * std::atan( std::tan((2 * M_PI * pTime - pPhase) / (2.0 * pWavelength)) );
+float64_t wave::sawtooth( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+    return pAmplitude / M_PI_2 * std::atan( std::tan(4 * M_PI * pFrequency * pTime - pPhase) );
 }
 
 };

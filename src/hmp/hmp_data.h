@@ -18,6 +18,15 @@ const extern color4u8_t TEAM[3];
 
 };
 
+namespace sfx {
+
+constexpr static float64_t VOLUME = 1000.0;
+constexpr static float64_t BLIP_TIME = 2.0e-2;
+
+constexpr static float64_t MID_C_FREQ = 261.0;
+
+};
+
 namespace gfx {
 
 constexpr static uint32_t DIGIT_WIDTH = 5, DIGIT_HEIGHT = 7;

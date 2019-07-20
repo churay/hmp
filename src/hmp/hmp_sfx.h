@@ -12,7 +12,7 @@ namespace sfx {
 typedef float64_t (*wave_f)( const float64_t, const float64_t, const float64_t, const float64_t );
 
 struct waveform_t {
-    waveform_t( const wave_f pWaveFun, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
+    waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
 
     float64_t operator()( const float64_t pTime ) const;
 
@@ -42,10 +42,10 @@ struct synth_t {
 };
 
 namespace wave {
-    float64_t sine( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
-    float64_t square( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
-    float64_t triangle( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
-    float64_t sawtooth( const float64_t pTime, const float64_t pWavelength, const float64_t pAmplitude, const float64_t pPhase );
+    float64_t sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
+    float64_t square( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
+    float64_t triangle( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
+    float64_t sawtooth( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
 };
 
 };
