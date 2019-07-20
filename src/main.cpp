@@ -683,7 +683,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): Improve accounting for currently buffered sound data. There
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
-        if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] ) {
+        if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] && !cIsSimulating ) {
             SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
             simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
         }
