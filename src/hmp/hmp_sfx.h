@@ -25,8 +25,10 @@ struct synth_t {
 
     synth_t( const bool32_t pRunning = true );
 
-    void update( const float64_t pDT );
-    void render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const;
+    bool32_t update( const float64_t pDT );
+    bool32_t render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const;
+
+    bool32_t playing() const;
 
     void play( const waveform_t* pWaveform, const float64_t pWaveDuration );
     void toggle();

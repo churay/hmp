@@ -242,7 +242,7 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
     }
 
     if( dy[0] + dy[1] != 0 ) {
-        pState->synth.play( &csChangeWave, 0.1 );
+        pState->synth.play( &csChangeWave, 0.02 );
     }
 
     if( dselect ) {

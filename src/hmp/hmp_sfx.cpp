@@ -32,7 +32,7 @@ synth_t::synth_t( const bool32_t pRunning ) {
 }
 
 
-void synth_t::update( const float64_t pDT ) {
+bool32_t synth_t::update( const float64_t pDT ) {
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
         if( mWaveformPositions[waveIdx] > mWaveformDurations[waveIdx] ) {
             mWaveforms[waveIdx] = nullptr;
@@ -44,10 +44,12 @@ void synth_t::update( const float64_t pDT ) {
     }
 
     mUpdateDT = pDT;
+
+    return true;
 }
 
 
-void synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const {
+bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const {
     const uint32_t cAudioFormatBytes = SDL_AUDIO_BITSIZE( pAudioSpec.format ) / 8;
     const uint32_t cAudioSampleBytes = cAudioFormatBytes * pAudioSpec.channels;
     const uint32_t cAudioBufferBytes = pAudioSpec.samples * cAudioSampleBytes;
@@ -96,6 +98,16 @@ void synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) co
             }
         }
     }
+
+    return true;
+}
+
+bool32_t synth_t::playing() const {
+    bool32_t isPlaying = false;
+    for( uint32_t waveIdx = 0, wavePlaying = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
+        isPlaying |= mWaveforms[waveIdx] != nullptr;
+    }
+    return isPlaying && mRunning;
 }
 
 

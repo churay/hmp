@@ -71,6 +71,7 @@ struct output_t {
     // Audio Output //
     SDL_AudioSpec sfxConfig;
     bit8_t* sfxBuffers[SFX_BUFFER_COUNT];
+    bool32_t sfxDirtyBits[SFX_BUFFER_COUNT];
 };
 
 }

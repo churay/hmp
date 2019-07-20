@@ -540,6 +540,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             // TODO(JRC): This isn't ideal since spinning in this way can really
             // ramp up processing time, but it's a permissible while there aren't
             // too many iterations per reload (there are none at time of writing).
+            // TODO(JRC): Consider clearing out the audio queue at this point
+            // because the hot-loaded state could lag as a result of existing audio.
             uint32_t lockSpinCount = 0;
             while( cInstallLockPath.exists() ) { lockSpinCount++; }
 
@@ -681,8 +683,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): Improve accounting for currently buffered sound data. There
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
-        SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
-            sizeof(audioBuffer) - SDL_GetQueuedAudioSize(audioDeviceID) );
+        if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] ) {
+            SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
+            simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
+        }
 
         SDL_GL_SwapWindow( window );
 
