@@ -112,7 +112,10 @@ bool32_t synth_t::playing() const {
 
 
 void synth_t::play( const waveform_t* pWaveform, const float64_t pWaveDuration ) {
-    for( uint32_t waveIdx = 0, wavePlaying = 0; waveIdx < MAX_WAVE_COUNT && !wavePlaying; waveIdx++ ) {
+    bool wavePlaying = false;
+    for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && !wavePlaying; waveIdx++ ) {
+        wavePlaying |= mWaveforms[waveIdx] == pWaveform;
+    } for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && !wavePlaying; waveIdx++ ) {
         if( mWaveforms[waveIdx] == nullptr ) {
             mWaveforms[waveIdx] = pWaveform;
             mWaveformPositions[waveIdx] = 0.0;
