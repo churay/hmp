@@ -1,11 +1,8 @@
 #ifndef LLCE_PLATFORM_H
 #define LLCE_PLATFORM_H
 
-#if LLCE_CAPTURE_ENABLED == ON
-#define LLCE_CAPTURE 1
-#endif
-
 #include "consts.h"
+#include "conf.h"
 
 namespace llce {
 

@@ -1,6 +1,16 @@
 #ifndef LLCE_CONF_H
 #define LLCE_CONF_H
 
+#if LLCE_CAPTURE_ENABLED == ON
+#define LLCE_CAPTURE 1
+#endif
+
+#if LLCE_FDOUBLE_ENABLED == ON
+typedef float real;
+#else
+typedef double real;
+#endif
+
 #define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
 
 #endif

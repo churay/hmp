@@ -39,6 +39,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ## user options ####################
 ####################################
 
+option(LLCE_FDOUBLE_ENABLED "Enable double precision floating-point values." OFF)
 option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
 
@@ -125,7 +126,7 @@ pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 set(hmp_dep_incs ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 set(hmp_dep_libs ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
-if(HMP_CAPTURE_ENABLED)
+if(LLCE_CAPTURE_ENABLED)
     pkg_search_module(LIBPNG REQUIRED libpng16)
     set(hmp_exe_incs ${hmp_exe_incs} ${LIBPNG_INCLUDE_DIRS})
     set(hmp_exe_libs ${hmp_exe_libs} ${LIBPNG_LIBRARIES})

@@ -21,6 +21,7 @@ typedef unsigned char uchar8_t;
 typedef uint32_t bool32_t;
 typedef float float32_t;
 typedef double float64_t;
+typedef real real_t;
 
 typedef glm::vec<4, uint8_t, glm::defaultp> vec4u8_t;
 typedef glm::vec<2, uint32_t, glm::defaultp> vec2u32_t;
