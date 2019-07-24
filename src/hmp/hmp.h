@@ -34,6 +34,7 @@ struct state_t {
     // Game State //
     float64_t rt; // round time
     bool32_t roundStarted; // round flag
+    bool32_t roundPaused; // round pause flag
     team::team_e roundServer; // round starter flag
 
     bounds_t boundsEnt;

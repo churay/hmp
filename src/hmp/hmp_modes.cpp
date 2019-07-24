@@ -19,11 +19,88 @@ namespace hmp {
 
 namespace mode {
 
+/// Helper Structures ///
+
+const static hmp::sfx::waveform_t SFX_MENU_CHANGE(
+    hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
+const static hmp::sfx::waveform_t SFX_MENU_SELECT(
+    hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ * 2.0, hmp::sfx::VOLUME, 0.0 );
+
+/// Helper Functions ///
+
+void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+    hmp::gfx::fbo_context_t simFBOC(
+        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
+        pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
+
+    if( pState->roundPaused ) {
+        hmp::gfx::render_context_t boardRC(
+            hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+            &hmp::color::BACKGROUND );
+        boardRC.render();
+
+        const vec2f32_t cMessagePos = { 0.5f, 0.5f };
+        const vec2f32_t cMessageDims = { 1.0f, 0.25f };
+        hmp::gfx::render_context_t messageRC(
+            hmp::box_t(cMessagePos, cMessageDims, hmp::box_t::anchor_e::c), 
+            &hmp::color::BACKGROUND );
+        hmp::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2 );
+    } else {
+        pState->boundsEnt.render();
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+            pState->ricochetEnts[sideIdx].render();
+        pState->ballEnt.render();
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+            pState->paddleEnts[sideIdx].render();
+
+        if( !pState->roundStarted ) {
+            const hmp::ball_t& ball = pState->ballEnt;
+            hmp::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
+        }
+    }
+}
+
+
+void render_scoreboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+    hmp::gfx::fbo_context_t simFBOC(
+        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI],
+        pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI] );
+
+    pState->scoreEnt.render();
+}
+
+
+void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
+    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
+    hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+
+    hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
+    hmpRC.render();
+
+    for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
+        const uint32_t gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];
+        const vec2u32_t& gfxBufferRes = pOutput->gfxBufferRess[gfxBufferIdx];
+        const hmp::box_t& gfxBufferBox = pOutput->gfxBufferBoxs[gfxBufferIdx];
+
+        glBindFramebuffer( GL_READ_FRAMEBUFFER, gfxBufferFBO );
+        glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
+        for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
+            glBlitFramebuffer( 0, 0, gfxBufferRes.x, gfxBufferRes.y,
+                gfxBufferBox.min().x * masterRes.x, gfxBufferBox.min().y * masterRes.y,
+                gfxBufferBox.max().x * masterRes.x, gfxBufferBox.max().y * masterRes.y,
+                bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
+                bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
+        }
+    }
+}
+
 /// 'hmp::mode::game' Functions  ///
 
 bool32_t game::init( hmp::state_t* pState ) {
     pState->rt = 0.0;
     pState->roundStarted = false;
+    pState->roundPaused = false;
     pState->roundServer = hmp::team::east;
 
     const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
@@ -81,7 +158,13 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         dx[1] += 1;
     }
 
+    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_G) ) {
+        pState->roundPaused = !pState->roundPaused;
+    }
+
     // Update State //
+
+    if( pState->roundPaused ) { return true; }
 
     pState->rt += pDT;
 
@@ -168,58 +251,9 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 
 
 bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    { // Render State //
-        hmp::gfx::fbo_context_t simFBOC(
-            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
-            pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
-
-        { // Entity Renders //
-            pState->boundsEnt.render();
-            for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
-                pState->ricochetEnts[sideIdx].render();
-            pState->ballEnt.render();
-            for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
-                pState->paddleEnts[sideIdx].render();
-        }
-
-        if( !pState->roundStarted ) {
-            const hmp::ball_t& ball = pState->ballEnt;
-            hmp::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
-        }
-    }
-
-    { // Render UI //
-        hmp::gfx::fbo_context_t simFBOC(
-            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI],
-            pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI] );
-
-        pState->scoreEnt.render();
-    }
-
-    { // Render Master //
-        const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
-        const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
-        hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
-
-        hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
-        hmpRC.render();
-
-        for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-            const uint32_t gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];
-            const vec2u32_t& gfxBufferRes = pOutput->gfxBufferRess[gfxBufferIdx];
-            const hmp::box_t& gfxBufferBox = pOutput->gfxBufferBoxs[gfxBufferIdx];
-
-            glBindFramebuffer( GL_READ_FRAMEBUFFER, gfxBufferFBO );
-            glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
-            for( uint32_t bufferTypeIdx = 0; bufferTypeIdx < 2; bufferTypeIdx++ ) {
-                glBlitFramebuffer( 0, 0, gfxBufferRes.x, gfxBufferRes.y,
-                    gfxBufferBox.min().x * masterRes.x, gfxBufferBox.min().y * masterRes.y,
-                    gfxBufferBox.max().x * masterRes.x, gfxBufferBox.max().y * masterRes.y,
-                    bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
-                    bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
-            }
-        }
-    }
+    render_gameboard( pState, pInput, pOutput );
+    render_scoreboard( pState, pInput, pOutput );
+    render_rasterize( pState, pInput, pOutput );
 
     return true;
 }
@@ -234,11 +268,6 @@ bool32_t menu::init( hmp::state_t* pState ) {
 
 
 bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const static hmp::sfx::waveform_t csMenuChangeSFX(
-        hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
-    const static hmp::sfx::waveform_t csMenuSelectSFX(
-        hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ * 2.0, hmp::sfx::VOLUME, 0.0 );
-
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
 
@@ -259,7 +288,7 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
     }
 
     if( dselect ) {
-        pState->synth.play( &csMenuSelectSFX, hmp::sfx::BLIP_TIME );
+        pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
         if( pState->menuIdx == 0 ) {
             pState->pmid = hmp::mode::game_id;
         } else if( pState->menuIdx == 1 ) {
@@ -267,7 +296,7 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         }
     } else {
         if( dy[0] + dy[1] != 0 ) {
-            pState->synth.play( &csMenuChangeSFX, hmp::sfx::BLIP_TIME );
+            pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
         }
         pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
     }
@@ -309,25 +338,6 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
         }
     }
 
-    return true;
-}
-
-/// 'hmp::mode::pause' Functions  ///
-
-bool32_t pause::init( hmp::state_t* pState ) {
-    // TODO(JRC)
-    return true;
-}
-
-
-bool32_t pause::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    // TODO(JRC)
-    return true;
-}
-
-
-bool32_t pause::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    // TODO(JRC)
     return true;
 }
 

@@ -27,11 +27,11 @@ typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hm
 /// Per-Mode Tables ///
 
 constexpr static init_f MODE_INIT_FUNS[] = {
-    hmp::mode::game::init, hmp::mode::menu::init, hmp::mode::pause::init, hmp::mode::reset::init };
+    hmp::mode::game::init, hmp::mode::menu::init, hmp::mode::reset::init };
 constexpr static update_f MODE_UPDATE_FUNS[] = {
-    hmp::mode::game::update, hmp::mode::menu::update, hmp::mode::pause::update, hmp::mode::reset::update };
+    hmp::mode::game::update, hmp::mode::menu::update, hmp::mode::reset::update };
 constexpr static render_f MODE_RENDER_FUNS[] = {
-    hmp::mode::game::render, hmp::mode::menu::render, hmp::mode::pause::render, hmp::mode::reset::render };
+    hmp::mode::game::render, hmp::mode::menu::render, hmp::mode::reset::render };
 constexpr static uint32_t MODE_COUNT = ARRAY_LEN( MODE_INIT_FUNS );
 
 /// Interface Functions ///
