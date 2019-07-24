@@ -19,6 +19,8 @@ constexpr static float32_t ROUND_START_TIME = 1.0f;
 
 constexpr static char8_t MENU_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t MENU_ITEM_COUNT = ARRAY_LEN( MENU_ITEM_TEXT );
+constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
+constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
 
 struct state_t {
     // Global State //

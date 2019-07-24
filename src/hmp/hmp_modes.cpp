@@ -226,7 +226,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             pState->roundStarted = false;
 
             if( pState->scoreEnt.mScores[0] <= 0 || pState->scoreEnt.mScores[1] <= 0 ) {
-                pState->pmid = hmp::mode::menu_id;
+                pState->pmid = hmp::mode::reset_id;
             }
 
             pState->synth.play( &csScoreSFX, hmp::sfx::BLIP_TIME );
@@ -344,19 +344,99 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
 /// 'hmp::mode::reset' Functions  ///
 
 bool32_t reset::init( hmp::state_t* pState ) {
-    // TODO(JRC)
+    pState->menuIdx = 0;
+
     return true;
 }
 
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    // TODO(JRC)
+    int32_t dy[2] = { 0, 0 };
+    bool32_t dselect = false;
+
+    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_D) ) {
+        dselect = true;
+    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_L) ) {
+        dselect = true;
+    }
+
+    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_W) ) {
+        dy[0] += 1;
+    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_S) ) {
+        dy[0] -= 1;
+    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_I) ) {
+        dy[1] += 1;
+    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_K) ) {
+        dy[1] -= 1;
+    }
+
+    if( dselect ) {
+        pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
+        if( pState->menuIdx == 0 ) {
+            pState->pmid = hmp::mode::game_id;
+        } else if( pState->menuIdx == 1 ) {
+            pState->pmid = hmp::mode::menu_id;
+        }
+    } else {
+        if( dy[0] + dy[1] != 0 ) {
+            pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
+        }
+        pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::RESET_ITEM_COUNT;
+    }
+
     return true;
 }
 
 
 bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    // TODO(JRC)
+    { // Render Reset Menu //
+        hmp::gfx::fbo_context_t menuFBOC(
+            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
+            pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
+        hmp::gfx::render_context_t menuRC(
+            hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+            &hmp::color::BACKGROUND );
+        menuRC.render();
+
+        { // Header //
+            const char8_t cTeamNames[2][8] = { "EAST", "WEST" };
+            const hmp::team::team_e cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
+                hmp::team::west : hmp::team::east;
+
+            char8_t headerText[16];
+            std::snprintf( &headerText[0], sizeof(headerText),
+                "%s WINS!", &cTeamNames[cTeamWinner][0] );
+            const color4u8_t* headerColor = &hmp::color::TEAM[cTeamWinner];
+
+            const float32_t cHeaderPadding = 0.05f;
+            const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
+            const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
+
+            hmp::gfx::render_context_t headerRC(
+                hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
+            hmp::gfx::text::render( headerText, headerColor );
+        }
+
+        { // Items //
+            const float32_t cItemPadding = 0.05f;
+            const vec2f32_t cItemDims = { 1.0f, 0.10f };
+            const vec2f32_t cItemBase = { 0.0f, 0.50f };
+
+            for( uint32_t itemIdx = 0; itemIdx < hmp::RESET_ITEM_COUNT; itemIdx++ ) {
+                vec2f32_t itemPos = cItemBase -
+                    static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
+                hmp::gfx::render_context_t itemRC(
+                    hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+
+                if( itemIdx == pState->menuIdx ) { itemRC.render(); }
+                hmp::gfx::text::render( hmp::RESET_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
+            }
+        }
+    }
+
+    render_scoreboard( pState, pInput, pOutput );
+    render_rasterize( pState, pInput, pOutput );
+
     return true;
 }
 
