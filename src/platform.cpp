@@ -8,7 +8,7 @@
 
 #include "platform.h"
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
 extern "C" {
 #include <png.h>
 }
@@ -104,7 +104,7 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
     return symbolFunction;
 }
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
 
 bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uint32_t pPNGWidth, uint32_t pPNGHeight ) {
     bool32_t saveSuccessful = false;

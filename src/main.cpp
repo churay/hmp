@@ -129,6 +129,14 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
     const auto cDLLReload = [ &dllFilePaths, &dllHandles, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
+#if LLCE_DYLOAD
+        dllInit = &init;
+        dllBoot = &boot;
+        dllUpdate = &update;
+        dllRender = &render;
+
+        return true;
+#else
         bool32_t dllLoadSuccess = true;
 
         // NOTE(JRC): This needs to happen in two stages to ensure that libraries
@@ -155,11 +163,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         return dllLoadSuccess &&
             dllInit != nullptr && dllBoot != nullptr &&
             dllUpdate != nullptr && dllRender != nullptr;
+#endif
     };
 
     // NOTE(JRC): Reduces all DLL modification times to a single value based
     // on the given function (e.g. std::min for earliest, std::max for latest).
     const auto cDLLModTime = [ &dllFilePaths ] ( reduce_f pReduce ) {
+#if LLCE_DYLOAD
+        return 1;
+#else
         int64_t reducedModTime = -1;
         for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
             int64_t dllModTime = dllFilePaths[dllIdx].modtime();
@@ -167,6 +179,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 dllModTime : pReduce( dllModTime, reducedModTime );
         }
         return reducedModTime;
+#endif
     };
 
     LLCE_ASSERT_ERROR( cDLLReload(),
@@ -339,7 +352,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
     static color4u8_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
@@ -593,7 +606,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
                 } glEnd();
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
                 if( isCapturing ) {
                     LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 

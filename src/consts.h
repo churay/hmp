@@ -98,4 +98,5 @@ typedef vec4f32_t color4f32_t;
             exit(1); \
         } \
     } while (false)
+
 #endif

@@ -39,6 +39,7 @@ set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 ## user options ####################
 ####################################
 
+option(LLCE_DYLOAD_ENABLED "Enable dynamic loading of loop-live library." ON)
 option(LLCE_FDOUBLE_ENABLED "Enable double precision floating-point values." OFF)
 option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
@@ -109,10 +110,14 @@ foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target} ${hmp_e
 endforeach()
 
 add_dependencies(${hmp_lib_target} ${hmp_dat_target})
-# add_dependencies(${hmp_exe_target} ${hmp_dat_target})
 
 target_include_directories(${hmp_dat_target} PUBLIC src/hmp)
 target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
+
+if(NOT LLCE_DYLOAD_ENABLED)
+    target_include_directories(${hmp_exe_target} PUBLIC src/hmp)
+    add_dependencies(${hmp_exe_target} ${hmp_lib_target})
+endif()
 
 ###############################################################################
 ## dependencies ###############################################################
@@ -141,7 +146,10 @@ foreach(hmp_exe_target ${hmp_exe_target})
     target_link_libraries(${hmp_exe_target} PUBLIC ${hmp_dep_libs} ${hmp_exe_libs})
 endforeach()
 target_link_libraries(${hmp_lib_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
-# target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
+
+if(NOT LLCE_DYLOAD_ENABLED)
+    target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
+endif()
 
 ###############################################################################
 ## testing ####################################################################
