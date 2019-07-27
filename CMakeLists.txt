@@ -9,6 +9,15 @@ include(ExternalProject)
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
+####################################
+## user options ####################
+####################################
+
+option(LLCE_DYLOAD_ENABLED "Enable dynamic loading of loop-live library." ON)
+option(LLCE_FDOUBLE_ENABLED "Enable double precision floating-point values." OFF)
+option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
+set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
+
 ###########################################
 ## compiler/linker options ################
 ###########################################
@@ -18,6 +27,16 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGL_GLEXT_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLM_ENABLE_EXPERIMENTAL -DGLM_FORCE_RADIANS -DGLM_FORCE_XYZW_ONLY")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -DLLCE_DEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
+
+if(LLCE_DYLOAD_ENABLED)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DLLCE_DYLOAD")
+endif()
+if(LLCE_FDOUBLE_ENABLED)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DLLCE_FDOUBLE")
+endif()
+if(LLCE_CAPTURE_ENABLED)
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DLLCE_CAPTURE")
+endif()
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
@@ -34,15 +53,6 @@ set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-####################################
-## user options ####################
-####################################
-
-option(LLCE_DYLOAD_ENABLED "Enable dynamic loading of loop-live library." ON)
-option(LLCE_FDOUBLE_ENABLED "Enable double precision floating-point values." OFF)
-option(LLCE_CAPTURE_ENABLED "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
-set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
 
 ###############################################################################
 ## file globbing ##############################################################
@@ -95,9 +105,15 @@ set(hmp_dat_target "hmpdata")
 set(hmp_lib_target "hmp")
 set(hmp_exe_target "hmp.out")
 
+if(LLCE_DYLOAD_ENABLED)
+    set(hmp_lib_type "SHARED")
+else()
+    set(hmp_lib_type "STATIC")
+endif()
+
 add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
-add_library(${hmp_dat_target} SHARED ${hmp_dat_files})
-add_library(${hmp_lib_target} SHARED ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
+add_library(${hmp_dat_target} ${hmp_lib_type} ${hmp_dat_files})
+add_library(${hmp_lib_target} ${hmp_lib_type} ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 
 foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target})
@@ -116,6 +132,7 @@ target_include_directories(${hmp_lib_target} PUBLIC src/hmp)
 
 if(NOT LLCE_DYLOAD_ENABLED)
     target_include_directories(${hmp_exe_target} PUBLIC src/hmp)
+    add_dependencies(${hmp_exe_target} ${hmp_dat_target})
     add_dependencies(${hmp_exe_target} ${hmp_lib_target})
 endif()
 
@@ -148,6 +165,7 @@ endforeach()
 target_link_libraries(${hmp_lib_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
 
 if(NOT LLCE_DYLOAD_ENABLED)
+    target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_dat_target}>)
     target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
 endif()
 

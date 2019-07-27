@@ -38,15 +38,18 @@ typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancod
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
-    const float64_t csSimFPS = 60.0;
+    const static float64_t csSimFPS = 60.0;
 
     /// Parse Input Arguments ///
 
-    if( llce::cli::exists("-v", pArgs, pArgCount) ) {
-        LLCE_ALERT_INFO( "{Version: v0.0.a, " <<
-            "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
-            "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
-    }
+    // TODO(JRC): Re-enabled this feature once a better method for converting
+    // CMake options to C++ defines is discovered.
+    //
+    // if( llce::cli::exists("-v", pArgs, pArgCount) ) {
+    //     LLCE_ALERT_INFO( "{Version: v0.0.a, " <<
+    //         "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
+    //         "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
+    // }
 
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
     const int32_t cSimStateIdx = cSimStateArg != nullptr ? std::atoi( cSimStateArg ) : -1;
@@ -115,6 +118,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     path_t dllFilePaths[csDLLCount];
     void* dllHandles[csDLLCount];
+#ifdef LLCE_DYLOAD
     for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
         const char8_t* cDLLFileName = csDLLFileNames[dllIdx];
         path_t& dllFilePath = dllFilePaths[dllIdx];
@@ -123,13 +127,14 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         LLCE_ASSERT_ERROR( dllFilePath.exists(),
             "Failed to find library '" << cDLLFileName << "' in dynamic path." );
     }
+#endif
 
     init_f dllInit = nullptr;
     boot_f dllBoot = nullptr;
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
     const auto cDLLReload = [ &dllFilePaths, &dllHandles, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
-#if LLCE_DYLOAD
+#ifndef LLCE_DYLOAD
         dllInit = &init;
         dllBoot = &boot;
         dllUpdate = &update;
@@ -169,7 +174,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // NOTE(JRC): Reduces all DLL modification times to a single value based
     // on the given function (e.g. std::min for earliest, std::max for latest).
     const auto cDLLModTime = [ &dllFilePaths ] ( reduce_f pReduce ) {
-#if LLCE_DYLOAD
+#ifndef LLCE_DYLOAD
         return 1;
 #else
         int64_t reducedModTime = -1;
@@ -352,7 +357,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-#if LLCE_CAPTURE
+#ifdef LLCE_CAPTURE
     static color4u8_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
@@ -385,7 +390,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    bool32_t isCapturing = LLCE_CAPTURE && cIsSimulating;
+#ifdef LLCE_CAPTURE
+    bool32_t isCapturing = cIsSimulating;
+#else
+    bool32_t isCapturing = false;
+#endif
     uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( csSimFPS, llce::timer_t::ratio_e::fps );
@@ -606,7 +615,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
                 } glEnd();
 
-#if LLCE_CAPTURE
+#ifdef LLCE_CAPTURE
                 if( isCapturing ) {
                     LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
@@ -711,11 +720,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Clean Up + Exit ///
 
+#ifdef LLCE_DYLOAD
     for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
         if( dllHandles[dllIdx] != nullptr ) {
             llce::platform::dllUnloadHandle( dllHandles[dllIdx], dllFilePaths[dllIdx] );
         }
     }
+#endif
 
     recStateStream.close();
     recInputStream.close();

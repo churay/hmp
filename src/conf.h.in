@@ -1,19 +1,7 @@
 #ifndef LLCE_CONF_H
 #define LLCE_CONF_H
 
-#if LLCE_DYLOAD_ENABLED == ON
-#define LLCE_DYLOAD 1
-#else
-#define LLCE_DYLOAD 0
-#endif
-
-#if LLCE_CAPTURE_ENABLED == ON
-#define LLCE_CAPTURE 1
-#else
-#define LLCE_CAPTURE 0
-#endif
-
-#if LLCE_FDOUBLE_ENABLED == ON
+#ifndef LLCE_FDOUBLE
 typedef float real;
 #else
 typedef double real;
