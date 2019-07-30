@@ -16,7 +16,7 @@ namespace platform {
     bool32_t dllUnloadHandle( void* pDLLHandle, const char8_t* pDLLPath );
     void* dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol );
 
-#if LLCE_CAPTURE
+#ifdef LLCE_CAPTURE
     bool32_t pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uint32_t pPNGWidth, uint32_t pPNGHeight );
     bool32_t pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData );
 #endif

@@ -1,6 +1,10 @@
 #ifndef LLCE_CONF_H
 #define LLCE_CONF_H
 
+#cmakedefine LLCE_DYLOAD
+#cmakedefine LLCE_FDOUBLE
+#cmakedefine LLCE_CAPTURE
+
 #ifndef LLCE_FDOUBLE
 typedef float real;
 #else
