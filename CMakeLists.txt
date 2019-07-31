@@ -1,28 +1,27 @@
+################################################################################
+### metadata ###################################################################
+################################################################################
+
 cmake_minimum_required(VERSION 3.5)
-project(hmp)
+
+project(hmp VERSION "0.0.1" LANGUAGES C CXX)
 
 include(ExternalProject)
 
-###############################################################################
-## config options #############################################################
-###############################################################################
-
-set(CMAKE_VERBOSE_MAKEFILE ON)
-
-####################################
-## user options ####################
-####################################
+################################################################################
+### user config ################################################################
+################################################################################
 
 option(LLCE_DYLOAD "Enable dynamic loading of loop-live library." ON)
 option(LLCE_FDOUBLE "Enable double precision floating-point values." OFF)
 option(LLCE_CAPTURE "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
 
-option(BUILD_SHARED_LIBS "Enable dynamic loading of loop-live library." ${LLCE_DYLOAD})
+################################################################################
+### compiler/linker ############################################################
+################################################################################
 
-###########################################
-## compiler/linker options ################
-###########################################
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1y -Wall -Wno-unused-variable -fno-exceptions")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGL_GLEXT_PROTOTYPES")
@@ -32,23 +31,20 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
+set(BUILD_SHARED_LIBS ${LLCE_DYLOAD})
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set (CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "Default install path." FORCE)
 endif()
-
-####################################
-## rpath options ###################
-####################################
 
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-###############################################################################
-## file globbing ##############################################################
-###############################################################################
+################################################################################
+### sources ####################################################################
+################################################################################
 
 file(GLOB         hmp_exe_files     src/main.cpp)
 file(GLOB         hmp_cnf_files     src/*.h.in)
@@ -58,13 +54,9 @@ file(GLOB         hmp_lib_files     src/hmp/*.cpp src/hmp/*.h)
 file(GLOB         hmp_dat_files     src/hmp/hmp_data*)
 list(REMOVE_ITEM  hmp_lib_files     ${hmp_dat_files})
 
-###############################################################################
-## target definitions #########################################################
-###############################################################################
-
-####################################
-## extra targets ###################
-####################################
+################################################################################
+### targets (external) #########################################################
+################################################################################
 
 ExternalProject_Add(glm
     PREFIX ${CMAKE_BINARY_DIR}/glm_src
@@ -78,19 +70,9 @@ ExternalProject_Add(glm
     LOG_DOWNLOAD ON)
 set(GLM_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/glm)
 
-########################################
-## config targets ######################
-########################################
-
-set(hmp_cnf_dir ${CMAKE_BINARY_DIR}/config)
-foreach(hmp_cnf_file ${hmp_cnf_files})
-    get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME_WE)
-    configure_file(${hmp_cnf_file} ${hmp_cnf_dir}/${hmp_cnf_filename}.h)
-endforeach()
-
-####################################
-## project targets #################
-####################################
+################################################################################
+### targets (internal) #########################################################
+################################################################################
 
 set(hmp_obj_target "hmpobj")
 set(hmp_dat_target "hmpdata")
@@ -101,6 +83,12 @@ add_library(${hmp_obj_target} OBJECT ${hmp_obj_files})
 add_library(${hmp_dat_target} ${hmp_dat_files})
 add_library(${hmp_lib_target} ${hmp_lib_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
 add_executable(${hmp_exe_target} ${hmp_exe_files} $<TARGET_OBJECTS:${hmp_obj_target}>)
+
+set(hmp_cnf_dir ${CMAKE_BINARY_DIR}/config)
+foreach(hmp_cnf_file ${hmp_cnf_files})
+    get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME_WE)
+    configure_file(${hmp_cnf_file} ${hmp_cnf_dir}/${hmp_cnf_filename}.h)
+endforeach()
 
 foreach(hmp_target ${hmp_obj_target} ${hmp_dat_target} ${hmp_lib_target})
     set_property(TARGET ${hmp_target} PROPERTY POSITION_INDEPENDENT_CODE ON)
@@ -122,9 +110,9 @@ if(NOT LLCE_DYLOAD)
     add_dependencies(${hmp_exe_target} ${hmp_lib_target})
 endif()
 
-###############################################################################
-## dependencies ###############################################################
-###############################################################################
+################################################################################
+### dependencies ###############################################################
+################################################################################
 
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -155,9 +143,9 @@ if(NOT LLCE_DYLOAD)
     target_link_libraries(${hmp_exe_target} PUBLIC $<TARGET_FILE:${hmp_lib_target}>)
 endif()
 
-###############################################################################
-## testing ####################################################################
-###############################################################################
+################################################################################
+### testing ####################################################################
+################################################################################
 
 # TODO(JRC): Add this feature once testing because useful for the project.
 
@@ -190,9 +178,9 @@ endif()
 #   
 # endif()
 
-###############################################################################
-## packaging ##################################################################
-###############################################################################
+################################################################################
+### packaging ##################################################################
+################################################################################
 
 # TODO(JRC): The solution below works when running CMake in serial because the
 # "install.lock" file will necessarily be written before any changes are made
@@ -216,7 +204,7 @@ install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 # you need to set for some package types, but we want to
 # be minimal here.
 set(CPACK_PACKAGE_NAME "hmp")
-set(CPACK_PACKAGE_VERSION "0.0.a")
+set(CPACK_PACKAGE_VERSION "0.0.1")
 
 # We don't want to split our program up into several incomplete pieces.
 set(CPACK_MONOLITHIC_INSTALL TRUE)
