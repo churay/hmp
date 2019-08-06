@@ -14,6 +14,18 @@
 ### sources ####################################################################
 ################################################################################
 
+# TODO(JRC): Clean up this hack that facilitates sharing of input handling code
+# between the simulation and the steering components.
+file(GLOB         hmp_shared_sources  ${CMAKE_CURRENT_SOURCE_DIR}/input.cpp)
+file(GLOB         hmp_shared_headers  ${CMAKE_CURRENT_SOURCE_DIR}/input.h)
+
+set(hmp_shared_dirs "")
+foreach(hmp_shared_header ${hmp_shared_headers})
+    set(hmp_shared_dir "")
+    get_filename_component(hmp_shared_dir ${hmp_shared_header} DIRECTORY)
+    list(APPEND hmp_shared_dirs ${hmp_shared_dir})
+endforeach()
+
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/hmp")
 
 file(GLOB         hmp_plat_obj_sources  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
