@@ -106,22 +106,25 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
 
 #ifdef LLCE_CAPTURE
 
+// NOTE(JRC): Code below heavily inspired by GitHub gist of user 'niw':
+// https://gist.github.com/niw/5963798
+
 bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uint32_t pPNGWidth, uint32_t pPNGHeight ) {
     bool32_t saveSuccessful = false;
 
     FILE* pngFile = nullptr;
     LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "wb")) != nullptr,
-        "Failed to open render file at path '" << pPNGPath << "'." );
+        "Failed to open PNG file at path '" << pPNGPath << "'." );
 
     // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
     png_struct* pngBase = nullptr;
     LLCE_ASSERT_INFO(
         (pngBase = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
-        "Failed to create base headers for render file at path '" << pPNGPath << "'." );
+        "Failed to create base headers for PNG file at path '" << pPNGPath << "'." );
     png_info* pngInfo = nullptr;
     LLCE_ASSERT_INFO(
         (pngInfo = png_create_info_struct(pngBase)) != nullptr,
-        "Failed to create info headers for render file at path '" << pPNGPath << "'." );
+        "Failed to create info headers for PNG file at path '" << pPNGPath << "'." );
 
     if( pngFile != nullptr && pngBase != nullptr && pngInfo != nullptr ) {
         png_init_io( pngBase, pngFile );
@@ -147,8 +150,63 @@ bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uin
 
 
 bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData ) {
-    // TODO(JRC)
-    return false;
+    bool32_t loadSuccessful = false;
+
+    FILE* pngFile = nullptr;
+    LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "rb")) != nullptr,
+        "Failed to open PNG file at path '" << pPNGPath << "'." );
+
+    // TODO(JRC): For local memory allocation handling, use png_create_read_struct_2.
+    png_struct* pngBase = nullptr;
+    LLCE_ASSERT_INFO(
+        (pngBase = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
+        "Failed to create base headers for PNG file at path '" << pPNGPath << "'." );
+    png_info* pngInfo = nullptr;
+    LLCE_ASSERT_INFO(
+        (pngInfo = png_create_info_struct(pngBase)) != nullptr,
+        "Failed to create info headers for PNG file at path '" << pPNGPath << "'." );
+
+    if( pngFile != nullptr && pngBase != nullptr && pngInfo != nullptr ) {
+        png_init_io( pngBase, pngFile );
+        png_read_info( pngBase, pngInfo );
+
+        const uint32_t cPNGWidth = png_get_image_width( pngBase, pngInfo );
+        const uint32_t cPNGHeight = png_get_image_height( pngBase, pngInfo );
+        const uint32_t cPNGColorType = png_get_color_type( pngBase, pngInfo );
+        const uint32_t cPNGBitDepth = png_get_bit_depth( pngBase, pngInfo );
+
+        { // Convert 'Color Type' to RGBA8 //
+            if( cPNGBitDepth == 16 ) {
+                png_set_strip_16( pngBase );
+            } if( cPNGColorType == PNG_COLOR_TYPE_PALETTE ) {
+                png_set_palette_to_rgb( pngBase );
+            } if( cPNGColorType == PNG_COLOR_TYPE_GRAY && cPNGBitDepth < 8 ) {
+                png_set_expand_gray_1_2_4_to_8( pngBase );
+            } if( png_get_valid(pngBase, pngInfo, PNG_INFO_tRNS) ) {
+                png_set_tRNS_to_alpha( pngBase );
+            } if( cPNGColorType == PNG_COLOR_TYPE_RGB ||
+                    cPNGColorType == PNG_COLOR_TYPE_GRAY ||
+                    cPNGColorType == PNG_COLOR_TYPE_PALETTE ) {
+                png_set_filler( pngBase, 0xFF, PNG_FILLER_AFTER );
+            } if( cPNGColorType == PNG_COLOR_TYPE_GRAY ||
+                    cPNGColorType == PNG_COLOR_TYPE_GRAY_ALPHA ) {
+                png_set_gray_to_rgb( pngBase );
+            }
+
+            png_read_update_info( pngBase, pngInfo );
+        }
+
+        for( uint32_t rowIdx = 0; rowIdx < cPNGHeight; rowIdx++ ) {
+            png_read_row( pngBase, (png_byte*)&pPNGData[rowIdx * cPNGWidth * 4], nullptr );
+        }
+
+        png_destroy_read_struct( &pngBase, &pngInfo, nullptr );
+        fclose( pngFile );
+
+        loadSuccessful = true;
+    }
+
+    return loadSuccessful;
 }
 
 #endif
