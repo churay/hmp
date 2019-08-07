@@ -25,8 +25,8 @@ list(REMOVE_ITEM  hmp_sim_lib_headers     ${hmp_sim_dat_headers})
 ### targets ####################################################################
 ################################################################################
 
-set(hmp_sim_dat_target "hmpdata")
-set(hmp_sim_lib_target "hmp")
+set(hmp_sim_dat_target "hmpdata" CACHE INTERNAL "" FORCE)
+set(hmp_sim_lib_target "hmp" CACHE INTERNAL "" FORCE)
 
 add_library(${hmp_sim_dat_target} ${hmp_sim_dat_sources} ${hmp_shared_sources})
 add_library(${hmp_sim_lib_target} ${hmp_sim_lib_sources} ${hmp_shared_sources})
@@ -39,12 +39,6 @@ foreach(hmp_target ${hmp_sim_dat_target} ${hmp_sim_lib_target})
     target_link_libraries(${hmp_target} PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 endforeach()
 target_link_libraries(${hmp_sim_lib_target} PRIVATE $<TARGET_FILE:${hmp_sim_dat_target}>)
-
-if(NOT LLCE_DYLOAD)
-    target_include_directories(${hmp_plat_exe_target} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
-    target_link_libraries(${hmp_plat_exe_target} PUBLIC $<TARGET_FILE:${hmp_sim_dat_target}>)
-    target_link_libraries(${hmp_plat_exe_target} PUBLIC $<TARGET_FILE:${hmp_sim_lib_target}>)
-endif()
 
 ################################################################################
 ### testing ####################################################################
@@ -92,8 +86,8 @@ endif()
 # extend to parallel builds (though they probably do at least for Makefile outputs).
 
 install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
-install(TARGETS ${hmp_sim_dat_target} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(TARGETS ${hmp_sim_lib_target} LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS ${hmp_sim_dat_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS ${hmp_sim_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 
 ################################################################################

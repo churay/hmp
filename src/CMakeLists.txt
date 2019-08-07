@@ -31,12 +31,14 @@ file(GLOB         hmp_plat_obj_headers  ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 file(GLOB         hmp_plat_exe_sources  ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
 list(REMOVE_ITEM  hmp_plat_obj_sources  ${hmp_plat_exe_sources})
 
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/hmp")
+
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
-set(hmp_plat_obj_target "hmpobj")
-set(hmp_plat_exe_target "hmp.out")
+set(hmp_plat_obj_target "hmpobj" CACHE INTERNAL "" FORCE)
+set(hmp_plat_exe_target "hmp.out" CACHE INTERNAL "" FORCE)
 
 add_library(${hmp_plat_obj_target} OBJECT ${hmp_plat_obj_sources})
 add_executable(${hmp_plat_exe_target} ${hmp_plat_exe_sources} $<TARGET_OBJECTS:${hmp_plat_obj_target}>)
@@ -51,6 +53,12 @@ target_link_libraries(${hmp_plat_exe_target} PRIVATE ${SDL2_LIBRARIES} ${SDL2_tt
 if(LLCE_CAPTURE)
     target_include_directories(${hmp_plat_exe_target} PRIVATE ${LIBPNG_INCLUDE_DIRS})
     target_link_libraries(${hmp_plat_exe_target} PRIVATE ${LIBPNG_LIBRARIES})
+endif()
+
+if(NOT LLCE_DYLOAD)
+    target_include_directories(${hmp_plat_exe_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/hmp")
+    target_link_libraries(${hmp_plat_exe_target} PRIVATE ${hmp_sim_dat_target})
+    target_link_libraries(${hmp_plat_exe_target} PRIVATE ${hmp_sim_lib_target})
 endif()
 
 ################################################################################
@@ -94,10 +102,10 @@ endif()
 
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-install(TARGETS ${hmp_plat_exe_target} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS ${hmp_plat_exe_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 ################################################################################
 ### sub-packaging ##############################################################
 ################################################################################
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/hmp")
+
