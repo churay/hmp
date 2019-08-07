@@ -92,17 +92,9 @@ endif()
 ### packaging ##################################################################
 ################################################################################
 
-# TODO(JRC): The solution below works when running CMake in serial because the
-# "install.lock" file will necessarily be written before any changes are made
-# to the project's install targets and be removed afterwards based on CMake's
-# install script generation rules. It isn't clear whether or not these rules
-# extend to parallel builds (though they probably do at least for Makefile outputs).
-
 # All install commands get the same destination. this allows us to use paths
 # relative to the executable.
-# install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
 install(TARGETS ${hmp_plat_exe_target} RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX})
-# install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 
 ################################################################################
 ### sub-packaging ##############################################################
