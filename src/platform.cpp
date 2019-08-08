@@ -109,7 +109,7 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
 // NOTE(JRC): Code below heavily inspired by GitHub gist of user 'niw':
 // https://gist.github.com/niw/5963798
 
-bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uint32_t pPNGWidth, uint32_t pPNGHeight ) {
+bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, const uint32_t& pPNGWidth, const uint32_t& pPNGHeight ) {
     bool32_t saveSuccessful = false;
 
     FILE* pngFile = nullptr;
@@ -149,8 +149,9 @@ bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, uin
 }
 
 
-bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData ) {
+bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData, uint32_t& pPNGWidth, uint32_t& pPNGHeight ) {
     bool32_t loadSuccessful = false;
+    pPNGWidth = pPNGHeight = 0;
 
     FILE* pngFile = nullptr;
     LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "rb")) != nullptr,
@@ -170,8 +171,8 @@ bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData ) {
         png_init_io( pngBase, pngFile );
         png_read_info( pngBase, pngInfo );
 
-        const uint32_t cPNGWidth = png_get_image_width( pngBase, pngInfo );
-        const uint32_t cPNGHeight = png_get_image_height( pngBase, pngInfo );
+        pPNGWidth = png_get_image_width( pngBase, pngInfo );
+        pPNGHeight = png_get_image_height( pngBase, pngInfo );
         const uint32_t cPNGColorType = png_get_color_type( pngBase, pngInfo );
         const uint32_t cPNGBitDepth = png_get_bit_depth( pngBase, pngInfo );
 
@@ -196,8 +197,8 @@ bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData ) {
             png_read_update_info( pngBase, pngInfo );
         }
 
-        for( uint32_t rowIdx = 0; rowIdx < cPNGHeight; rowIdx++ ) {
-            png_read_row( pngBase, (png_byte*)&pPNGData[rowIdx * cPNGWidth * 4], nullptr );
+        for( uint32_t rowIdx = 0; rowIdx < pPNGHeight; rowIdx++ ) {
+            png_read_row( pngBase, (png_byte*)&pPNGData[rowIdx * pPNGWidth * 4], nullptr );
         }
 
         png_destroy_read_struct( &pngBase, &pngInfo, nullptr );

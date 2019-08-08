@@ -101,6 +101,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         "Failed to find path to running executable." );
     const path_t cInstallLockPath( 2, cInstallPath.cstr(), "install.lock" );
 
+    const path_t cAssetPath( 2, cInstallPath.cstr(), "dat" );
+
     // NOTE(JRC): It's important to realize that the pathing here ties debugging
     // outputs to particular builds of the code. This is probably a good thing, but
     // it does mean clearing the current build will cause all debug files to be lost.
@@ -230,6 +232,37 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     LLCE_ASSERT_ERROR( window != nullptr,
         "SDL failed to create window instance; " << SDL_GetError() );
 
+    { /// Initialize Window ///
+        const path_t cIconPath( 2, cAssetPath.cstr(), "icon.png" );
+        static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION];
+
+        uint32_t iconWidth = 0, iconHeight = 0;
+        LLCE_ASSERT_INFO(
+            llce::platform::pngLoad(cIconPath, (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight),
+            "Failed to load icon at path '" << cIconPath << "'." );
+
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+        const uint32_t cRMask = 0xFF000000;
+        const uint32_t cGMask = 0x00FF0000;
+        const uint32_t cBMask = 0x0000FF00;
+        const uint32_t cAMask = 0x000000FF;
+#else // little endian, like x86
+        const uint32_t cRMask = 0x000000FF;
+        const uint32_t cGMask = 0x0000FF00;
+        const uint32_t cBMask = 0x00FF0000;
+        const uint32_t cAMask = 0xFF000000;
+#endif
+
+        SDL_Surface* windowIcon = nullptr;
+        windowIcon = SDL_CreateRGBSurfaceFrom( (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight,
+            sizeof(color4u8_t) * 8, sizeof(color4u8_t) * iconWidth, cRMask, cGMask, cBMask, cAMask );
+        LLCE_ASSERT_INFO( windowIcon != nullptr,
+            "Failed to load the icon for the application." );
+
+        SDL_SetWindowIcon( window, windowIcon );
+        // SDL_FreeSurface( windowIcon );
+    }
+
     SDL_GLContext glcontext = SDL_GL_CreateContext( window );
     LLCE_ASSERT_ERROR( glcontext != nullptr,
         "SDL failed to generate OpenGL context; " << SDL_GetError() );
@@ -289,8 +322,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     SDL_PauseAudioDevice( audioDeviceID, false );
 
     /// Generate Graphics Assets ///
-
-    const path_t cAssetPath( 2, cInstallPath.cstr(), "dat" );
 
     const char8_t* cFontFileName = "dejavu_mono.ttf";
     const path_t cFontPath( 2, cAssetPath.cstr(), cFontFileName );
@@ -645,7 +676,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                         std::memcpy( &sCaptureBuffer[oppOff], tempBuffer, bufferByteCount );
                     }
 
-                    llce::platform::pngSave( capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y );
+                    LLCE_ASSERT_INFO(
+                        llce::platform::pngSave(capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y),
+                        "Failed to capture frame {" << simFrame << "} to path '" << capturePath << "'." );
                 }
                 isCapturing = cIsSimulating;
 #endif
