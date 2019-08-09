@@ -8,7 +8,7 @@
 
 #include "platform.h"
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
 extern "C" {
 #include <png.h>
 }
@@ -104,7 +104,7 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
     return symbolFunction;
 }
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
 
 // NOTE(JRC): Code below heavily inspired by GitHub gist of user 'niw':
 // https://gist.github.com/niw/5963798

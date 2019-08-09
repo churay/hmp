@@ -11,6 +11,7 @@
 #include <cstring>
 #include <cstdio>
 #include <fstream>
+#include <iostream>
 
 #include "hmp/hmp.h"
 
@@ -42,18 +43,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Parse Input Arguments ///
 
-    // TODO(JRC): Re-enabled this feature once a better method for converting
-    // CMake options to C++ defines is discovered.
-    //
-    // if( llce::cli::exists("-v", pArgs, pArgCount) ) {
-    //     LLCE_ALERT_INFO( "{Version: v0.0.a, " <<
-    //         "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
-    //         "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
-    // }
+    if( llce::cli::exists("-v", pArgs, pArgCount) ) {
+        std::cout << "{Version: v" << LLCE_VERSION << ", " <<
+            "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
+            "Libraries: " << (LLCE_DYLOAD ? "Dynamic" : "Static") << ", " <<
+            "Floats: " << (LLCE_FDOUBLE ? "Double" : "Single") << "-Precision, " <<
+            "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" << std::endl;
+    }
 
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
     const int32_t cSimStateIdx = cSimStateArg != nullptr ? std::atoi( cSimStateArg ) : -1;
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
     bool32_t cIsSimulating = cSimStateIdx > 0;
 #else
     bool32_t cIsSimulating = false;
@@ -63,7 +63,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     // NOTE(JRC): This base address was chosen by following the steps enumerated
     // in the 'doc/static_address.md' documentation file.
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
     bit8_t* const cBufferAddress = (bit8_t*)0x0000100000000000;
     const uint64_t cBackupBufferCount = static_cast<uint64_t>( 2.0 * csSimFPS );
 #else
@@ -81,7 +81,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     hmp::input_t* simInput = &inputs[0];
     hmp::output_t* simOutput = (hmp::output_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::output_t) );
 
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
     hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
     hmp::state_t* backupStates = (hmp::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::state_t) );
 #endif
@@ -120,7 +120,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     path_t dllFilePaths[csDLLCount];
     void* dllHandles[csDLLCount];
-#ifdef LLCE_DYLOAD
+#if LLCE_DYLOAD
     for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
         const char8_t* cDLLFileName = csDLLFileNames[dllIdx];
         path_t& dllFilePath = dllFilePaths[dllIdx];
@@ -136,7 +136,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     update_f dllUpdate = nullptr;
     render_f dllRender = nullptr;
     const auto cDLLReload = [ &dllFilePaths, &dllHandles, &dllInit, &dllBoot, &dllUpdate, &dllRender ] () {
-#ifndef LLCE_DYLOAD
+#if !LLCE_DYLOAD
         dllInit = &init;
         dllBoot = &boot;
         dllUpdate = &update;
@@ -176,7 +176,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // NOTE(JRC): Reduces all DLL modification times to a single value based
     // on the given function (e.g. std::min for earliest, std::max for latest).
     const auto cDLLModTime = [ &dllFilePaths ] ( reduce_f pReduce ) {
-#ifndef LLCE_DYLOAD
+#if !LLCE_DYLOAD
         return 1;
 #else
         int64_t reducedModTime = -1;
@@ -260,7 +260,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             "Failed to load the icon for the application." );
 
         SDL_SetWindowIcon( window, windowIcon );
-        // SDL_FreeSurface( windowIcon );
+        SDL_FreeSurface( windowIcon );
     }
 
     SDL_GLContext glcontext = SDL_GL_CreateContext( window );
@@ -336,7 +336,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const static color4u8_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
     const static color4u8_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
 
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
     color4u8_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
@@ -388,7 +388,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
     static color4u8_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
 #endif
 
@@ -421,7 +421,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
     bool32_t isCapturing = cIsSimulating;
 #else
     bool32_t isCapturing = false;
@@ -444,7 +444,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     simOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
 
     while( isRunning ) {
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
         bool32_t isStepReady = false;
         while( isStepping && !isStepReady ) {
             SDL_Event event;
@@ -481,7 +481,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             // ` key = capture application
             isCapturing = true;
         }
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
         uint64_t backupIdx = simFrame % cBackupBufferCount;
         std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(hmp::input_t) );
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(hmp::state_t) );
@@ -646,7 +646,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
                 } glEnd();
 
-#ifdef LLCE_CAPTURE
+#if LLCE_CAPTURE
                 if( isCapturing ) {
                     LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
@@ -686,7 +686,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
-#ifdef LLCE_DEBUG
+#if LLCE_DEBUG
         glEnable( GL_TEXTURE_2D ); {
             std::snprintf( &textureTexts[cFPSTextureID][0],
                 csTextureTextLength,
@@ -753,7 +753,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Clean Up + Exit ///
 
-#ifdef LLCE_DYLOAD
+#if LLCE_DYLOAD
     for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
         if( dllHandles[dllIdx] != nullptr ) {
             llce::platform::dllUnloadHandle( dllHandles[dllIdx], dllFilePaths[dllIdx] );

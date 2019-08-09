@@ -79,7 +79,7 @@ struct output_t {
 
 }
 
-#ifndef LLCE_DYLOAD
+#if !LLCE_DYLOAD
 extern "C" {
     bool32_t init( hmp::state_t* pState, hmp::input_t* pInput );
     bool32_t boot( hmp::output_t* pOutput );

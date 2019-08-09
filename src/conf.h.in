@@ -1,16 +1,17 @@
 #ifndef LLCE_CONF_H
 #define LLCE_CONF_H
 
-#cmakedefine LLCE_DYLOAD
-#cmakedefine LLCE_FDOUBLE
-#cmakedefine LLCE_CAPTURE
+#cmakedefine01 LLCE_DYLOAD
+#cmakedefine01 LLCE_FDOUBLE
+#cmakedefine01 LLCE_CAPTURE
 
-#ifndef LLCE_FDOUBLE
+#if !LLCE_FDOUBLE
 typedef float real;
 #else
 typedef double real;
 #endif
 
+#define LLCE_VERSION "@PROJECT_VERSION@"
 #define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
 
 #endif
