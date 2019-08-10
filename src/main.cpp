@@ -231,17 +231,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             llce::platform::pngLoad(cIconPath, (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight),
             "Failed to load icon at path '" << cIconPath << "'." );
 
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        const uint32_t cRMask = 0xFF000000;
-        const uint32_t cGMask = 0x00FF0000;
-        const uint32_t cBMask = 0x0000FF00;
-        const uint32_t cAMask = 0x000000FF;
-#else // little endian, like x86
-        const uint32_t cRMask = 0x000000FF;
-        const uint32_t cGMask = 0x0000FF00;
-        const uint32_t cBMask = 0x00FF0000;
-        const uint32_t cAMask = 0xFF000000;
-#endif
+        const uint32_t cRMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0xFF000000 : 0x000000FF;
+        const uint32_t cGMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x00FF0000 : 0x0000FF00;
+        const uint32_t cBMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x0000FF00 : 0x00FF0000;
+        const uint32_t cAMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x000000FF : 0xFF000000;
 
         SDL_Surface* windowIcon = nullptr;
         windowIcon = SDL_CreateRGBSurfaceFrom( (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight,
@@ -411,11 +404,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-#if LLCE_CAPTURE
-    bool32_t isCapturing = cIsSimulating;
-#else
-    bool32_t isCapturing = false;
-#endif
+    bool32_t isCapturing = LLCE_CAPTURE && cIsSimulating;
     uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( csSimFPS, llce::timer_t::ratio_e::fps );
