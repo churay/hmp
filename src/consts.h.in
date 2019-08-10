@@ -49,52 +49,94 @@ typedef vec4f32_t color4f32_t;
 
 // TODO(JRC): Consider changing these functions to use 'prinf' functionality
 // instead of 'std::cerr' functionality.
-// NOTE(JRC): Code inspired by Stack Overflow response:
-// https://stackoverflow.com/a/3767883.
-#ifdef LLCE_DEBUG
-#define LLCE_ALERT_INFO(message) \
+
+#if LLCE_DEBUG
+#define LLCE_INFO_DEBUG(message) \
     do { \
-        std::cerr << "[ALERT]: " << message << std::endl; \
+        std::cerr << "[INFO]: " << message << std::endl; \
     } while (false)
 #else
-#define LLCE_ALERT_INFO(message) do { } while(false)
+#define LLCE_INFO_DEBUG(message) do { } while(false)
 #endif
 
-#ifdef LLCE_DEBUG
-#define LLCE_ASSERT_INFO(condition, message) \
+#define LLCE_INFO_RELEASE(message) \
+    do { \
+        std::cerr << "[INFO]: " << message << std::endl; \
+    } while (false)
+
+// NOTE(JRC): The helper macros below are graded on two dimensions: how they
+// handle the provided conditional, and how they react to that conditional's
+// result. The tiers per dimension are as follows:
+//
+// # Conditional Handling #
+//
+// - CHECK: debug-only conditional evaluation, debug-only result processing
+// - VERIFY: always-on conditional evaluation, debug-only result processing
+// - ASSERT: always-on conditional evaluation, always-on result processing
+//
+// # Result Processing #
+//
+// - WARNING: Print out the macro-provided message.
+// - ERROR: Print out the macro-provided message and then exit abnormally.
+
+#if LLCE_DEBUG
+#define LLCE_CHECK_WARNING(condition, message) \
     do { \
         if (! (condition)) { \
-            std::cerr << "[INFO] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
+            std::cerr << "[WARN] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
         } \
     } while (false)
 #else
-#define LLCE_ASSERT_INFO(condition, message) do { } while(false)
+#define LLCE_CHECK_WARNING(condition, message) do { } while(false)
 #endif
 
-#ifdef LLCE_DEBUG
-#define LLCE_ASSERT_DEBUG(condition, message) \
+#if LLCE_DEBUG
+#define LLCE_VERIFY_WARNING(condition, message) \
     do { \
         if (! (condition)) { \
-            std::cerr << "[DEBUG] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
-            exit(1); \
+            std::cerr << "[WARN] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
         } \
     } while (false)
 #else
-#define LLCE_ASSERT_DEBUG(condition, message) do { } while(false)
+#define LLCE_VERIFY_WARNING(condition, message) do { (condition) } while(false)
 #endif
 
-#define LLCE_ASSERT_ERROR(condition, message) \
+#define LLCE_ASSERT_WARNING(condition, message) \
+    do { \
+        if (! (condition)) { \
+            std::cerr << "[WARN] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
+        } \
+    } while (false)
+
+
+#if LLCE_DEBUG
+#define LLCE_CHECK_ERROR(condition, message) \
     do { \
         if (! (condition)) { \
             std::cerr << "[ERROR] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
             exit(1); \
         } \
     } while (false)
+#else
+#define LLCE_CHECK_ERROR(condition, message) do { } while(false)
+#endif
 
-#define LLCE_ASSERT_ERRNO() \
+#if LLCE_DEBUG
+#define LLCE_VERIFY_ERROR(condition, message) \
     do { \
-        if (errno != 0) { \
-            std::cerr << "[ERRNO] (" << __FILE__ << ":" << __LINE__ << "): " << strerror( errno ) << std::endl; \
+        if (! (condition)) { \
+            std::cerr << "[ERROR] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
+            exit(1); \
+        } \
+    } while (false)
+#else
+#define LLCE_VERIFY_ERROR(condition, message) do { (condition) } while(false)
+#endif
+
+#define LLCE_ASSERT_ERROR(condition, message) \
+    do { \
+        if (! (condition)) { \
+            std::cerr << "[ERROR] (" << __FILE__ << ":" << __LINE__ << "): " << message << std::endl; \
             exit(1); \
         } \
     } while (false)

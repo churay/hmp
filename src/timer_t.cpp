@@ -7,7 +7,7 @@
 namespace llce {
 
 timer_t::timer_t( float64_t pRatio, timer_t::ratio_e pType ) {
-    LLCE_ASSERT_DEBUG( pRatio > 0.0,
+    LLCE_CHECK_ERROR( pRatio > 0.0,
         "Couldn't create timer with invalid fps/spf ratio of " << pRatio << "; "
         "this ratio value must be positive." );
 

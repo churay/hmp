@@ -37,7 +37,7 @@ bit8_t* platform::allocBuffer( uint64_t pBufferLength, bit8_t* pBufferBase ) {
                 errno == ENOMEM );
         }
 
-        LLCE_ASSERT_INFO( !isBufferOccupied,
+        LLCE_CHECK_ERROR( !isBufferOccupied,
             "Allocation of buffer of length " << pBufferLength << " " <<
             "at base address " << pBufferBase << " will cause eviction of one "
             "or more existing memory blocks." );
@@ -51,7 +51,7 @@ bit8_t* platform::allocBuffer( uint64_t pBufferLength, bit8_t* pBufferBase ) {
         -1,                      // File Descriptor
         0 );                     // File Offset
 
-    LLCE_ASSERT_INFO( buffer != (bit8_t*)MAP_FAILED,
+    LLCE_CHECK_ERROR( buffer != (bit8_t*)MAP_FAILED,
         "Unable to allocate buffer of length " << pBufferLength << " " <<
         "at base address " << pBufferBase << "; " << strerror(errno) );
 
@@ -62,7 +62,7 @@ bit8_t* platform::allocBuffer( uint64_t pBufferLength, bit8_t* pBufferBase ) {
 bool32_t platform::deallocBuffer( bit8_t* pBuffer, uint64_t pBufferLength ) {
     int64_t status = munmap( pBuffer, pBufferLength );
 
-    LLCE_ASSERT_INFO( status == 0,
+    LLCE_CHECK_ERROR( status == 0,
         "Deallocation of buffer of length " << pBufferLength << " " <<
         "at base address " << pBuffer << " failed; possible memory corruption." );
 
@@ -76,7 +76,7 @@ void* platform::dllLoadHandle( const char8_t* pDLLPath ) {
     void* libraryHandle = dlopen( pDLLPath, RTLD_NOW | RTLD_GLOBAL );
     const char8_t* libraryError = dlerror();
 
-    LLCE_ASSERT_INFO( libraryHandle != nullptr,
+    LLCE_CHECK_ERROR( libraryHandle != nullptr,
         "Failed to load library `" << pDLLPath << "`: " << libraryError );
 
     return libraryHandle;
@@ -87,7 +87,7 @@ bool32_t platform::dllUnloadHandle( void* pDLLHandle, const char8_t* pDLLPath ) 
     int64_t status = dlclose( pDLLHandle );
     const char8_t* libraryError = dlerror();
 
-    LLCE_ASSERT_INFO( status == 0,
+    LLCE_CHECK_ERROR( status == 0,
         "Failed to unload library `" << pDLLPath << "`; " << libraryError );
 
     return status == 0;
@@ -98,7 +98,7 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
     void* symbolFunction = dlsym( const_cast<void*>(pDLLHandle), pDLLSymbol );
     const char8_t* symbolError = dlerror();
 
-    LLCE_ASSERT_INFO( symbolFunction != nullptr,
+    LLCE_CHECK_ERROR( symbolFunction != nullptr,
         "Failed to load symbol `" << pDLLSymbol << "`: " << symbolError );
 
     return symbolFunction;
@@ -113,16 +113,16 @@ bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, con
     bool32_t saveSuccessful = false;
 
     FILE* pngFile = nullptr;
-    LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "wb")) != nullptr,
+    LLCE_VERIFY_WARNING( (pngFile = fopen(pPNGPath, "wb")) != nullptr,
         "Failed to open PNG file at path '" << pPNGPath << "'." );
 
     // TODO(JRC): For local memory allocation handling, use png_create_write_struct_2.
     png_struct* pngBase = nullptr;
-    LLCE_ASSERT_INFO(
+    LLCE_VERIFY_WARNING(
         (pngBase = png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
         "Failed to create base headers for PNG file at path '" << pPNGPath << "'." );
     png_info* pngInfo = nullptr;
-    LLCE_ASSERT_INFO(
+    LLCE_VERIFY_WARNING(
         (pngInfo = png_create_info_struct(pngBase)) != nullptr,
         "Failed to create info headers for PNG file at path '" << pPNGPath << "'." );
 
@@ -154,16 +154,16 @@ bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData, uint32_t&
     pPNGWidth = pPNGHeight = 0;
 
     FILE* pngFile = nullptr;
-    LLCE_ASSERT_INFO( (pngFile = fopen(pPNGPath, "rb")) != nullptr,
+    LLCE_VERIFY_WARNING( (pngFile = fopen(pPNGPath, "rb")) != nullptr,
         "Failed to open PNG file at path '" << pPNGPath << "'." );
 
     // TODO(JRC): For local memory allocation handling, use png_create_read_struct_2.
     png_struct* pngBase = nullptr;
-    LLCE_ASSERT_INFO(
+    LLCE_VERIFY_WARNING(
         (pngBase = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr)) != nullptr,
         "Failed to create base headers for PNG file at path '" << pPNGPath << "'." );
     png_info* pngInfo = nullptr;
-    LLCE_ASSERT_INFO(
+    LLCE_VERIFY_WARNING(
         (pngInfo = png_create_info_struct(pngBase)) != nullptr,
         "Failed to create info headers for PNG file at path '" << pPNGPath << "'." );
 

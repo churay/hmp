@@ -11,7 +11,6 @@
 #include <cstring>
 #include <cstdio>
 #include <fstream>
-#include <iostream>
 
 #include "hmp/hmp.h"
 
@@ -44,32 +43,23 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Parse Input Arguments ///
 
     if( llce::cli::exists("-v", pArgs, pArgCount) ) {
-        std::cout << "{Version: v" << LLCE_VERSION << ", " <<
+        LLCE_INFO_RELEASE( "{Version: v" << LLCE_VERSION << ", " <<
             "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
             "Libraries: " << (LLCE_DYLOAD ? "Dynamic" : "Static") << ", " <<
             "Floats: " << (LLCE_FDOUBLE ? "Double" : "Single") << "-Precision, " <<
-            "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" << std::endl;
+            "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
     }
 
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
     const int32_t cSimStateIdx = cSimStateArg != nullptr ? std::atoi( cSimStateArg ) : -1;
-#if LLCE_DEBUG
-    bool32_t cIsSimulating = cSimStateIdx > 0;
-#else
-    bool32_t cIsSimulating = false;
-#endif
+    const bool32_t cIsSimulating = LLCE_DEBUG ? cSimStateIdx > 0 : false;
 
     /// Initialize Application Memory/State ///
 
     // NOTE(JRC): This base address was chosen by following the steps enumerated
     // in the 'doc/static_address.md' documentation file.
-#if LLCE_DEBUG
-    bit8_t* const cBufferAddress = (bit8_t*)0x0000100000000000;
-    const uint64_t cBackupBufferCount = static_cast<uint64_t>( 2.0 * csSimFPS );
-#else
-    bit8_t* const cBufferAddress = nullptr;
-    const uint64_t cBackupBufferCount = 0;
-#endif
+    bit8_t* const cBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
+    const uint64_t cBackupBufferCount = LLCE_DEBUG ? static_cast<uint64_t>( 2.0 * csSimFPS ) : 0;
     const uint64_t cSimBufferIdx = 0, cSimBufferLength = MEGABYTE_BL( 1 );
     const uint64_t cBackupBufferIdx = 1, cBackupBufferLength = cBackupBufferCount * cSimBufferLength;
     const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
@@ -237,7 +227,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION];
 
         uint32_t iconWidth = 0, iconHeight = 0;
-        LLCE_ASSERT_INFO(
+        LLCE_VERIFY_WARNING(
             llce::platform::pngLoad(cIconPath, (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight),
             "Failed to load icon at path '" << cIconPath << "'." );
 
@@ -256,7 +246,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_Surface* windowIcon = nullptr;
         windowIcon = SDL_CreateRGBSurfaceFrom( (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight,
             sizeof(color4u8_t) * 8, sizeof(color4u8_t) * iconWidth, cRMask, cGMask, cBMask, cAMask );
-        LLCE_ASSERT_INFO( windowIcon != nullptr,
+        LLCE_CHECK_WARNING( windowIcon != nullptr,
             "Failed to load the icon for the application." );
 
         SDL_SetWindowIcon( window, windowIcon );
@@ -489,7 +479,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( (!isStepping && isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE)) ||
                 (isStepping && isKeyDown(appInput->keyboard, SDL_SCANCODE_SPACE)) ) {
             // space key = toggle frame advance mode
-            LLCE_ALERT_INFO( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
+            LLCE_INFO_DEBUG( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
         }
 
@@ -510,7 +500,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             if( (isKeyDown(appInput->keyboard, SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
                 // lshift + fx = toggle slot x replay
-                LLCE_ALERT_INFO( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
+                LLCE_INFO_DEBUG( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
                     repFrameIdx = 0;
                     recStateStream.open( slotStateFilePath, cIOModeR );
@@ -528,7 +518,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 isReplaying = !isReplaying;
             } else if( isKeyDown(appInput->keyboard, SDL_SCANCODE_RSHIFT) && !isRecording ) {
                 // rshift + fx = hotload slot x state (reset replay)
-                LLCE_ALERT_INFO( "Hotload Slot {" << recSlotIdx << "}" );
+                LLCE_INFO_DEBUG( "Hotload Slot {" << recSlotIdx << "}" );
                 if( isReplaying ) {
                     repFrameIdx = 0;
                     recInputStream.seekg( 0, std::ios_base::end );
@@ -540,7 +530,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 }
             } else if( recSlotIdx != 1 && !isReplaying ) {
                 // fx = toggle slot x recording
-                LLCE_ALERT_INFO( "Record Slot {" << recSlotIdx << "} <" << (!isRecording ? "ON " : "OFF") << ">" );
+                LLCE_INFO_DEBUG( "Record Slot {" << recSlotIdx << "} <" << (!isRecording ? "ON " : "OFF") << ">" );
                 if( !isRecording ) {
                     recFrameCount = 0;
                     recStateStream.open( slotStateFilePath, cIOModeW );
@@ -553,7 +543,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 isRecording = !isRecording;
             } else if(recSlotIdx == 1 && !isReplaying ) {
                 // f1 = instant backup record
-                LLCE_ALERT_INFO( "Hotsave Slot {" << recSlotIdx << "}" );
+                LLCE_INFO_DEBUG( "Hotsave Slot {" << recSlotIdx << "}" );
                 // TODO(JRC): It's potentially worth putting a guard on this
                 // function or improving the backup state implementation so
                 // that hot-saving before the number of total backups is possible.
@@ -598,15 +588,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             uint32_t lockSpinCount = 0;
             while( cInstallLockPath.exists() ) { lockSpinCount++; }
 
-            LLCE_ASSERT_INFO( lockSpinCount == 0,
+            LLCE_CHECK_WARNING( lockSpinCount == 0,
                 "Performed " << lockSpinCount << " spin cycles " <<
                 "while waiting for DLL install; consider transitioning to file locks." );
 
-            LLCE_ASSERT_ERROR( cDLLReload(),
+            LLCE_VERIFY_ERROR( cDLLReload(),
                 "Couldn't load dynamic library symbols at " <<
                 "simulation time " << simTimer.tt() << "." );
 
-            LLCE_ALERT_INFO( "DLL Reload {" << simFrame << "}" );
+            LLCE_INFO_DEBUG( "DLL Reload {" << simFrame << "}" );
 
             prevDylibModTime = currDylibModTime;
         }
@@ -648,7 +638,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_CAPTURE
                 if( isCapturing ) {
-                    LLCE_ALERT_INFO( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
+                    LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
                     char8_t slotCaptureFileName[csOutputFileNameLength];
                     std::snprintf( &slotCaptureFileName[0],
@@ -676,7 +666,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                         std::memcpy( &sCaptureBuffer[oppOff], tempBuffer, bufferByteCount );
                     }
 
-                    LLCE_ASSERT_INFO(
+                    LLCE_VERIFY_WARNING(
                         llce::platform::pngSave(capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y),
                         "Failed to capture frame {" << simFrame << "} to path '" << capturePath << "'." );
                 }

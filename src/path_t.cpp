@@ -58,7 +58,7 @@ path_t::path_t( const uint32_t pArgCount, ... ) {
 
     va_end( args );
 
-    LLCE_ASSERT_INFO( areArgsValid,
+    LLCE_CHECK_ERROR( areArgsValid,
         "Failed to initialize arbitrary variadic path; one or more indicated " <<
         "arguments were invalid." );
 }
@@ -86,7 +86,7 @@ bool32_t path_t::up( const uint32_t pLevels ) {
         bool32_t hasPathParent = pathItr > &mBuffer[0];
         success &= hasPathParent;
         if( !hasPathParent ) {
-            LLCE_ASSERT_INFO( false,
+            LLCE_CHECK_ERROR( false,
                 "Cannot find ancestor at level " << (levelIdx + 1) <<
                 " for path `" << &mBuffer[0] << "`." );
             break;
@@ -110,7 +110,7 @@ bool32_t path_t::dn( const char8_t* pChild ) {
     success &= !isPathOverflowed;
 
     if( isPathOverflowed ) {
-        LLCE_ASSERT_INFO( false,
+        LLCE_CHECK_ERROR( false,
             "Cannot find child `" << pChild << "` of extended path `" << &mBuffer[0] << "`." );
     } else {
         mBuffer[mLength] = path_t::DSEP;
@@ -139,7 +139,7 @@ int64_t path_t::size() const {
         fileSize = static_cast<int64_t>( fileStatus.st_size );
     }
 
-    LLCE_ASSERT_INFO( fileSize > 0,
+    LLCE_CHECK_ERROR( fileSize > 0,
         "Failed to read size of file " << &mBuffer[0] << "; " <<
         strerror(errno) );
 
@@ -158,7 +158,7 @@ int64_t path_t::modtime() const {
         fileModTime = static_cast<int64_t>( fileStatus.st_mtime );
     }
 
-    LLCE_ASSERT_INFO( fileModTime > 0,
+    LLCE_CHECK_ERROR( fileModTime > 0,
         "Failed to read mod time of file at path " << &mBuffer[0] << "; " <<
         strerror(errno) );
 
@@ -178,7 +178,7 @@ bool32_t path_t::wait() const {
         waitSuccessful &= !close( fileHandle );
     }
 
-    LLCE_ASSERT_INFO( waitSuccessful,
+    LLCE_CHECK_ERROR( waitSuccessful,
         "Failed to wait for file at path " << &mBuffer[0] << "; " <<
         strerror(errno) );
 
@@ -206,7 +206,7 @@ path_t exeBasePath() {
         path_t::MAX_LENGTH );
 
     int64_t pathLength = ( status <= 0 ) ? 0 : status;
-    LLCE_ASSERT_INFO( pathLength > 0,
+    LLCE_CHECK_ERROR( pathLength > 0,
         "Failed to retrieve the path to the running executable; " <<
         strerror(errno) );
 
@@ -268,7 +268,7 @@ path_t libFindDLLPath( const char8_t* pLibName ) {
         }
     }
 
-    LLCE_ASSERT_INFO( libPath.exists(),
+    LLCE_CHECK_ERROR( libPath.exists(),
         "Failed to find `" << pLibName << "` in the executable's dynamic path; " <<
         strerror(errno) );
 

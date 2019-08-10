@@ -5,7 +5,7 @@
 namespace llce {
 
 memory_t::memory_t( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t* pBlockBase ) {
-    LLCE_ASSERT_DEBUG( pBlockCount <= memory_t::MAX_BLOCKS,
+    LLCE_CHECK_ERROR( pBlockCount <= memory_t::MAX_BLOCKS,
         "Couldn't allocate memory chunk with " << pBlockCount << " blocks; " <<
         "block count has a maximum value of " << memory_t::MAX_BLOCKS << "." );
 
@@ -18,7 +18,7 @@ memory_t::memory_t( uint64_t pBlockCount, const uint64_t* pBlockLengths, bit8_t*
     }
 
     mBuffer = platform::allocBuffer( mBufferLength, pBlockBase );
-    LLCE_ASSERT_DEBUG( mBuffer != nullptr,
+    LLCE_CHECK_ERROR( mBuffer != nullptr,
         "Unable to allocate buffer of length " << mBufferLength << " " <<
         "at base address " << pBlockBase << ".");
 
@@ -35,7 +35,7 @@ memory_t::~memory_t() {
 
 
 bit8_t* memory_t::allocate( uint64_t pBufferIdx, uint64_t pAllocLength ) {
-    LLCE_ASSERT_DEBUG(
+    LLCE_CHECK_ERROR(
         mBlockAllocs[pBufferIdx] + pAllocLength <= mBlockLengths[pBufferIdx],
         "Cannot allocate an additional " << pAllocLength << " bytes to buffer " <<
         pBufferIdx << "; allocation puts block over " << mBlockAllocs[pBufferIdx] <<
