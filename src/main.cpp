@@ -371,9 +371,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-#if LLCE_CAPTURE
-    static color4u8_t sCaptureBuffer[LLCE_MAX_RESOLUTION];
-#endif
+    const static uint32_t csCaptureBufferSize = LLCE_CAPTURE ? LLCE_MAX_RESOLUTION : 1;
+    static color4u8_t sCaptureBuffer[csCaptureBufferSize];
 
     /// Input Wrangling ///
 

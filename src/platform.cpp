@@ -104,14 +104,16 @@ void* platform::dllLoadSymbol( void* pDLLHandle, const char8_t* pDLLSymbol ) {
     return symbolFunction;
 }
 
-#if LLCE_CAPTURE
-
 // NOTE(JRC): Code below heavily inspired by GitHub gist of user 'niw':
 // https://gist.github.com/niw/5963798
 
 bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, const uint32_t& pPNGWidth, const uint32_t& pPNGHeight ) {
     bool32_t saveSuccessful = false;
 
+#if !LLCE_CAPTURE
+    LLCE_ASSERT_WARNING( false,
+        "Failed to open PNG file at path '" << pPNGPath << "'; PNG library not loaded." );
+#else
     FILE* pngFile = nullptr;
     LLCE_VERIFY_WARNING( (pngFile = fopen(pPNGPath, "wb")) != nullptr,
         "Failed to open PNG file at path '" << pPNGPath << "'." );
@@ -144,6 +146,7 @@ bool32_t platform::pngSave( const char8_t* pPNGPath, const bit8_t* pPNGData, con
 
         saveSuccessful = true;
     }
+#endif
 
     return saveSuccessful;
 }
@@ -153,6 +156,10 @@ bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData, uint32_t&
     bool32_t loadSuccessful = false;
     pPNGWidth = pPNGHeight = 0;
 
+#if !LLCE_CAPTURE
+    LLCE_ASSERT_WARNING( false,
+        "Failed to open PNG file at path '" << pPNGPath << "'; PNG library not loaded." );
+#else
     FILE* pngFile = nullptr;
     LLCE_VERIFY_WARNING( (pngFile = fopen(pPNGPath, "rb")) != nullptr,
         "Failed to open PNG file at path '" << pPNGPath << "'." );
@@ -206,10 +213,9 @@ bool32_t platform::pngLoad( const char8_t* pPNGPath, bit8_t* pPNGData, uint32_t&
 
         loadSuccessful = true;
     }
+#endif
 
     return loadSuccessful;
 }
-
-#endif
 
 }
