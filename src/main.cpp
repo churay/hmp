@@ -114,10 +114,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     for( uint32_t dllIdx = 0; dllIdx < csDLLCount; dllIdx++ ) {
         const char8_t* cDLLFileName = csDLLFileNames[dllIdx];
         path_t& dllFilePath = dllFilePaths[dllIdx];
+        void*& dllHandle = dllHandles[dllIdx];
 
         dllFilePath = llce::platform::libFindDLLPath( cDLLFileName );
         LLCE_ASSERT_ERROR( dllFilePath.exists(),
             "Failed to find library '" << cDLLFileName << "' in dynamic path." );
+        dllHandle = nullptr;
     }
 #endif
 

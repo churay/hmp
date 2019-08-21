@@ -98,7 +98,7 @@ typedef vec4f32_t color4f32_t;
         } \
     } while (false)
 #else
-#define LLCE_VERIFY_WARNING(condition, message) do { (condition) } while(false)
+#define LLCE_VERIFY_WARNING(condition, message) do { (condition); } while(false)
 #endif
 
 #define LLCE_ASSERT_WARNING(condition, message) \
@@ -130,7 +130,7 @@ typedef vec4f32_t color4f32_t;
         } \
     } while (false)
 #else
-#define LLCE_VERIFY_ERROR(condition, message) do { (condition) } while(false)
+#define LLCE_VERIFY_ERROR(condition, message) do { (condition); } while(false)
 #endif
 
 #define LLCE_ASSERT_ERROR(condition, message) \
