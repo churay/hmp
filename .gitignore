@@ -6,6 +6,7 @@ hmp.out
 *.o
 *.so
 *.to
+*.data*
 
 ## External Library Files ##
 lib/*
