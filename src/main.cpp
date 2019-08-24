@@ -399,7 +399,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Update/Render Loop ///
 
-    bool32_t isRunning = true, isStepping = false;
+    bool32_t isRunning = true, isStepping = false, doStep = true;
 
     bool32_t isRecording = false, isReplaying = false;
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
@@ -424,24 +424,34 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     simOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
 
     while( isRunning ) {
-#if LLCE_DEBUG
-        bool32_t isStepReady = false;
-        while( isStepping && !isStepReady ) {
-            SDL_Event event;
-            SDL_WaitEvent( &event );
-            if( event.type == SDL_QUIT || (
-                    event.type == SDL_KEYDOWN && (
-                    event.key.keysym.scancode == SDL_SCANCODE_RETURN ||
-                    event.key.keysym.scancode == SDL_SCANCODE_SPACE)) ) {
-                isStepReady = true;
-                SDL_PushEvent( &event );
-            }
-        }
-#endif
         simTimer.split();
 
-        llce::input::readKeyboard( appInput->keyboard );
-        std::memcpy( simInput, appInput, sizeof(hmp::input_t) );
+#if LLCE_DEBUG
+        LLCE_ASSERT_ERROR(
+            currDylibModTime = cDLLModTime(std::max<int64_t>),
+            "Couldn't load dynamic library stat data on step." );
+        if( currDylibModTime != prevDylibModTime ) {
+            // TODO(JRC): This isn't ideal since spinning in this way can really
+            // ramp up processing time, but it's a permissible while there aren't
+            // too many iterations per reload (there are none at time of writing).
+            // TODO(JRC): Consider clearing out the audio queue at this point
+            // because the hot-loaded state could lag as a result of existing audio.
+            uint32_t lockSpinCount = 0;
+            while( cInstallLockPath.exists() ) { lockSpinCount++; }
+
+            LLCE_CHECK_WARNING( lockSpinCount == 0,
+                "Performed " << lockSpinCount << " spin cycles " <<
+                "while waiting for DLL install; consider transitioning to file locks." );
+
+            LLCE_VERIFY_ERROR( cDLLReload(),
+                "Couldn't load dynamic library symbols at " <<
+                "simulation time " << simTimer.tt() << "." );
+
+            LLCE_INFO_DEBUG( "DLL Reload {" << simFrame << "}" );
+
+            prevDylibModTime = currDylibModTime;
+        }
+#endif
 
         SDL_Event event;
         while( SDL_PollEvent(&event) ) {
@@ -453,6 +463,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 SDL_GetWindowSize( window, &windowWidth, &windowHeight );
             }
         }
+
+        llce::input::readKeyboard( appInput->keyboard );
 
         if( isKeyDown(appInput->keyboard, SDL_SCANCODE_Q) ) {
             // q key = quit application
@@ -466,11 +478,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(hmp::input_t) );
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(hmp::state_t) );
 
-        if( (!isStepping && isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE)) ||
-                (isStepping && isKeyDown(appInput->keyboard, SDL_SCANCODE_SPACE)) ) {
+        if( isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             LLCE_INFO_DEBUG( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
+            doStep = !isStepping;
+        } if(isKeyPressed(appInput->keyboard, SDL_SCANCODE_RETURN)) {
+            doStep = true;
         }
 
         if( (currSlotIdx = isKGPressed(appInput->keyboard, &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
@@ -550,121 +564,72 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 recInputStream.close();
             }
         }
-
-        if( isRecording ) {
-            recInputStream.write( (bit8_t*)simInput, sizeof(hmp::input_t) );
-            recFrameCount++;
-        } if( isReplaying ) {
-            if( recInputStream.peek() == EOF || recInputStream.eof() ) {
-                isRunning = !( cIsSimulating && repFrameIdx != 0 );
-                repFrameIdx = 0;
-                recStateStream.seekg( 0 );
-                recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
-                recInputStream.seekg( 0 );
-            }
-            recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
-            repFrameIdx++;
-        }
-
-        LLCE_ASSERT_ERROR(
-            currDylibModTime = cDLLModTime(std::max<int64_t>),
-            "Couldn't load dynamic library stat data on step." );
-        if( currDylibModTime != prevDylibModTime ) {
-            // TODO(JRC): This isn't ideal since spinning in this way can really
-            // ramp up processing time, but it's a permissible while there aren't
-            // too many iterations per reload (there are none at time of writing).
-            // TODO(JRC): Consider clearing out the audio queue at this point
-            // because the hot-loaded state could lag as a result of existing audio.
-            uint32_t lockSpinCount = 0;
-            while( cInstallLockPath.exists() ) { lockSpinCount++; }
-
-            LLCE_CHECK_WARNING( lockSpinCount == 0,
-                "Performed " << lockSpinCount << " spin cycles " <<
-                "while waiting for DLL install; consider transitioning to file locks." );
-
-            LLCE_VERIFY_ERROR( cDLLReload(),
-                "Couldn't load dynamic library symbols at " <<
-                "simulation time " << simTimer.tt() << "." );
-
-            LLCE_INFO_DEBUG( "DLL Reload {" << simFrame << "}" );
-
-            prevDylibModTime = currDylibModTime;
-        }
 #endif
-        glViewport( 0, 0, windowWidth, windowHeight );
 
-        glMatrixMode( GL_PROJECTION );
-        glLoadIdentity();
-        glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
-        glMatrixMode( GL_MODELVIEW );
-        glLoadIdentity();
-
-        std::memset( audioBuffer, 0, sizeof(audioBuffer) );
-
-        isRunning &= dllUpdate( simState, simInput, simDT );
-        isRunning &= dllRender( simState, simInput, simOutput );
-
-        glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        glPushMatrix(); {
-            const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
-            glm::mat4 matWorldView( 1.0f );
-            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-viewRatio)/2.0f, 0.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 1.0f) );
-            glMultMatrixf( &matWorldView[0][0] );
-
-            glEnable( GL_TEXTURE_2D ); {
-                // NOTE(JRC): This is required to get the expected/correct texture color,
-                // but it's unclear as to why. OpenGL may perform color mixing by default?
-                glColor4ubv( (uint8_t*)&csWhiteColor );
-                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
-                glBegin( GL_QUADS ); {
-                    glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
-                    glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
-                    glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
-                    glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
-                } glEnd();
-
-#if LLCE_CAPTURE
-                if( isCapturing ) {
-                    LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
-
-                    char8_t slotCaptureFileName[csOutputFileNameLength];
-                    std::snprintf( &slotCaptureFileName[0],
-                        sizeof(slotCaptureFileName),
-                        cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
-                    path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
-
-                    // TODO(JRC): Reversing the colors results in the proper color values,
-                    // but it's unclear why this is necessary given that they're stored
-                    // internally in the order requested. Debugging may be required in the
-                    // future when adapting this code to work on multiple platforms.
-                    vec2u32_t captureDims = simOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
-                    glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
-
-                    // TODO(JRC): Ultimately, it would be best if the data could just
-                    // be funneled natively into the PNG interface instead of having
-                    // to mirror it about the y-axis.
-                    color4u8_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
-                    uint32_t bufferByteCount = captureDims.x * sizeof( color4u8_t );
-                    for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
-                        uint32_t rowOff = rowIdx * captureDims.x;
-                        uint32_t oppOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;
-                        std::memcpy( tempBuffer, &sCaptureBuffer[rowOff], bufferByteCount );
-                        std::memcpy( &sCaptureBuffer[rowOff], &sCaptureBuffer[oppOff], bufferByteCount );
-                        std::memcpy( &sCaptureBuffer[oppOff], tempBuffer, bufferByteCount );
-                    }
-
-                    LLCE_VERIFY_WARNING(
-                        llce::platform::pngSave(capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y),
-                        "Failed to capture frame {" << simFrame << "} to path '" << capturePath << "'." );
+        if( doStep ) {
+            llce::input::readKeyboard( simInput->keyboard );
+#if LLCE_DEBUG
+            if( isRecording ) {
+                recInputStream.write( (bit8_t*)simInput, sizeof(hmp::input_t) );
+                recFrameCount++;
+            } if( isReplaying ) {
+                if( recInputStream.peek() == EOF || recInputStream.eof() ) {
+                    isRunning = !( cIsSimulating && repFrameIdx != 0 );
+                    repFrameIdx = 0;
+                    recStateStream.seekg( 0 );
+                    recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
+                    recInputStream.seekg( 0 );
                 }
-                isCapturing = cIsSimulating;
+                recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
+                repFrameIdx++;
+            }
 #endif
-                glBindTexture( GL_TEXTURE_2D, 0 );
-            } glDisable( GL_TEXTURE_2D );
-        } glPopMatrix();
+
+            glViewport( 0, 0, windowWidth, windowHeight );
+            glMatrixMode( GL_PROJECTION );
+            glLoadIdentity();
+            glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+            glMatrixMode( GL_MODELVIEW );
+            glLoadIdentity();
+
+            std::memset( audioBuffer, 0, sizeof(audioBuffer) );
+
+            isRunning &= dllUpdate( simState, simInput, simDT );
+            isRunning &= dllRender( simState, simInput, simOutput );
+
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glPushMatrix(); {
+                const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
+                glm::mat4 matWorldView( 1.0f );
+                matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+                matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+                matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-viewRatio)/2.0f, 0.0f, 0.0f) );
+                matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 1.0f) );
+                glMultMatrixf( &matWorldView[0][0] );
+
+                glEnable( GL_TEXTURE_2D ); {
+                    // NOTE(JRC): This is required to get the expected/correct texture color,
+                    // but it's unclear as to why. OpenGL may perform color mixing by default?
+                    glColor4ubv( (uint8_t*)&csWhiteColor );
+                    glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
+                    glBegin( GL_QUADS ); {
+                        glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
+                        glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
+                        glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
+                        glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+                    } glEnd();
+                    glBindTexture( GL_TEXTURE_2D, 0 );
+                } glDisable( GL_TEXTURE_2D );
+            } glPopMatrix();
+
+            // TODO(JRC): Improve accounting for currently buffered sound data. There
+            // shouldn't be any since we fill the entire buffer every frame, but lag
+            // and backfill may occur in high memory/compute load situations.
+            if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] && !cIsSimulating ) {
+                SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
+                simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
+            }
+        }
 
 #if LLCE_DEBUG
         glEnable( GL_TEXTURE_2D ); {
@@ -715,13 +680,48 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         } glDisable( GL_TEXTURE_2D );
 #endif
 
-        // TODO(JRC): Improve accounting for currently buffered sound data. There
-        // shouldn't be any since we fill the entire buffer every frame, but lag
-        // and backfill may occur in high memory/compute load situations.
-        if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] && !cIsSimulating ) {
-            SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
-            simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
+#if LLCE_CAPTURE
+        if( isCapturing ) {
+            LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
+
+            glEnable( GL_TEXTURE_2D );
+            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
+
+            char8_t slotCaptureFileName[csOutputFileNameLength];
+            std::snprintf( &slotCaptureFileName[0],
+                sizeof(slotCaptureFileName),
+                cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
+            path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
+
+            // TODO(JRC): Reversing the colors results in the proper color values,
+            // but it's unclear why this is necessary given that they're stored
+            // internally in the order requested. Debugging may be required in the
+            // future when adapting this code to work on multiple platforms.
+            vec2u32_t captureDims = simOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
+            glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
+
+            // TODO(JRC): Ultimately, it would be best if the data could just
+            // be funneled natively into the PNG interface instead of having
+            // to mirror it about the y-axis.
+            color4u8_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
+            uint32_t bufferByteCount = captureDims.x * sizeof( color4u8_t );
+            for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
+                uint32_t rowOff = rowIdx * captureDims.x;
+                uint32_t oppOff = ( captureDims.y - rowIdx - 1 ) * captureDims.x;
+                std::memcpy( tempBuffer, &sCaptureBuffer[rowOff], bufferByteCount );
+                std::memcpy( &sCaptureBuffer[rowOff], &sCaptureBuffer[oppOff], bufferByteCount );
+                std::memcpy( &sCaptureBuffer[oppOff], tempBuffer, bufferByteCount );
+            }
+
+            LLCE_VERIFY_WARNING(
+                llce::platform::pngSave(capturePath, (bit8_t*)&sCaptureBuffer[0], captureDims.x, captureDims.y),
+                "Failed to capture frame {" << simFrame << "} to path '" << capturePath << "'." );
+
+            glBindTexture( GL_TEXTURE_2D, 0 );
+            glDisable( GL_TEXTURE_2D );
         }
+        isCapturing = cIsSimulating;
+#endif
 
         SDL_GL_SwapWindow( window );
 
@@ -729,6 +729,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
+        doStep = !isStepping;
     }
 
     /// Clean Up + Exit ///
