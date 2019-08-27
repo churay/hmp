@@ -28,6 +28,9 @@ typedef glm::vec<2, uint32_t, glm::defaultp> vec2u32_t;
 typedef glm::vec<2, float32_t, glm::defaultp> vec2f32_t;
 typedef glm::vec<3, float32_t, glm::defaultp> vec3f32_t;
 typedef glm::vec<4, float32_t, glm::defaultp> vec4f32_t;
+typedef glm::vec<2, real_t, glm::defaultp> vec2rBW_t;
+typedef glm::vec<3, real_t, glm::defaultp> vec3rBW_t;
+typedef glm::vec<4, real_t, glm::defaultp> vec4rBW_t;
 
 // NOTE(JRC): These can only be passed directly to OpenGL's color array functions
 // using '(uint8_t*)&color4u8_t', but this is only because 'GLM_FORCE_XYZW_ONLY' is enabled.

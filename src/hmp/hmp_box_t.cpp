@@ -9,19 +9,19 @@ namespace hmp {
 /// Class Functions ///
 
 box_t::box_t(
-        const glm::vec2& pPos, const glm::vec2& pDims, const box_t::anchor_e pAnchor ) :
+        const vec2f32_t& pPos, const vec2f32_t& pDims, const box_t::anchor_e pAnchor ) :
         mPos( pPos ), mDims( pDims ) {
     uint8_t intAnchor = static_cast<int8_t>( pAnchor );
     uint8_t xScale = ( intAnchor >> 0 ) & 1;
     uint8_t yScale = ( intAnchor >> 1 ) & 1;
     uint8_t dimSkew = ( (intAnchor >> 2) & 1 ) ? 2 : 1;
-    mPos -= ( (1.0f / dimSkew) * glm::vec2(xScale * mDims.x, yScale * mDims.y) );
+    mPos -= ( (1.0f / dimSkew) * vec2f32_t(xScale * mDims.x, yScale * mDims.y) );
 }
 
 
 box_t::box_t(
         const float32_t pPos, const float32_t pDims, const box_t::anchor_e pAnchor ) :
-        box_t( glm::vec2(pPos, pPos), glm::vec2(pDims, pDims), pAnchor ) {
+        box_t( vec2f32_t(pPos, pPos), vec2f32_t(pDims, pDims), pAnchor ) {
     
 }
 
@@ -29,7 +29,7 @@ box_t::box_t(
 box_t::box_t(
         const float32_t pPosX, const float32_t pPosY,
         const float32_t pDimsX, const float32_t pDimsY, const box_t::anchor_e pAnchor ) :
-        box_t( glm::vec2(pPosX, pPosY), glm::vec2(pDimsX, pDimsY), pAnchor ) {
+        box_t( vec2f32_t(pPosX, pPosY), vec2f32_t(pDimsX, pDimsY), pAnchor ) {
     
 }
 
@@ -54,18 +54,18 @@ bool32_t box_t::exbed( const box_t& pOther ) {
     float32_t minDeltaX = tx.exbed( ox ), minDeltaY = ty.exbed( oy );
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     if( minDeltaX < minDeltaY ) {
-        mPos = glm::vec2( tx.mMin, mPos[1] );
-        mDims = glm::vec2( tx.mMax - tx.mMin, mDims[1] );
+        mPos = vec2f32_t( tx.mMin, mPos[1] );
+        mDims = vec2f32_t( tx.mMax - tx.mMin, mDims[1] );
     } else {
-        mPos = glm::vec2( mPos[0], ty.mMin );
-        mDims = glm::vec2( mDims[0], ty.mMax - ty.mMin );
+        mPos = vec2f32_t( mPos[0], ty.mMin );
+        mDims = vec2f32_t( mDims[0], ty.mMax - ty.mMin );
     }
 
     return false;
 }
 
 
-bool32_t box_t::contains( const glm::vec2& pPos ) const {
+bool32_t box_t::contains( const vec2f32_t& pPos ) const {
     const interval_t tx = xbounds(), ty = ybounds();
     return tx.contains( pPos[0] ) && ty.contains( pPos[1] );
 }
@@ -90,8 +90,8 @@ box_t box_t::intersect( const box_t& pOther ) const {
     const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
 
     interval_t bx = tx.intersect( ox ), by = ty.intersect( oy );
-    return box_t( glm::vec2(bx.mMin, by.mMin),
-        glm::vec2(bx.mMax - bx.mMin, by.mMax - by.mMin) );
+    return box_t( vec2f32_t(bx.mMin, by.mMin),
+        vec2f32_t(bx.mMax - bx.mMin, by.mMax - by.mMin) );
 }
 
 
@@ -107,17 +107,17 @@ bool32_t box_t::valid() const {
 }
 
 
-glm::vec2 box_t::min() const {
+vec2f32_t box_t::min() const {
     return mPos;
 }
 
 
-glm::vec2 box_t::max() const {
+vec2f32_t box_t::max() const {
     return mPos + mDims;
 }
 
 
-glm::vec2 box_t::center() const {
+vec2f32_t box_t::center() const {
     return mPos + 0.5f * mDims;
 }
 

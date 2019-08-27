@@ -19,8 +19,8 @@ namespace gfx {
 render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor ) {
     glPushMatrix();
     glm::mat4 matModelWorld( 1.0f );
-    matModelWorld *= glm::translate( glm::mat4(1.0f), glm::vec3(pBox.mPos.x, pBox.mPos.y, 0.0f) );
-    matModelWorld *= glm::scale( glm::mat4(1.0f), glm::vec3(pBox.mDims.x, pBox.mDims.y, 1.0f) );
+    matModelWorld *= glm::translate( glm::mat4(1.0f), vec3f32_t(pBox.mPos.x, pBox.mPos.y, 0.0f) );
+    matModelWorld *= glm::scale( glm::mat4(1.0f), vec3f32_t(pBox.mDims.x, pBox.mDims.y, 1.0f) );
     glMultMatrixf( &matModelWorld[0][0] );
 
     glPushAttrib( GL_CURRENT_BIT );
@@ -50,8 +50,8 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
         }
 
         glm::mat4 vpMatrix( 1.0f );
-        vpMatrix = glm::translate( vpMatrix, glm::vec3((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
-        vpMatrix = glm::scale( vpMatrix, glm::vec3(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
+        vpMatrix = glm::translate( vpMatrix, vec3f32_t((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
+        vpMatrix = glm::scale( vpMatrix, vec3f32_t(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
 
         xformMatrix = vpMatrix * projMatrix * mvMatrix;
     }
@@ -71,8 +71,8 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
     }
 
     glm::mat4 matRatio( 1.0f );
-    matRatio *= glm::translate( glm::mat4(1.0f), glm::vec3(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
-    matRatio *= glm::scale( glm::mat4(1.0f), glm::vec3(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
+    matRatio *= glm::translate( glm::mat4(1.0f), vec3f32_t(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
+    matRatio *= glm::scale( glm::mat4(1.0f), vec3f32_t(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
     glMultMatrixf( &matRatio[0][0] );
 }
 
@@ -168,8 +168,8 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
 
     glPushMatrix();
     glm::mat4 matVecSpace( 1.0f );
-    matVecSpace *= glm::translate( glm::mat4(1.0f), glm::vec3(pOrigin.x, pOrigin.y, 0.0f) );
-    matVecSpace *= glm::rotate( glm::mat4(1.0f), cDirAngle, glm::vec3(0.0f, 0.0f, 1.0f) );
+    matVecSpace *= glm::translate( glm::mat4(1.0f), vec3f32_t(pOrigin.x, pOrigin.y, 0.0f) );
+    matVecSpace *= glm::rotate( glm::mat4(1.0f), cDirAngle, vec3f32_t(0.0f, 0.0f, 1.0f) );
     glMultMatrixf( &matVecSpace[0][0] );
 
     glPushAttrib( GL_CURRENT_BIT );

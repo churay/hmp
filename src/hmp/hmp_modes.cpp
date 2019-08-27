@@ -103,25 +103,25 @@ bool32_t game::init( hmp::state_t* pState ) {
     pState->roundPaused = false;
     pState->roundServer = hmp::team::east;
 
-    const glm::vec2 boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
+    const vec2f32_t boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
     pState->boundsEnt = hmp::bounds_t( hmp::box_t(boundsBasePos, boundsDims) );
 
     for( uint32_t ricochetIdx = 0; ricochetIdx < 2; ricochetIdx++ ) {
-        const glm::vec2 boundsPos = boundsBasePos + glm::vec2( 0.0f, (ricochetIdx != 0) ? 1.0f : -1.0f );
+        const vec2f32_t boundsPos = boundsBasePos + vec2f32_t( 0.0f, (ricochetIdx != 0) ? 1.0f : -1.0f );
         pState->ricochetEnts[ricochetIdx] = hmp::bounds_t( hmp::box_t(boundsPos, boundsDims) );
     }
 
-    const glm::vec2 scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f );
+    const vec2f32_t scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f );
     pState->scoreEnt = hmp::scoreboard_t( hmp::box_t(scoreBasePos, scoreDims) );
 
-    const glm::vec2 ballDims( 2.5e-2f, 2.5e-2f );
-    const glm::vec2 ballPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballDims;
+    const vec2f32_t ballDims( 2.5e-2f, 2.5e-2f );
+    const vec2f32_t ballPos = vec2f32_t( 0.5f, 0.5f ) - 0.5f * ballDims;
     pState->ballEnt = hmp::ball_t( hmp::box_t(ballPos, ballDims) );
 
-    const glm::vec2 paddleDims( 2.5e-2f, 1.0e-1f );
-    const glm::vec2 westPos = glm::vec2( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
+    const vec2f32_t paddleDims( 2.5e-2f, 1.0e-1f );
+    const vec2f32_t westPos = vec2f32_t( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     pState->paddleEnts[hmp::team::west] = hmp::paddle_t( hmp::box_t(westPos, paddleDims), hmp::team::west );
-    const glm::vec2 eastPos = glm::vec2( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
+    const vec2f32_t eastPos = vec2f32_t( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
     pState->paddleEnts[hmp::team::east] = hmp::paddle_t( hmp::box_t(eastPos, paddleDims), hmp::team::east );
 
     return true;
@@ -194,7 +194,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
         float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
         pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
-            glm::vec2( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
+            vec2f32_t( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
     } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
@@ -218,8 +218,8 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
             pState->roundServer = isWestScore ? hmp::team::east : hmp::team::west;
 
-            ballEnt.mBBox.mPos = glm::vec2( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
-            ballEnt.mVel = glm::vec2( 0.0f, 0.0f );
+            ballEnt.mBBox.mPos = vec2f32_t( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
+            ballEnt.mVel = vec2f32_t( 0.0f, 0.0f );
             ballEnt.change( hmp::team::team_e::neutral );
 
             pState->rt = 0.0f;

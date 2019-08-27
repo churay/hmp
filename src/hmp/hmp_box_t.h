@@ -21,7 +21,7 @@ class box_t {
     /// Constructors ///
 
     box_t(
-        const glm::vec2& pPos, const glm::vec2& pDims,
+        const vec2f32_t& pPos, const vec2f32_t& pDims,
         const anchor_e pAnch = anchor_e::sw );
     box_t(
         const float32_t pPos, const float32_t pDims,
@@ -36,7 +36,7 @@ class box_t {
     bool32_t embed( const box_t& pOther );
     bool32_t exbed(const box_t& pOther );
 
-    bool32_t contains( const glm::vec2& pPos ) const;
+    bool32_t contains( const vec2f32_t& pPos ) const;
     bool32_t contains( const box_t& pOther ) const;
     bool32_t overlaps( const box_t& pOther ) const;
     box_t intersect( const box_t& pOther ) const;
@@ -44,16 +44,16 @@ class box_t {
     bool32_t empty() const;
     bool32_t valid() const;
 
-    glm::vec2 min() const;
-    glm::vec2 max() const;
-    glm::vec2 center() const;
+    vec2f32_t min() const;
+    vec2f32_t max() const;
+    vec2f32_t center() const;
     float32_t ratio() const;
     interval_t xbounds() const;
     interval_t ybounds() const;
 
     /// Class Fields ///
 
-    glm::vec2 mPos, mDims;
+    vec2f32_t mPos, mDims;
 };
 
 }

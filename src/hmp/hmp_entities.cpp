@@ -57,8 +57,8 @@ ball_t::ball_t( const box_t& pBBox ) :
 
 
 void ball_t::ricochet( const entity_t* pSurface ) {
-    glm::vec2 contactVec = mBBox.center() - pSurface->mBBox.center();
-    glm::vec2 contactNormal = contactVec; {
+    vec2f32_t contactVec = mBBox.center() - pSurface->mBBox.center();
+    vec2f32_t contactNormal = contactVec; {
         interval_t ballBoundsX = mBBox.xbounds(), ballBoundsY = mBBox.ybounds();
         interval_t surfBoundsX = pSurface->mBBox.xbounds(), surfBoundsY = pSurface->mBBox.ybounds();
 
@@ -83,23 +83,23 @@ void ball_t::ricochet( const entity_t* pSurface ) {
         contactNormal = glm::normalize( contactNormal );
     }
 
-    glm::vec2 refspaceNormal = ( glm::length(pSurface->mVel) > glm::epsilon<float32_t>() ) ?
-        glm::normalize( pSurface->mVel ) : glm::vec2( 0.0f, 0.0f );
+    vec2f32_t refspaceNormal = ( glm::length(pSurface->mVel) > glm::epsilon<float32_t>() ) ?
+        glm::normalize( pSurface->mVel ) : vec2f32_t( 0.0f, 0.0f );
 
-    glm::vec2 ricochetNormal = glm::normalize(
+    vec2f32_t ricochetNormal = glm::normalize(
         0.5f * glm::normalize(glm::reflect(mVel, contactNormal)) +
         0.5f * refspaceNormal );
     float32_t ricochetAngle = glm::orientedAngle( contactNormal, ricochetNormal );
 
-    glm::vec2 ricochetMinNormal, ricochetMaxNormal; {
-        glm::vec3 vecRotate3d( contactNormal.x, contactNormal.y, 1.0f );
-        glm::vec3 vecMinRotate3d =
+    vec2f32_t ricochetMinNormal, ricochetMaxNormal; {
+        vec3f32_t vecRotate3d( contactNormal.x, contactNormal.y, 1.0f );
+        vec3f32_t vecMinRotate3d =
             glm::rotate( glm::mat3(1.0f), -ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
-        glm::vec3 vecMaxRotate3d =
+        vec3f32_t vecMaxRotate3d =
             glm::rotate( glm::mat3(1.0f), +ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
 
-        ricochetMinNormal = glm::vec2( vecMinRotate3d.x, vecMinRotate3d.y );
-        ricochetMaxNormal = glm::vec2( vecMaxRotate3d.x, vecMaxRotate3d.y );
+        ricochetMinNormal = vec2f32_t( vecMinRotate3d.x, vecMinRotate3d.y );
+        ricochetMaxNormal = vec2f32_t( vecMaxRotate3d.x, vecMaxRotate3d.y );
     }
 
     ricochetNormal = (
@@ -158,10 +158,10 @@ void scoreboard_t::render() const {
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
         const auto teamAnchor = isTeamWest ? box_t::anchor_e::se : box_t::anchor_e::sw;
-        const glm::vec2 teamBasePos = glm::vec2( 0.5f, scoreboard_t::PADDING_WIDTH ) +
-            teamOrient * glm::vec2( scoreboard_t::PADDING_WIDTH, 0.0f );
-        const glm::vec2 teamBaseDims = glm::vec2( 0.5f, 1.0f ) -
-            ( 2.0f * scoreboard_t::PADDING_WIDTH * glm::vec2(1.0f, 1.0f) );
+        const vec2f32_t teamBasePos = vec2f32_t( 0.5f, scoreboard_t::PADDING_WIDTH ) +
+            teamOrient * vec2f32_t( scoreboard_t::PADDING_WIDTH, 0.0f );
+        const vec2f32_t teamBaseDims = vec2f32_t( 0.5f, 1.0f ) -
+            ( 2.0f * scoreboard_t::PADDING_WIDTH * vec2f32_t(1.0f, 1.0f) );
 
         const hmp::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
             hmp::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
