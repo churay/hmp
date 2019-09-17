@@ -17,7 +17,10 @@ mkdir -p build
 cd build
 
 cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-    -DLLCE_DYLOAD=ON -DLLCE_FDOUBLE=ON -DLLCE_CAPTURE=ON ${PROJ_PATH}
+    -DLLCE_DYLOAD=ON \
+    -DLLCE_FDOUBLE=ON \
+    -DLLCE_CAPTURE=ON \
+    ${PROJ_PATH}
 make -j${BUILD_TASKS} && make -j${BUILD_TASKS} install
 
 if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then

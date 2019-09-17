@@ -278,21 +278,29 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Initialize Audio ///
 
-    const static uint32_t csAudioFrequency = 48000;                         // audio samples / second
-    const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;              // audio sample data format
-    const static uint32_t csAudioChannelCount = 2;                          // audio channels (2: stereo)
-    const static uint32_t csAudioSampleBytes = 2 * csAudioChannelCount;     // audio bytes / sample
-    const static uint32_t csAudioSampleCount = ( csAudioFrequency * csAudioSampleBytes ) / csSimFPS;
-    int16_t audioBuffer[csAudioSampleCount * csAudioChannelCount];          // audio frame buffer
+    const static uint32_t csAudioBufferFrames = 4;                                      // audio buffer frame coverage
+    const static uint32_t csAudioFrequency = 48000;                                     // audio samples / second
+    const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;                          // audio sample data format
+    const static uint32_t csAudioChannelCount = 2;                                      // audio channels (2: stereo)
+    const static uint32_t csAudioSampleBytes = sizeof( int16_t ) * csAudioChannelCount; // audio bytes / sample
+
+    const static uint32_t csAudioSamplesPerFrames =                                     // audio buffer size in audio frames
+        ( csAudioFrequency * csAudioBufferFrames ) / csSimFPS;
+    const static uint32_t csAudioSamplesPerFramesP2 =                                   // audio buffer size in audio frames (2^x)
+        std::pow( 2.0, std::ceil(std::log2(static_cast<float32_t>(csAudioSamplesPerFrames))) );
+    const static uint32_t csAudioBytesPerFrame =
+        ( csAudioFrequency * csAudioSampleBytes ) / csSimFPS;                           // per-frame audio buffer size in bytes
+
+    int16_t audioBuffer[csAudioSamplesPerFramesP2 * csAudioChannelCount];               // audio frame buffer
 
     SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
         tempAudioConfig.format = csAudioFormat;
         tempAudioConfig.channels = csAudioChannelCount;
-        tempAudioConfig.samples = csAudioSampleCount;
+        tempAudioConfig.samples = csAudioSamplesPerFramesP2;
         tempAudioConfig.callback = nullptr;
     }
-    const SDL_AudioSpec wantAudioConfig = tempAudioConfig;
+    const SDL_AudioSpec cWantAudioConfig = tempAudioConfig;
     SDL_AudioSpec realAudioConfig;
 
     SDL_AudioDeviceID audioDeviceID = 1;
@@ -301,7 +309,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             nullptr, 0, &tempAudioConfig, &realAudioConfig, SDL_AUDIO_ALLOW_ANY_CHANGE)) >= 0,
         "SDL failed to initialize audio device; " << SDL_GetError() );
     LLCE_ASSERT_ERROR(
-        wantAudioConfig.channels == realAudioConfig.channels && wantAudioConfig.format == realAudioConfig.format,
+        cWantAudioConfig.channels == realAudioConfig.channels && cWantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
 
     SDL_PauseAudioDevice( audioDeviceID, false );
@@ -629,7 +637,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // shouldn't be any since we fill the entire buffer every frame, but lag
         // and backfill may occur in high memory/compute load situations.
         if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] && !cIsSimulating ) {
-            SDL_QueueAudio( audioDeviceID, &audioBuffer[0], sizeof(audioBuffer) );
+            SDL_QueueAudio( audioDeviceID, &audioBuffer[0], csAudioBytesPerFrame );
             simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
         }
 

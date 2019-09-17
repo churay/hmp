@@ -52,15 +52,16 @@ bool32_t synth_t::update( const float64_t pDT ) {
 bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const {
     const uint32_t cAudioFormatBytes = SDL_AUDIO_BITSIZE( pAudioSpec.format ) / 8;
     const uint32_t cAudioSampleBytes = cAudioFormatBytes * pAudioSpec.channels;
-    const uint32_t cAudioBufferBytes = pAudioSpec.samples * cAudioSampleBytes;
+    const uint32_t cAudioRenderSamples = std::ceil( mUpdateDT * pAudioSpec.freq );
+    const uint32_t cAudioBufferBytes = cAudioRenderSamples * cAudioSampleBytes;
 
     const bool8_t cIsFormatFloat = SDL_AUDIO_ISFLOAT( pAudioSpec.format );
     const bool8_t cIsFormatSigned = SDL_AUDIO_ISSIGNED( pAudioSpec.format );
 
     std::memset( pAudioBuffer, 0, cAudioBufferBytes );
 
-    for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < pAudioSpec.samples; sampleIdx++ ) {
-        float64_t sampleDT = ( mUpdateDT * sampleIdx ) / pAudioSpec.samples;
+    for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cAudioRenderSamples; sampleIdx++ ) {
+        float64_t sampleDT = ( mUpdateDT * sampleIdx ) / cAudioRenderSamples;
 
         float64_t sampleValue = 0.0;
         for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
@@ -132,12 +133,8 @@ void synth_t::toggle() {
 
 /// 'hmp::sfx::wave' Functions ///
 
-// TODO(JRC): Figure out why all trigonometric wave functions (i.e. all but 'square')
-// need to have 2*f as a modifier to achieve the correct sound when they should just
-// need f in theory.
-
 float64_t wave::sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude * std::sin( 4 * M_PI * pFrequency * pTime - pPhase );
+    return pAmplitude * std::sin( 2 * M_PI * pFrequency * pTime - pPhase );
 }
 
 
@@ -148,12 +145,12 @@ float64_t wave::square( const float64_t pTime, const float64_t pFrequency, const
 
 
 float64_t wave::triangle( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude / M_PI_2 * std::asin( std::sin(4 * M_PI * pFrequency * pTime - pPhase) );
+    return pAmplitude / M_PI_2 * std::asin( std::sin(2 * M_PI * pFrequency * pTime - pPhase) );
 }
 
 
 float64_t wave::sawtooth( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
-    return pAmplitude / M_PI_2 * std::atan( std::tan(4 * M_PI * pFrequency * pTime - pPhase) );
+    return pAmplitude / M_PI_2 * std::atan( std::tan(M_PI * pFrequency * pTime - pPhase) );
 }
 
 };
