@@ -278,26 +278,20 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Initialize Audio ///
 
-    const static uint32_t csAudioBufferFrames = 4;                                      // audio buffer frame coverage
     const static uint32_t csAudioFrequency = 48000;                                     // audio samples / second
     const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;                          // audio sample data format
     const static uint32_t csAudioChannelCount = 2;                                      // audio channels (2: stereo)
     const static uint32_t csAudioSampleBytes = sizeof( int16_t ) * csAudioChannelCount; // audio bytes / sample
 
-    const static uint32_t csAudioSamplesPerFrames =                                     // audio buffer size in audio frames
-        ( csAudioFrequency * csAudioBufferFrames ) / csSimFPS;
-    const static uint32_t csAudioSamplesPerFramesP2 =                                   // audio buffer size in audio frames (2^x)
-        std::pow( 2.0, std::ceil(std::log2(static_cast<float32_t>(csAudioSamplesPerFrames))) );
-    const static uint32_t csAudioBytesPerFrame =
-        ( csAudioFrequency * csAudioSampleBytes ) / csSimFPS;                           // per-frame audio buffer size in bytes
-
-    int16_t audioBuffer[csAudioSamplesPerFramesP2 * csAudioChannelCount];               // audio frame buffer
+    const static uint32_t csAudioSamplesPerFrames = csAudioFrequency / csSimFPS;        // audio buffer size in audio frames
+    const static uint32_t csAudioBytesPerFrame = csAudioSamplesPerFrames * csAudioSampleBytes; // per-frame audio buffer size in bytes
+    int16_t audioBuffer[csAudioSamplesPerFrames * csAudioChannelCount];               // audio frame buffer
 
     SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
         tempAudioConfig.format = csAudioFormat;
         tempAudioConfig.channels = csAudioChannelCount;
-        tempAudioConfig.samples = csAudioSamplesPerFramesP2;
+        tempAudioConfig.samples = csAudioSamplesPerFrames;
         tempAudioConfig.callback = nullptr;
     }
     const SDL_AudioSpec cWantAudioConfig = tempAudioConfig;

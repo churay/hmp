@@ -113,16 +113,21 @@ bool32_t synth_t::playing() const {
 
 
 void synth_t::play( const waveform_t* pWaveform, const float64_t pWaveDuration ) {
-    bool wavePlaying = false;
-    for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && !wavePlaying; waveIdx++ ) {
-        wavePlaying |= mWaveforms[waveIdx] == pWaveform;
-    } for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && !wavePlaying; waveIdx++ ) {
+    uint32_t waveformIdx = MAX_WAVE_COUNT;
+
+    for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && waveformIdx >= MAX_WAVE_COUNT; waveIdx++ ) {
+        waveformIdx = ( mWaveforms[waveIdx] == pWaveform ) ? waveIdx : waveformIdx;
+    } for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && waveformIdx >= MAX_WAVE_COUNT; waveIdx++ ) {
         if( mWaveforms[waveIdx] == nullptr ) {
             mWaveforms[waveIdx] = pWaveform;
-            mWaveformPositions[waveIdx] = 0.0;
-            mWaveformDurations[waveIdx] = pWaveDuration;
-            wavePlaying = true;
+            waveformIdx = waveIdx;
         }
+    }
+
+    // NOTE(JRC): This code resets playing sounds if they self-interrupt.
+    if( waveformIdx < MAX_WAVE_COUNT ) {
+        mWaveformPositions[waveformIdx] = 0.0;
+        mWaveformDurations[waveformIdx] = pWaveDuration;
     }
 }
 
