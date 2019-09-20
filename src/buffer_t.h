@@ -16,6 +16,7 @@ class buffer_t {
 
     bool32_t enqueue( const bit8_t* pData, const uint64_t pDataLength );
     bool32_t dequeue( bit8_t* pData = nullptr, const uint64_t pDataLength = 0 );
+    bool32_t clear();
 
     uint64_t length() const;
 

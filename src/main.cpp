@@ -16,6 +16,7 @@
 
 #include "timer_t.h"
 #include "memory_t.h"
+#include "buffer_t.h"
 #include "path_t.h"
 #include "platform.h"
 #include "input.h"
@@ -24,6 +25,7 @@
 
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
+typedef llce::buffer_t buffer_t;
 
 typedef const int64_t& (*reduce_f)( const int64_t&, const int64_t& );
 
@@ -285,7 +287,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     const static uint32_t csAudioSamplesPerFrames = csAudioFrequency / csSimFPS;        // audio buffer size in audio frames
     const static uint32_t csAudioBytesPerFrame = csAudioSamplesPerFrames * csAudioSampleBytes; // per-frame audio buffer size in bytes
-    int16_t audioBuffer[csAudioSamplesPerFrames * csAudioChannelCount];               // audio frame buffer
+    const static uint32_t csAudioBufferFrames = 4;                                      // max number of frames in audio buffer
+
+    int16_t audioBuffer[csAudioBufferFrames * csAudioSamplesPerFrames * csAudioChannelCount];
+    buffer_t audioRingBuffer( (bit8_t*)&audioBuffer[0], sizeof(audioBuffer) );
+    audioRingBuffer.clear();
 
     SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
