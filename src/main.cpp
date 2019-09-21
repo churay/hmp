@@ -31,7 +31,7 @@ typedef const int64_t& (*reduce_f)( const int64_t&, const int64_t& );
 
 typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef bool32_t (*boot_f)( hmp::output_t* );
-typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
+typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const hmp::output_t*, const float64_t );
 typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::output_t* );
 
 typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
@@ -287,11 +287,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     const static uint32_t csAudioSamplesPerFrames = csAudioFrequency / csSimFPS;        // audio buffer size in audio frames
     const static uint32_t csAudioBytesPerFrame = csAudioSamplesPerFrames * csAudioSampleBytes; // per-frame audio buffer size in bytes
-    const static uint32_t csAudioBufferFrames = 4;                                      // max number of frames in audio buffer
-
+    const static uint32_t csAudioBufferFrames = 2;                                      // max number of frames in audio buffer
     int16_t audioBuffer[csAudioBufferFrames * csAudioSamplesPerFrames * csAudioChannelCount];
-    buffer_t audioRingBuffer( (bit8_t*)&audioBuffer[0], sizeof(audioBuffer) );
-    audioRingBuffer.clear();
 
     SDL_AudioSpec tempAudioConfig = {0}; {
         tempAudioConfig.freq = csAudioFrequency;
@@ -311,6 +308,14 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     LLCE_ASSERT_ERROR(
         cWantAudioConfig.channels == realAudioConfig.channels && cWantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
+
+    /*
+    const auto cResetAudio = [ &audioDeviceID, &audioBuffer, &simOutput ] () {
+        SDL_ClearQueuedAudio( audioDeviceID );
+        simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
+        std::memset( &audioBuffer[0], 0, sizeof(audioBuffer) );
+    };
+    */
 
     SDL_PauseAudioDevice( audioDeviceID, false );
 
@@ -430,6 +435,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // if at all possible to be less 'raw'.
     simOutput->sfxConfig = realAudioConfig;
     simOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
+    simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
 
     while( isRunning ) {
         simTimer.split();
@@ -574,14 +580,22 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 #endif
 
-        glViewport( 0, 0, windowWidth, windowHeight );
-        glMatrixMode( GL_PROJECTION );
-        glLoadIdentity();
-        glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
-        glMatrixMode( GL_MODELVIEW );
-        glLoadIdentity();
+        { // Initialize Graphics State //
+            glViewport( 0, 0, windowWidth, windowHeight );
+            glMatrixMode( GL_PROJECTION );
+            glLoadIdentity();
+            glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+            glMatrixMode( GL_MODELVIEW );
+            glLoadIdentity();
+        }
 
-        std::memset( audioBuffer, 0, sizeof(audioBuffer) );
+        { // Initialize Audio State //
+            std::memset( audioBuffer, 0, sizeof(audioBuffer) );
+
+            const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
+            const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
+            simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = csAudioBufferFrames - cQueuedAudioFrames;
+        }
 
         if( doStep ) {
             // NOTE(JRC): Consider placing these step clauses above with more
@@ -604,7 +618,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
 #endif
 
-            isRunning &= dllUpdate( simState, simInput, simDT );
+            isRunning &= dllUpdate( simState, simInput, simOutput, simDT );
             isRunning &= dllRender( simState, simInput, simOutput );
         }
 
@@ -633,12 +647,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
-        // TODO(JRC): Improve accounting for currently buffered sound data. There
-        // shouldn't be any since we fill the entire buffer every frame, but lag
-        // and backfill may occur in high memory/compute load situations.
-        if( simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] && !cIsSimulating ) {
-            SDL_QueueAudio( audioDeviceID, &audioBuffer[0], csAudioBytesPerFrame );
-            simOutput->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = false;
+        if( simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] > 0 && !cIsSimulating ) {
+            SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
+                simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] * csAudioBytesPerFrame );
+            simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
         }
 
 #if LLCE_DEBUG

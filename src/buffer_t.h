@@ -19,6 +19,7 @@ class buffer_t {
     bool32_t clear();
 
     uint64_t length() const;
+    uint64_t capacity() const;
 
     private:
 

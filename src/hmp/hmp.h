@@ -74,7 +74,7 @@ struct output_t {
     // Audio Output //
     SDL_AudioSpec sfxConfig;
     bit8_t* sfxBuffers[SFX_BUFFER_COUNT];
-    bool32_t sfxDirtyBits[SFX_BUFFER_COUNT];
+    uint32_t sfxBufferFrames[SFX_BUFFER_COUNT];
 };
 
 }
@@ -83,7 +83,7 @@ struct output_t {
 extern "C" {
     bool32_t init( hmp::state_t* pState, hmp::input_t* pInput );
     bool32_t boot( hmp::output_t* pOutput );
-    bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT );
+    bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hmp::output_t* pOutput, const float64_t pDT );
     bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput );
 };
 #endif

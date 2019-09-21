@@ -25,7 +25,7 @@ struct synth_t {
 
     synth_t( const bool32_t pRunning = true );
 
-    bool32_t update( const float64_t pDT );
+    bool32_t update( const float64_t pDT, const uint32_t pDF );
     bool32_t render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const;
 
     bool32_t playing() const;
@@ -39,6 +39,8 @@ struct synth_t {
 
     bool32_t mRunning;
     float64_t mUpdateDT;
+    uint32_t mUpdateDF;
+    int32_t mLatency;
 };
 
 namespace wave {

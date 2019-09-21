@@ -123,7 +123,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
 }
 
 
-extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hmp::output_t* pOutput, const float64_t pDT ) {
     if( pState->mid != pState->pmid ) {
         if( pState->pmid < 0 ) { return false; }
         MODE_INIT_FUNS[pState->pmid]( pState );
@@ -134,7 +134,7 @@ extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const fl
     pState->tt += pDT;
 
     bool32_t updateStatus = MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
-    pState->synth.update( pDT );
+    pState->synth.update( pDT, pOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] );
     return updateStatus;
 }
 
@@ -145,6 +145,5 @@ extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInp
 
     bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pOutput );
     pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] );
-    const_cast<hmp::output_t*>( pOutput )->sfxDirtyBits[hmp::SFX_BUFFER_MASTER] = pState->synth.playing();
     return renderStatus;
 }

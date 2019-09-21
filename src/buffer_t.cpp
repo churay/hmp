@@ -87,4 +87,9 @@ uint64_t buffer_t::length() const {
         mBufferEnd + mBufferCapacity - mBufferStart;
 }
 
+
+uint64_t buffer_t::capacity() const {
+    return mBufferCapacity;
+}
+
 };

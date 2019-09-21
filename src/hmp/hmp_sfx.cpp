@@ -29,30 +29,39 @@ synth_t::synth_t( const bool32_t pRunning ) {
     }
 
     mRunning = pRunning;
+    mUpdateDT = 0.0;
+    mUpdateDF = 0;
+    mLatency = 0;
 }
 
 
-bool32_t synth_t::update( const float64_t pDT ) {
+bool32_t synth_t::update( const float64_t pDT, const uint32_t pDF ) {
+    // TODO(JRC): This may be broken if a new sound gets introduced;
+    // it won't have time to play...?
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
-        if( mWaveformPositions[waveIdx] > mWaveformDurations[waveIdx] ) {
-            mWaveforms[waveIdx] = nullptr;
-            mWaveformPositions[waveIdx] = 0.0;
-            mWaveformDurations[waveIdx] = 0.0;
-        } else if( mWaveforms[waveIdx] != nullptr ) {
-            mWaveformPositions[waveIdx] += pDT;
+        if( mWaveforms[waveIdx] != nullptr ) {
+            mWaveformPositions[waveIdx] += mUpdateDT * mUpdateDF;
+            if( mWaveformPositions[waveIdx] > mWaveformDurations[waveIdx] ) {
+                mWaveforms[waveIdx] = nullptr;
+                mWaveformPositions[waveIdx] = 0.0;
+                mWaveformDurations[waveIdx] = 0.0;
+            }
         }
     }
 
+    mLatency += pDF - 1;
     mUpdateDT = pDT;
+    mUpdateDF = pDF;
 
     return true;
 }
 
 
 bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer ) const {
+    const float64_t cAudioDT = mUpdateDF * mUpdateDT;
     const uint32_t cAudioFormatBytes = SDL_AUDIO_BITSIZE( pAudioSpec.format ) / 8;
     const uint32_t cAudioSampleBytes = cAudioFormatBytes * pAudioSpec.channels;
-    const uint32_t cAudioRenderSamples = std::ceil( mUpdateDT * pAudioSpec.freq );
+    const uint32_t cAudioRenderSamples = std::ceil( cAudioDT * pAudioSpec.freq );
     const uint32_t cAudioBufferBytes = cAudioRenderSamples * cAudioSampleBytes;
 
     const bool8_t cIsFormatFloat = SDL_AUDIO_ISFLOAT( pAudioSpec.format );
@@ -61,12 +70,12 @@ bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer 
     std::memset( pAudioBuffer, 0, cAudioBufferBytes );
 
     for( uint32_t sampleIdx = 0, bufferIdx = 0; sampleIdx < cAudioRenderSamples; sampleIdx++ ) {
-        float64_t sampleDT = ( mUpdateDT * sampleIdx ) / cAudioRenderSamples;
+        float64_t sampleDT = ( cAudioDT * sampleIdx ) / cAudioRenderSamples;
 
         float64_t sampleValue = 0.0;
         for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
             if( mWaveforms[waveIdx] != nullptr ) {
-                float64_t waveTime = mWaveformPositions[waveIdx] - mUpdateDT + sampleDT;
+                float64_t waveTime = mWaveformPositions[waveIdx] + sampleDT;
                 if( waveTime <= mWaveformDurations[waveIdx] ) {
                     sampleValue += (*mWaveforms[waveIdx])( waveTime );
                 }
@@ -133,6 +142,7 @@ void synth_t::play( const waveform_t* pWaveform, const float64_t pWaveDuration )
 
 
 void synth_t::toggle() {
+    // TODO(JRC): This behavior has been broken by the lookahead buffer implementation.
     mRunning = !mRunning;
 }
 
