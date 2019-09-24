@@ -36,15 +36,14 @@ synth_t::synth_t( const bool32_t pRunning ) {
 
 
 bool32_t synth_t::update( const float64_t pDT, const uint32_t pDF ) {
-    // TODO(JRC): This may be broken if a new sound gets introduced;
-    // it won't have time to play...?
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
         if( mWaveforms[waveIdx] != nullptr ) {
-            mWaveformPositions[waveIdx] += mUpdateDT * mUpdateDF;
             if( mWaveformPositions[waveIdx] > mWaveformDurations[waveIdx] ) {
                 mWaveforms[waveIdx] = nullptr;
                 mWaveformPositions[waveIdx] = 0.0;
                 mWaveformDurations[waveIdx] = 0.0;
+            } else {
+                mWaveformPositions[waveIdx] += mUpdateDT * mUpdateDF;
             }
         }
     }
