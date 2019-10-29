@@ -153,7 +153,9 @@ void scoreboard_t::render() const {
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const int8_t teamScore = mScores[team];
+        const float32_t teamScoreScaled = teamScore / ( hmp::WINNING_SCORE + 0.0f );
         const color4u8_t* teamColor = &hmp::color::TEAM[team];
+        const color4u8_t teamColorScaled = 0.5f * static_cast<color4f32_t>( *teamColor );
         const bool8_t isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
@@ -167,8 +169,13 @@ void scoreboard_t::render() const {
             hmp::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
             teamRC.render();
 
-            const hmp::box_t scoreBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
-                hmp::gfx::render_context_t scoreRC( scoreBox, 1.0f, &hmp::color::INTERFACE );
+            const hmp::box_t scoreBox( isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor ); {
+                hmp::gfx::render_context_t scoreRC( scoreBox, &teamColorScaled );
+                scoreRC.render();
+            }
+
+            const hmp::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
+                hmp::gfx::render_context_t textRC( textBox, 1.0f, &hmp::color::INTERFACE );
 
                 char teamScoreBuffer[2];
                 std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
