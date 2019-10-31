@@ -1,3 +1,4 @@
+#include <cmath>
 #include <chrono>
 #include <ratio>
 #include <thread>
@@ -46,11 +47,11 @@ float64_t timer_t::ft( timer_t::time_e pType ) const {
 
 
 float64_t timer_t::tt( timer_t::time_e pType ) const {
-    // TODO(JRC): For true idealized time, round this up to the nearest frame time.
-    SecDuration totalTime = std::chrono::duration_cast<SecDuration>(
-        ((pType == timer_t::time_e::ideal) ? mFrameSplits[mCurrFrameIdx] : Clock::now() ) -
-        mTimerStart );
-    return static_cast<float64_t>( totalTime.count() );
+    ClockDuration totalTime = mFrameSplits[mCurrFrameIdx] - mTimerStart;
+    SecDuration totalSecs = std::chrono::duration_cast<SecDuration>(
+        (pType == timer_t::time_e::real) ? totalTime :
+        std::ceil( totalTime.count() / mFrameDuration.count() ) * mFrameDuration );
+    return static_cast<float64_t>( totalSecs.count() );
 }
 
 
