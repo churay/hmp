@@ -422,7 +422,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( csSimFPS, llce::timer_t::ratio_e::fps );
-    float64_t simDT = 0.0;
+    float64_t simDT = 0.0, simWT = 0.0;
     // NOTE(JRC): A cursory check shows that it will take ~1e10 years of
     // uninterrupted run time for this to overflow at 60 FPS, so the fact
     // that this increments very quickly over time isn't a big concern.
@@ -748,9 +748,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SwapWindow( window );
 
         simTimer.split();
-        simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
+        simWT = simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
+
+        LLCE_ASSERT_WARNING( simWT >= 0.0 || simFrame == 0,
+            "Frame {" << simFrame << "} lagged for " << -simWT << " seconds!" );
 
         doStep = !isStepping;
     }

@@ -22,19 +22,26 @@ timer_t::timer_t( float64_t pRatio, timer_t::ratio_e pType ) {
 }
 
 
-void timer_t::split() {
+float64_t timer_t::split() {
     mPrevFrameIdx = mCurrFrameIdx;
     mCurrFrameIdx = ( mCurrFrameIdx + 1 ) % mFrameSplits.size();
     mFrameSplits[mCurrFrameIdx] = Clock::now();
+
+    SecDuration splitSecs = std::chrono::duration_cast<SecDuration>(
+        mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx] );
+    return static_cast<float64_t>( splitSecs.count() );
 }
 
 
-void timer_t::wait( float64_t pTargetFrameTime ) const {
-    ClockDuration frameTime = ( pTargetFrameTime < 0.0 ) ?
-        ClockDuration( static_cast<int64_t>(pTargetFrameTime) ) :
-        mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx];
-    ClockDuration remainingTime = mFrameDuration - frameTime;
-    std::this_thread::sleep_for( remainingTime );
+float64_t timer_t::wait( float64_t pTargetFrameTime ) const {
+    ClockDuration waitTime = ( pTargetFrameTime >= 0.0 ) ?
+        std::chrono::duration_cast<ClockDuration>( SecDuration{pTargetFrameTime} ) :
+        mFrameDuration - (mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx]);
+
+    std::this_thread::sleep_for( waitTime );
+
+    SecDuration waitSecs = std::chrono::duration_cast<SecDuration>( waitTime );
+    return static_cast<float64_t>( waitSecs.count() );
 }
 
 

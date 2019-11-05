@@ -24,8 +24,8 @@ class timer_t {
 
     /// Class Functions ///
 
-    void split();
-    void wait( float64_t pTargetFrameTime = -1.0 ) const;
+    float64_t split();
+    float64_t wait( float64_t pTargetFrameTime = -1.0 ) const;
 
     float64_t ft( time_e pType = time_e::real ) const;
     float64_t tt( time_e pType = time_e::real ) const;
