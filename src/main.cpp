@@ -44,6 +44,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Parse Input Arguments ///
 
+    // -v: display version information
     if( llce::cli::exists("-v", pArgs, pArgCount) ) {
         LLCE_INFO_RELEASE( "{Version: v" << LLCE_VERSION << ", " <<
             "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
@@ -52,6 +53,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
     }
 
+    // -d: display a second window w/ debug information
+    const bool32_t cShowDebugWindow = llce::cli::exists( "-d", pArgs, pArgCount );
+
+    // -r [replay-id]: replay in simulation state
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
     const int32_t cSimStateIdx = cSimStateArg != nullptr ? std::atoi( cSimStateArg ) : -1;
     const bool32_t cIsSimulating = LLCE_DEBUG ? cSimStateIdx > 0 : false;
@@ -213,18 +218,40 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SetSwapInterval( 1 ); // vsync
     }
 
-    int32_t windowWidth = 640, windowHeight = 480;
+    SDL_Window* windows[2] = { nullptr, nullptr };
+    vec2i32_t windowDims[2] = { {640, 480}, {640, 640-480} };
+    const uint32_t cSimWindowID = 0, cDebugWindowID = 1;
+    const uint32_t cWindowCount = 1 + static_cast<uint32_t>( cShowDebugWindow );
+
     const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
         ( cIsSimulating ? SDL_WINDOW_HIDDEN : 0 );
-    SDL_Window* window = SDL_CreateWindow(
-        "Handmade Pong",                            // Window Title
-        SDL_WINDOWPOS_UNDEFINED,                    // Window X Position
-        SDL_WINDOWPOS_UNDEFINED,                    // Window Y Position
-        windowWidth,                                // Window Width
-        windowHeight,                               // Window Height
-        cWindowFlags );                             // Window Flags
-    LLCE_ASSERT_ERROR( window != nullptr,
+
+    windows[cSimWindowID] = SDL_CreateWindow(
+        "Handmade Pong",                                          // Window Title
+        SDL_WINDOWPOS_UNDEFINED,                                  // Window X Position
+        SDL_WINDOWPOS_UNDEFINED,                                  // Window Y Position
+        windowDims[cSimWindowID].x,                               // Window Width
+        windowDims[cSimWindowID].y,                               // Window Height
+        cWindowFlags );                                           // Window Flags
+    LLCE_ASSERT_ERROR( windows[cSimWindowID] != nullptr,
         "SDL failed to create window instance; " << SDL_GetError() );
+
+    if( cShowDebugWindow ) {
+        vec2i32_t simWindowPos;
+        SDL_GetWindowPosition( windows[cSimWindowID], &simWindowPos.x, &simWindowPos.y );
+
+        windows[cDebugWindowID] = SDL_CreateWindow(
+            "Handmade Pong (Debug)",                                  // Window Title
+            simWindowPos.x,                                           // Window X Position
+            simWindowPos.y + windowDims[cSimWindowID].y + 20,         // Window Y Position
+            windowDims[cDebugWindowID].x,                             // Window Width
+            windowDims[cDebugWindowID].y,                             // Window Height
+            cWindowFlags );                                           // Window Flags
+        LLCE_ASSERT_ERROR( windows[cDebugWindowID] != nullptr,
+            "SDL failed to create window instance; " << SDL_GetError() );
+        LLCE_ASSERT_ERROR( SDL_SetWindowInputFocus(windows[cSimWindowID]) >= 0,
+            "SDL failed to reset window focus; " << SDL_GetError() );
+    }
 
     { /// Initialize Window ///
         const path_t cIconPath( 2, cAssetPath.cstr(), "icon.png" );
@@ -246,11 +273,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         LLCE_CHECK_WARNING( windowIcon != nullptr,
             "Failed to load the icon for the application." );
 
-        SDL_SetWindowIcon( window, windowIcon );
+        SDL_SetWindowIcon( windows[cSimWindowID], windowIcon );
         SDL_FreeSurface( windowIcon );
     }
 
-    SDL_GLContext glcontext = SDL_GL_CreateContext( window );
+    SDL_GLContext glcontext = SDL_GL_CreateContext( windows[cSimWindowID] );
     LLCE_ASSERT_ERROR( glcontext != nullptr,
         "SDL failed to generate OpenGL context; " << SDL_GetError() );
 
@@ -474,7 +501,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } else if( event.type == SDL_WINDOWEVENT  && (
                    event.window.event == SDL_WINDOWEVENT_RESIZED ||
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
-                SDL_GetWindowSize( window, &windowWidth, &windowHeight );
+                SDL_GetWindowSize( windows[cSimWindowID], &windowDims[cSimWindowID].x, &windowDims[cSimWindowID].y );
             }
         }
 
@@ -581,7 +608,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         { // Initialize Graphics State //
-            glViewport( 0, 0, windowWidth, windowHeight );
+            glViewport( 0, 0, windowDims[cSimWindowID].x, windowDims[cSimWindowID].y );
             glMatrixMode( GL_PROJECTION );
             glLoadIdentity();
             glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
@@ -624,7 +651,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
-            const float32_t viewRatio = ( windowHeight + 0.0f ) / ( windowWidth + 0.0f );
+            const float32_t viewRatio = ( windowDims[cSimWindowID].y + 0.0f ) / ( windowDims[cSimWindowID].x + 0.0f );
             glm::mat4 matWorldView( 1.0f );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
@@ -745,7 +772,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         isCapturing = cIsSimulating;
 #endif
 
-        SDL_GL_SwapWindow( window );
+        SDL_GL_SwapWindow( windows[cSimWindowID] );
 
         simTimer.split();
         simWT = simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
@@ -777,7 +804,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     SDL_CloseAudioDevice( audioDeviceID );
 
     SDL_GL_DeleteContext( glcontext );
-    SDL_DestroyWindow( window );
+    for( uint32_t windowIdx = 0; windowIdx < cWindowCount; windowIdx++ ) {
+        SDL_DestroyWindow( windows[windowIdx] );
+    }
     SDL_Quit();
 
     return 0;
