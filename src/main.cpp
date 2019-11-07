@@ -14,6 +14,10 @@
 
 #include "hmp/hmp.h"
 
+#ifdef LLCE_DEBUG
+#include "meta.h"
+#endif
+
 #include "timer_t.h"
 #include "memory_t.h"
 #include "buffer_t.h"
@@ -53,8 +57,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             "Capture*:" << (LLCE_CAPTURE ? "Enabled" : "Disabled") << "}" );
     }
 
-    // -d: display a second window w/ debug information
-    const bool32_t cShowDebugWindow = llce::cli::exists( "-d", pArgs, pArgCount );
+    // -m: display a second window w/ meta information
+    const bool32_t cShowMeta = LLCE_DEBUG ? llce::cli::exists( "-m", pArgs, pArgCount ) : false;
 
     // -r [replay-id]: replay in simulation state
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
@@ -218,13 +222,22 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SetSwapInterval( 1 ); // vsync
     }
 
+    /// Create Windows ///
+
     SDL_Window* windows[2] = { nullptr, nullptr };
+    SDL_GLContext windowGLs[2] = { nullptr, nullptr };
     vec2i32_t windowDims[2] = { {640, 480}, {640, 640-480} };
-    const uint32_t cSimWindowID = 0, cDebugWindowID = 1;
-    const uint32_t cWindowCount = 1 + static_cast<uint32_t>( cShowDebugWindow );
+    const uint32_t cSimWindowID = 0, cMetaWindowID = 1;
+    const uint32_t cWindowCount = 1 + static_cast<uint32_t>( cShowMeta );
 
     const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
         ( cIsSimulating ? SDL_WINDOW_HIDDEN : 0 );
+
+    const auto cChangeWindow = [ &windows, &windowGLs ] ( const uint32_t pWindowIdx ) {
+        LLCE_ASSERT_ERROR(
+            SDL_GL_MakeCurrent(windows[pWindowIdx], windowGLs[pWindowIdx]) >= 0,
+            "SDL failed to set GL context on window " << pWindowIdx << "; " << SDL_GetError() );
+    };
 
     windows[cSimWindowID] = SDL_CreateWindow(
         "Handmade Pong",                                          // Window Title
@@ -236,24 +249,22 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     LLCE_ASSERT_ERROR( windows[cSimWindowID] != nullptr,
         "SDL failed to create window instance; " << SDL_GetError() );
 
-    if( cShowDebugWindow ) {
+    if( cShowMeta ) {
         vec2i32_t simWindowPos;
         SDL_GetWindowPosition( windows[cSimWindowID], &simWindowPos.x, &simWindowPos.y );
 
-        windows[cDebugWindowID] = SDL_CreateWindow(
+        windows[cMetaWindowID] = SDL_CreateWindow(
             "Handmade Pong (Debug)",                                  // Window Title
             simWindowPos.x,                                           // Window X Position
-            simWindowPos.y + windowDims[cSimWindowID].y + 20,         // Window Y Position
-            windowDims[cDebugWindowID].x,                             // Window Width
-            windowDims[cDebugWindowID].y,                             // Window Height
+            simWindowPos.y + windowDims[cSimWindowID].y,              // Window Y Position
+            windowDims[cMetaWindowID].x,                              // Window Width
+            windowDims[cMetaWindowID].y,                              // Window Height
             cWindowFlags );                                           // Window Flags
-        LLCE_ASSERT_ERROR( windows[cDebugWindowID] != nullptr,
+        LLCE_ASSERT_ERROR( windows[cMetaWindowID] != nullptr,
             "SDL failed to create window instance; " << SDL_GetError() );
-        LLCE_ASSERT_ERROR( SDL_SetWindowInputFocus(windows[cSimWindowID]) >= 0,
-            "SDL failed to reset window focus; " << SDL_GetError() );
     }
 
-    { /// Initialize Window ///
+    { /// Initialize Windows ///
         const path_t cIconPath( 2, cAssetPath.cstr(), "icon.png" );
         static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION];
 
@@ -273,37 +284,48 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         LLCE_CHECK_WARNING( windowIcon != nullptr,
             "Failed to load the icon for the application." );
 
-        SDL_SetWindowIcon( windows[cSimWindowID], windowIcon );
+        for( uint32_t windowIdx = cWindowCount; windowIdx-- > 0; )
+            SDL_SetWindowIcon( windows[windowIdx], windowIcon );
+
         SDL_FreeSurface( windowIcon );
     }
 
-    SDL_GLContext glcontext = SDL_GL_CreateContext( windows[cSimWindowID] );
-    LLCE_ASSERT_ERROR( glcontext != nullptr,
-        "SDL failed to generate OpenGL context; " << SDL_GetError() );
+    for( uint32_t windowIdx = cWindowCount; windowIdx-- > 0; ) {
+        windowGLs[windowIdx] = SDL_GL_CreateContext( windows[windowIdx] );
+        LLCE_ASSERT_ERROR( windowGLs[windowIdx] != nullptr,
+            "SDL failed to generate OpenGL context; " << SDL_GetError() );
 
-    { // Load OpenGL Extensions //
-        const static char8_t* csGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
-        const static uint32_t csGLExtensionCount = ARRAY_LEN( csGLExtensionNames );
-        for( uint32_t extensionIdx = 0; extensionIdx < csGLExtensionCount; ++extensionIdx ) {
-            const char8_t* glExtensionName = csGLExtensionNames[extensionIdx];
-            LLCE_ASSERT_ERROR( SDL_GL_ExtensionSupported(glExtensionName),
-                "Failed to load OpenGL extension '" << glExtensionName << "'." );
+        cChangeWindow( windowIdx );
+
+        { // Load OpenGL Extensions //
+            const static char8_t* csGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
+            const static uint32_t csGLExtensionCount = ARRAY_LEN( csGLExtensionNames );
+            for( uint32_t extensionIdx = 0; extensionIdx < csGLExtensionCount; ++extensionIdx ) {
+                const char8_t* glExtensionName = csGLExtensionNames[extensionIdx];
+                LLCE_ASSERT_ERROR( SDL_GL_ExtensionSupported(glExtensionName),
+                    "Failed to load OpenGL extension '" << glExtensionName << "'." );
+            }
+        }
+
+        { // Configure OpenGL Context //
+            glEnable( GL_DEPTH_TEST );
+            glDepthFunc( GL_ALWAYS );
+
+            glEnable( GL_BLEND );
+            glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+            glEnable( GL_TEXTURE_2D );
+            glDisable( GL_LIGHTING );
+
+            glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
+            glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
         }
     }
 
-    { // Configure OpenGL Context //
-        glEnable( GL_DEPTH_TEST );
-        glDepthFunc( GL_ALWAYS );
-
-        glEnable( GL_BLEND );
-        glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-
-        glEnable( GL_TEXTURE_2D );
-        glDisable( GL_LIGHTING );
-
-        glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
-        glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
-    }
+    LLCE_ASSERT_ERROR(
+        SDL_SetWindowInputFocus(windows[cSimWindowID]) >= 0,
+        "SDL failed to set window focus to main window; " << SDL_GetError() );
+    SDL_RaiseWindow( windows[cSimWindowID] );
 
     /// Initialize Audio ///
 
@@ -608,12 +630,16 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         { // Initialize Graphics State //
-            glViewport( 0, 0, windowDims[cSimWindowID].x, windowDims[cSimWindowID].y );
-            glMatrixMode( GL_PROJECTION );
-            glLoadIdentity();
-            glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
-            glMatrixMode( GL_MODELVIEW );
-            glLoadIdentity();
+            for( uint32_t windowIdx = cWindowCount; windowIdx-- > 0; ) {
+                cChangeWindow( windowIdx );
+
+                glViewport( 0, 0, windowDims[windowIdx].x, windowDims[windowIdx].y );
+                glMatrixMode( GL_PROJECTION );
+                glLoadIdentity();
+                glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+                glMatrixMode( GL_MODELVIEW );
+                glLoadIdentity();
+            }
         }
 
         { // Initialize Audio State //
@@ -729,6 +755,19 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         } glDisable( GL_TEXTURE_2D );
 #endif
 
+#if LLCE_DEBUG
+        if( cShowMeta ) {
+            cChangeWindow( cMetaWindowID );
+
+            // FIXME(JRC): This currently isn't working; is there an issue setting
+            // a new OpenGL context?
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            llce::meta::render( simState, simInput, simOutput );
+
+            cChangeWindow( cSimWindowID );
+        }
+#endif
+
 #if LLCE_CAPTURE
         if( isCapturing ) {
             LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
@@ -772,7 +811,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         isCapturing = cIsSimulating;
 #endif
 
-        SDL_GL_SwapWindow( windows[cSimWindowID] );
+        for( uint32_t windowIdx = cWindowCount; windowIdx-- > 0; ) {
+            SDL_GL_SwapWindow( windows[windowIdx] );
+        }
 
         simTimer.split();
         simWT = simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
@@ -803,8 +844,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     SDL_CloseAudioDevice( audioDeviceID );
 
-    SDL_GL_DeleteContext( glcontext );
-    for( uint32_t windowIdx = 0; windowIdx < cWindowCount; windowIdx++ ) {
+    for( uint32_t windowIdx = cWindowCount; windowIdx-- > 0; ) {
+        SDL_GL_DeleteContext( windowGLs[windowIdx] );
         SDL_DestroyWindow( windows[windowIdx] );
     }
     SDL_Quit();
