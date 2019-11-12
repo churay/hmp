@@ -222,19 +222,26 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SetSwapInterval( 1 ); // vsync
     }
 
+    // TODO(JRC): This code will need to be updated to be more flexible should a
+    // more general HUD solution (e.g. viewports at arbitrary positions around the
+    // sim viewport) be ultimately desirable.
+    const uint32_t cSimViewportID = 0, cMetaViewportID = 1;
+    vec2i32_t viewportDims[] = { {640, 480}, {cShowMeta * 640, cShowMeta * (640 - 480)} };
+    vec2i32_t viewportPoss[] = { {0, viewportDims[cMetaViewportID].y}, {0, 0} };
+    const uint32_t cViewportCount = ARRAY_LEN( viewportDims );
+
     SDL_Window* window = nullptr;
     SDL_GLContext windowGL = nullptr;
-    vec2i32_t windowDims = { 640, 480 };
+    vec2i32_t windowDims = {
+        viewportDims[cSimViewportID].x,
+        viewportDims[cSimViewportID].y + viewportDims[cMetaViewportID].y };
 
-    const uint32_t cWindowFlags =
-        SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
+    // TODO(JRC): Re-enable window resizing once the windows are converted to
+    // be in terms of ratios instead of absolute pixel amounts.
+    const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | // SDL_WINDOW_RESIZABLE |
         ( cIsSimulating ? SDL_WINDOW_HIDDEN : 0 );
 
     { // Initialize Window //
-        if( cShowMeta ) {
-            // TODO(JRC)
-        }
-
         window = SDL_CreateWindow(
             "Handmade Pong",                            // Window Title
             SDL_WINDOWPOS_UNDEFINED,                    // Window X Position
@@ -293,6 +300,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             glEnable( GL_TEXTURE_2D );
             glDisable( GL_LIGHTING );
+            // glEnable( GL_SCISSOR_TEST );
 
             glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
             glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -495,7 +503,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } else if( event.type == SDL_WINDOWEVENT  && (
                    event.window.event == SDL_WINDOWEVENT_RESIZED ||
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
-                SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+                // TODO(JRC): Re-enable window resizing once the windows are converted to
+                // be in terms of ratios instead of absolute pixel amounts.
+                // SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
             }
         }
 
@@ -602,7 +612,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         { // Initialize Graphics State //
-            glViewport( 0, 0, windowDims.x, windowDims.y );
+            glViewport(
+                viewportPoss[cSimViewportID].x, viewportPoss[cSimViewportID].y,
+                viewportDims[cSimViewportID].x, viewportDims[cSimViewportID].y );
+            // glScissor(
+            //     viewportPoss[cSimViewportID].x, viewportPoss[cSimViewportID].y,
+            //     viewportDims[cSimViewportID].x, viewportDims[cSimViewportID].y );
 
             glMatrixMode( GL_PROJECTION );
             glLoadIdentity();
@@ -647,7 +662,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
-            const float32_t viewRatio = ( windowDims.y + 0.0f ) / ( windowDims.x + 0.0f );
+            const float32_t viewRatio = ( viewportDims[cSimViewportID].y + 0.0f ) / ( viewportDims[cSimViewportID].x + 0.0f );
             glm::mat4 matWorldView( 1.0f );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
@@ -725,12 +740,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         } glDisable( GL_TEXTURE_2D );
 #endif
 
-#if LLCE_DEBUG
-        if( cShowMeta ) {
-            // TODO(JRC)
-        }
-#endif
-
 #if LLCE_CAPTURE
         if( isCapturing ) {
             LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
@@ -772,6 +781,43 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             glDisable( GL_TEXTURE_2D );
         }
         isCapturing = cIsSimulating;
+#endif
+
+#if LLCE_DEBUG
+        if( cShowMeta ) {
+            // TODO(JRC): Refactor this code so that it can be merged with the
+            // setup for the simulation viewport.
+            { // Initialize Graphics State //
+                glViewport(
+                    viewportPoss[cMetaViewportID].x, viewportPoss[cMetaViewportID].y,
+                    viewportDims[cMetaViewportID].x, viewportDims[cMetaViewportID].y );
+                // glScissor(
+                //     viewportPoss[cMetaViewportID].x, viewportPoss[cMetaViewportID].y,
+                //     viewportDims[cMetaViewportID].x, viewportDims[cMetaViewportID].y );
+
+                glMatrixMode( GL_PROJECTION );
+                glLoadIdentity();
+                glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+
+                glMatrixMode( GL_MODELVIEW );
+                glLoadIdentity();
+            }
+
+            glPushMatrix(); {
+                glm::mat4 matWorldView( 1.0f );
+                matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+                matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+                glMultMatrixf( &matWorldView[0][0] );
+
+                glColor4ubv( (uint8_t*)&csWhiteColor );
+                glBegin( GL_QUADS ); {
+                    glVertex2f( 0.0f, 0.0f );
+                    glVertex2f( 0.0f, 1.0f );
+                    glVertex2f( 1.0f, 1.0f );
+                    glVertex2f( 1.0f, 0.0f );
+                } glEnd();
+            } glPopMatrix();
+        }
 #endif
 
         SDL_GL_SwapWindow( window );
