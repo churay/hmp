@@ -236,6 +236,22 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         viewportDims[cSimViewportID].x,
         viewportDims[cSimViewportID].y + viewportDims[cMetaViewportID].y };
 
+    const auto cResetViewport = [ &viewportDims, &viewportPoss ] ( const uint32_t pViewportIdx ) {
+        glViewport(
+            viewportPoss[pViewportIdx].x, viewportPoss[pViewportIdx].y,
+            viewportDims[pViewportIdx].x, viewportDims[pViewportIdx].y );
+        glScissor(
+            viewportPoss[pViewportIdx].x, viewportPoss[pViewportIdx].y,
+            viewportDims[pViewportIdx].x, viewportDims[pViewportIdx].y );
+
+        glMatrixMode( GL_PROJECTION );
+        glLoadIdentity();
+        glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
+
+        glMatrixMode( GL_MODELVIEW );
+        glLoadIdentity();
+    };
+
     // TODO(JRC): Re-enable window resizing once the windows are converted to
     // be in terms of ratios instead of absolute pixel amounts.
     const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | // SDL_WINDOW_RESIZABLE |
@@ -300,7 +316,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             glEnable( GL_TEXTURE_2D );
             glDisable( GL_LIGHTING );
-            // glEnable( GL_SCISSOR_TEST );
+            glEnable( GL_SCISSOR_TEST );
 
             glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
             glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -612,19 +628,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
         { // Initialize Graphics State //
-            glViewport(
-                viewportPoss[cSimViewportID].x, viewportPoss[cSimViewportID].y,
-                viewportDims[cSimViewportID].x, viewportDims[cSimViewportID].y );
-            // glScissor(
-            //     viewportPoss[cSimViewportID].x, viewportPoss[cSimViewportID].y,
-            //     viewportDims[cSimViewportID].x, viewportDims[cSimViewportID].y );
-
-            glMatrixMode( GL_PROJECTION );
-            glLoadIdentity();
-            glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
-
-            glMatrixMode( GL_MODELVIEW );
-            glLoadIdentity();
+            cResetViewport( cSimViewportID );
         }
 
         { // Initialize Audio State //
@@ -785,24 +789,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_DEBUG
         if( cShowMeta ) {
-            // TODO(JRC): Refactor this code so that it can be merged with the
-            // setup for the simulation viewport.
-            { // Initialize Graphics State //
-                glViewport(
-                    viewportPoss[cMetaViewportID].x, viewportPoss[cMetaViewportID].y,
-                    viewportDims[cMetaViewportID].x, viewportDims[cMetaViewportID].y );
-                // glScissor(
-                //     viewportPoss[cMetaViewportID].x, viewportPoss[cMetaViewportID].y,
-                //     viewportDims[cMetaViewportID].x, viewportDims[cMetaViewportID].y );
+            cResetViewport( cMetaViewportID );
 
-                glMatrixMode( GL_PROJECTION );
-                glLoadIdentity();
-                glOrtho( -1.0f, +1.0f, -1.0f, +1.0f, -1.0f, +1.0f );
-
-                glMatrixMode( GL_MODELVIEW );
-                glLoadIdentity();
-            }
-
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glPushMatrix(); {
                 glm::mat4 matWorldView( 1.0f );
                 matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );

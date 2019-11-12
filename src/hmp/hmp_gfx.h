@@ -21,7 +21,7 @@ struct fbo_context_t {
     fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes );
     ~fbo_context_t();
 
-    vec2u32_t mViewCoords, mViewRes;
+    vec2i32_t mViewport[2], mScissor[2];
 };
 
 namespace text {
