@@ -44,7 +44,12 @@ typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancod
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
-    const static float64_t csSimFPS = 60.0;
+    const static uint32_t csFPS = 60;
+    const static float64_t csSimFPS = static_cast<float64_t>( csFPS );
+#if LLCE_DEBUG
+    static float64_t sBackupFTs[csFPS];
+    static uint32_t sBackupFTStartIdx = 0, sBackupFTEndIdx = 0;
+#endif
 
     /// Parse Input Arguments ///
 
@@ -316,7 +321,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             glEnable( GL_TEXTURE_2D );
             glDisable( GL_LIGHTING );
+
             glEnable( GL_SCISSOR_TEST );
+            glEnable( GL_LINE_STIPPLE );
+            glEnable( GL_LINE_SMOOTH );
 
             glColorMask( GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE );
             glClearColor( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -378,6 +386,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     const static color4u8_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
     const static color4u8_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
+    const static color4u8_t csRedColor = { 0xFF, 0x00, 0x00, 0xFF };
+    const static color4u8_t csGreenColor = { 0x00, 0xFF, 0x00, 0xFF };
+    const static color4u8_t csBlueColor = { 0x00, 0x00, 0xFF, 0xFF };
 
 #if LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
@@ -789,7 +800,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_DEBUG
         if( cShowMeta ) {
+            { // TODO(JRC): Move this logic to a more appropriate location in the codebase.
+                sBackupFTEndIdx = ( sBackupFTEndIdx + 1 ) % csFPS;
+                sBackupFTs[sBackupFTEndIdx] = 1.0 / simDT;
+                sBackupFTStartIdx = ( sBackupFTEndIdx == sBackupFTStartIdx ) ?
+                    (sBackupFTStartIdx + 1 ) % csFPS : sBackupFTStartIdx;
+            }
+
             cResetViewport( cMetaViewportID );
+
+            const static float32_t csMetaUILineWidth = 5.0f;
+            const static vec2f32_t csMetaUITargetPadding = { 0.0f, 0.25f };
 
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glPushMatrix(); {
@@ -798,13 +819,58 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
                 glMultMatrixf( &matWorldView[0][0] );
 
-                glColor4ubv( (uint8_t*)&csWhiteColor );
-                glBegin( GL_QUADS ); {
-                    glVertex2f( 0.0f, 0.0f );
-                    glVertex2f( 0.0f, 1.0f );
-                    glVertex2f( 1.0f, 1.0f );
-                    glVertex2f( 1.0f, 0.0f );
-                } glEnd();
+                glPushMatrix(); { // Render Background //
+                    const static color4u8_t* csMetaUIBackgroundColor = &csWhiteColor;
+
+                    glColor4ubv( (uint8_t*)csMetaUIBackgroundColor );
+                    glBegin( GL_QUADS ); {
+                        glVertex2f( 0.0f, 0.0f );
+                        glVertex2f( 0.0f, 1.0f );
+                        glVertex2f( 1.0f, 1.0f );
+                        glVertex2f( 1.0f, 0.0f );
+                    } glEnd();
+                } glPopMatrix();
+
+                glPushMatrix(); { // Render Trend Line //
+                    const static color4u8_t* csMetaUITrendColor = &csRedColor;
+                    const static uint16_t csMetaUITrendPattern = 0xFFFF;
+
+                    glm::mat4 matWorldView( 1.0f );
+                    matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(1.0f, 1.0f - csMetaUITargetPadding.y, 1.0f) );
+                    glMultMatrixf( &matWorldView[0][0] );
+
+                    glLineWidth( csMetaUILineWidth );
+                    glLineStipple( 1, csMetaUITrendPattern );
+                    glColor4ubv( (uint8_t*)csMetaUITrendColor );
+                    glBegin( GL_LINES ); {
+                        for( uint32_t currIdx = sBackupFTEndIdx, renderIdx = 0; currIdx != sBackupFTStartIdx; renderIdx++ ) {
+                            uint32_t nextIdx = ( currIdx != 0 ) ? currIdx - 1 : csFPS - 1;
+
+                            float64_t currFT = sBackupFTs[currIdx] / csSimFPS;
+                            float64_t nextFT = sBackupFTs[nextIdx] / csSimFPS;
+                            float64_t renderS = 1.0f - ( renderIdx / csSimFPS );
+
+                            glVertex2f( renderS, currFT );
+                            glVertex2f( renderS, nextFT );
+
+                            currIdx = nextIdx;
+                        }
+                    } glEnd();
+                } glPopMatrix();
+
+                glPushMatrix(); { // Render UI Elements //
+                    const static color4u8_t* csMetaUITargetColor = &csBlueColor;
+                    const static uint16_t csMetaUITargetPattern = 0x00FF;
+
+                    glLineWidth( csMetaUILineWidth );
+                    glLineStipple( 1, csMetaUITargetPattern );
+                    glColor4ubv( (uint8_t*)csMetaUITargetColor );
+                    glBegin( GL_LINES ); {
+                        glVertex2f( 0.0f - csMetaUITargetPadding.x, 1.0f - csMetaUITargetPadding.y );
+                        glVertex2f( 1.0f + csMetaUITargetPadding.x, 1.0f - csMetaUITargetPadding.y );
+                    } glEnd();
+                } glPopMatrix();
+
             } glPopMatrix();
         }
 #endif
