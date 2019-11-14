@@ -802,7 +802,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( cShowMeta ) {
             { // TODO(JRC): Move this logic to a more appropriate location in the codebase.
                 sBackupFTEndIdx = ( sBackupFTEndIdx + 1 ) % csFPS;
-                sBackupFTs[sBackupFTEndIdx] = 1.0 / simDT;
+                sBackupFTs[sBackupFTEndIdx] = 1.0 / ( simDT - std::min(0.0, simWT) );
                 sBackupFTStartIdx = ( sBackupFTEndIdx == sBackupFTStartIdx ) ?
                     (sBackupFTStartIdx + 1 ) % csFPS : sBackupFTStartIdx;
             }
@@ -848,10 +848,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
                             float64_t currFT = sBackupFTs[currIdx] / csSimFPS;
                             float64_t nextFT = sBackupFTs[nextIdx] / csSimFPS;
-                            float64_t renderS = 1.0f - ( renderIdx / csSimFPS );
+                            float64_t currS = 1.0f - ( renderIdx / csSimFPS );
+                            float64_t nextS = 1.0f - ( (renderIdx + 1) / csSimFPS );
 
-                            glVertex2f( renderS, currFT );
-                            glVertex2f( renderS, nextFT );
+                            glVertex2f( currS, currFT );
+                            glVertex2f( nextS, nextFT );
 
                             currIdx = nextIdx;
                         }
