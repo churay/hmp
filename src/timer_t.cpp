@@ -15,20 +15,15 @@ timer_t::timer_t( float64_t pRatio, timer_t::ratio_e pType ) {
     SecDuration frameDuration( (pType == timer_t::ratio_e::spf) ? pRatio : 1.0 / pRatio );
     mFrameDuration = std::chrono::duration_cast<ClockDuration>( frameDuration );
 
-    ClockPoint initTime = Clock::now();
-    mTimerStart = initTime;
-    mFrameSplits.fill( initTime );
-    mCurrFrameIdx = mPrevFrameIdx = 0;
+    mTimerStart = Clock::now();
+    mFrameSplits.push_back( mTimerStart );
 }
 
 
 float64_t timer_t::split() {
-    mPrevFrameIdx = mCurrFrameIdx;
-    mCurrFrameIdx = ( mCurrFrameIdx + 1 ) % mFrameSplits.size();
-    mFrameSplits[mCurrFrameIdx] = Clock::now();
-
+    mFrameSplits.push_back( Clock::now() );
     SecDuration splitSecs = std::chrono::duration_cast<SecDuration>(
-        mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx] );
+        mFrameSplits.back(0) - mFrameSplits.back(1) );
     return static_cast<float64_t>( splitSecs.count() );
 }
 
@@ -36,7 +31,7 @@ float64_t timer_t::split() {
 float64_t timer_t::wait( float64_t pTargetFrameTime ) const {
     ClockDuration waitTime = ( pTargetFrameTime >= 0.0 ) ?
         std::chrono::duration_cast<ClockDuration>( SecDuration{pTargetFrameTime} ) :
-        mFrameDuration - (mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx]);
+        mFrameDuration - ( mFrameSplits.back(0) - mFrameSplits.back(1) );
 
     std::this_thread::sleep_for( waitTime );
 
@@ -47,14 +42,14 @@ float64_t timer_t::wait( float64_t pTargetFrameTime ) const {
 
 float64_t timer_t::ft( timer_t::time_e pType ) const {
     ClockDuration prevFrameTime = ( pType == timer_t::time_e::ideal ) ? mFrameDuration :
-        std::max( mFrameDuration, mFrameSplits[mCurrFrameIdx] - mFrameSplits[mPrevFrameIdx] );
+        std::max( mFrameDuration, mFrameSplits.back(0) - mFrameSplits.back(1) );
     SecDuration prevFrameSecs = std::chrono::duration_cast<SecDuration>( prevFrameTime );
     return static_cast<float64_t>( prevFrameSecs.count() );
 }
 
 
 float64_t timer_t::tt( timer_t::time_e pType ) const {
-    ClockDuration totalTime = mFrameSplits[mCurrFrameIdx] - mTimerStart;
+    ClockDuration totalTime = mFrameSplits.back( 0 ) - mTimerStart;
     SecDuration totalSecs = std::chrono::duration_cast<SecDuration>(
         (pType == timer_t::time_e::real) ? totalTime :
         std::ceil( totalTime.count() / mFrameDuration.count() ) * mFrameDuration );

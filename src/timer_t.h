@@ -1,9 +1,9 @@
 #ifndef LLCE_TIMER_H
 #define LLCE_TIMER_H
 
-#include <array>
 #include <chrono>
 #include <ratio>
+#include "deque.hpp"
 #include "consts.h"
 
 namespace llce {
@@ -44,11 +44,9 @@ class timer_t {
 
     ClockDuration mFrameDuration;
     ClockPoint mTimerStart;
-
-    std::array<ClockPoint, CACHE_SIZE> mFrameSplits;
-    uint32_t mCurrFrameIdx, mPrevFrameIdx;
+    llce::deque<ClockPoint, CACHE_SIZE> mFrameSplits;
 };
 
-}
+};
 
 #endif
