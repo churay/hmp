@@ -14,15 +14,13 @@ namespace meta {
 
 /// 'llce::meta' Functions ///
 
-bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    glColor4f( 1.0f, 1.0f, 1.0f, 1.0f );
-    glBegin( GL_QUADS ); {
-        glVertex2f( +0.0f, +0.0f );
-        glVertex2f( +0.0f, +1.0f );
-        glVertex2f( +1.0f, +1.0f );
-        glVertex2f( +1.0f, +0.0f );
-    } glEnd();
+bool32_t update( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput, const float64_t pDT ) {
+    // TODO(JRC)
+    return true;
+}
 
+bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+    // TODO(JRC)
     return true;
 }
 

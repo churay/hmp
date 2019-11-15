@@ -66,6 +66,10 @@ size_t size() const {
     return mSize;
 }
 
+size_t capacity() const {
+    return N;
+}
+
 private:
 
 /// Private Functions ///

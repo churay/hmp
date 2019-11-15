@@ -16,6 +16,7 @@
 
 #ifdef LLCE_DEBUG
 #include "meta.h"
+#include "deque.hpp"
 #endif
 
 #include "timer_t.h"
@@ -47,8 +48,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const static uint32_t csFPS = 60;
     const static float64_t csSimFPS = static_cast<float64_t>( csFPS );
 #if LLCE_DEBUG
-    static float64_t sBackupFTs[csFPS];
-    static uint32_t sBackupFTStartIdx = 0, sBackupFTEndIdx = 0;
+    static llce::deque<float64_t, csFPS> sBackupFTs;
 #endif
 
     /// Parse Input Arguments ///
@@ -800,14 +800,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_DEBUG
         if( cShowMeta ) {
-            { // TODO(JRC): Move this logic to a more appropriate location in the codebase.
-                sBackupFTEndIdx = ( sBackupFTEndIdx + 1 ) % csFPS;
-                sBackupFTs[sBackupFTEndIdx] = 1.0 / ( simDT - std::min(0.0, simWT) );
-                sBackupFTStartIdx = ( sBackupFTEndIdx == sBackupFTStartIdx ) ?
-                    (sBackupFTStartIdx + 1 ) % csFPS : sBackupFTStartIdx;
-            }
-
             cResetViewport( cMetaViewportID );
+
+            sBackupFTs.push_back( 1.0 / (simDT - std::min(0.0, simWT)) );
 
             const static float32_t csMetaUILineWidth = 5.0f;
             const static vec2f32_t csMetaUITargetPadding = { 0.0f, 0.25f };
@@ -842,19 +837,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glLineWidth( csMetaUILineWidth );
                     glLineStipple( 1, csMetaUITrendPattern );
                     glColor4ubv( (uint8_t*)csMetaUITrendColor );
-                    glBegin( GL_LINES ); {
-                        for( uint32_t currIdx = sBackupFTEndIdx, renderIdx = 0; currIdx != sBackupFTStartIdx; renderIdx++ ) {
-                            uint32_t nextIdx = ( currIdx != 0 ) ? currIdx - 1 : csFPS - 1;
-
-                            float64_t currFT = sBackupFTs[currIdx] / csSimFPS;
-                            float64_t nextFT = sBackupFTs[nextIdx] / csSimFPS;
-                            float64_t currS = 1.0f - ( renderIdx / csSimFPS );
-                            float64_t nextS = 1.0f - ( (renderIdx + 1) / csSimFPS );
-
-                            glVertex2f( currS, currFT );
-                            glVertex2f( nextS, nextFT );
-
-                            currIdx = nextIdx;
+                    glBegin( GL_LINE_STRIP ); {
+                        for( uint32_t frameIdx = 0; frameIdx < sBackupFTs.size(); frameIdx++ ) {
+                            float64_t frameU = 1.0f - ( (frameIdx + 0.0f) / sBackupFTs.capacity() );
+                            float64_t frameV = sBackupFTs.back( frameIdx ) / sBackupFTs.capacity();
+                            glVertex2f( frameU, frameV );
                         }
                     } glEnd();
                 } glPopMatrix();
