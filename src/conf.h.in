@@ -13,5 +13,6 @@ typedef double real;
 
 #define LLCE_VERSION "@PROJECT_VERSION@"
 #define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
+#define LLCE_FPS @LLCE_FPS@
 
 #endif

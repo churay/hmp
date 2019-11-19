@@ -13,11 +13,10 @@
 #include <fstream>
 
 #include "hmp/hmp.h"
-
-#ifdef LLCE_DEBUG
-#include "meta.h"
-#include "deque.hpp"
-#endif
+// TODO(JRC): Add this once the build system is ready.
+// #ifdef LLCE_DEBUG
+// #include "meta/meta.h"
+// #endif
 
 #include "timer_t.h"
 #include "memory_t.h"
@@ -45,8 +44,7 @@ typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancod
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
-    const static uint32_t csFPS = 60;
-    const static float64_t csSimFPS = static_cast<float64_t>( csFPS );
+    const static float64_t csSimFPS = static_cast<float64_t>( LLCE_FPS );
 #if LLCE_DEBUG
     static llce::deque<float64_t, csFPS> sBackupFTs;
 #endif
