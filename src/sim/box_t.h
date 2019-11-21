@@ -1,15 +1,15 @@
-#ifndef HMP_BOX_T_H
-#define HMP_BOX_T_H
+#ifndef LLCE_BOX_T_H
+#define LLCE_BOX_T_H
 
 #include <sstream>
 
 #include <glm/ext/vector_float2.hpp>
 
-#include "hmp_interval_t.h"
+#include "interval_t.h"
 
 #include "consts.h"
 
-namespace hmp {
+namespace llce {
 
 class box_t {
     public:
@@ -58,6 +58,6 @@ class box_t {
 
 }
 
-std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox );
+std::ostream& operator<<( std::ostream& pOS, const llce::box_t& pBox );
 
 #endif

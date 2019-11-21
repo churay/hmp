@@ -15,7 +15,9 @@ include(ExternalProject)
 option(LLCE_DYLOAD "Enable dynamic loading of loop-live library." ON)
 option(LLCE_FDOUBLE "Enable double precision floating-point values." OFF)
 option(LLCE_CAPTURE "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
+
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
+set(LLCE_FPS "60" CACHE STRING "The target frames per second for the application.")
 
 ################################################################################
 ### compiler/linker ############################################################
@@ -31,7 +33,6 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -DLLCE_DEBUG=0")
 
 set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
-set(BUILD_SHARED_LIBS ${LLCE_DYLOAD})
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "Default install path." FORCE)
@@ -70,18 +71,22 @@ set(GLM_INCLUDE_DIRS ${PROJECT_BINARY_DIR}/glm)
 ### sources ####################################################################
 ################################################################################
 
-set(hmp_cnf_dir ${PROJECT_BINARY_DIR}/config)
-file(GLOB_RECURSE hmp_cnf_files ${PROJECT_SOURCE_DIR}/src/*.h.in)
-foreach(hmp_cnf_file ${hmp_cnf_files})
-    get_filename_component(hmp_cnf_filename ${hmp_cnf_file} NAME_WE)
-    configure_file(${hmp_cnf_file} ${hmp_cnf_dir}/${hmp_cnf_filename}.h)
+set(sim_cnf_dir ${PROJECT_BINARY_DIR}/config)
+file(GLOB_RECURSE sim_cnf_files ${PROJECT_SOURCE_DIR}/src/*.h*.in)
+foreach(sim_cnf_file ${sim_cnf_files})
+    get_filename_component(sim_cnf_filename ${sim_cnf_file} NAME)
+    string(REGEX REPLACE "\.in" "" sim_cnf_basename ${sim_cnf_filename})
+    configure_file(${sim_cnf_file} ${sim_cnf_dir}/${sim_cnf_basename})
 endforeach()
 
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
+set(sim_cnf_target ${PROJECT_NAME}.cnf CACHE INTERNAL "" FORCE)
 
+add_library(${sim_cnf_target} INTERFACE)
+target_include_directories(${sim_cnf_target} INTERFACE ${sim_cnf_dir})
 
 ################################################################################
 ### testing ####################################################################

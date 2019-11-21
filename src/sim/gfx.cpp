@@ -8,13 +8,13 @@
 
 #include <cstring>
 
-#include "hmp_gfx.h"
+#include "gfx.h"
 
-namespace hmp {
+namespace llce {
 
 namespace gfx {
 
-/// 'hmp::gfx::render_context_t' Functions ///
+/// 'llce::gfx::render_context_t' Functions ///
 
 render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor ) {
     glPushMatrix();
@@ -92,7 +92,7 @@ void render_context_t::render() const {
     } glEnd();
 }
 
-/// 'hmp::gfx::fbo_context_t' Functions ///
+/// 'llce::gfx::fbo_context_t' Functions ///
 
 fbo_context_t::fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes ) {
     const static int32_t csContextFlags[] = { GL_VIEWPORT, GL_SCISSOR_BOX };
@@ -117,26 +117,26 @@ fbo_context_t::~fbo_context_t() {
     glScissor( mScissor[0].x, mScissor[0].y, mScissor[1].x, mScissor[1].y );
 }
 
-/// 'hmp::gfx::text' Functions ///
+/// 'llce::gfx::text' Functions ///
 
 void text::render( const char8_t* pText, const color4u8_t* pColor ) {
-    const static float64_t csDigitSpaceX = 1.0 / hmp::gfx::DIGIT_WIDTH;
-    const static float64_t csDigitSpaceY = 1.0 / hmp::gfx::DIGIT_HEIGHT;
+    const static float64_t csDigitSpaceX = 1.0 / llce::gfx::DIGIT_WIDTH;
+    const static float64_t csDigitSpaceY = 1.0 / llce::gfx::DIGIT_HEIGHT;
     const static float64_t csDigitPaddingX = csDigitSpaceX / 10.0;
     const static float64_t csDigitPaddingY = csDigitSpaceY / 10.0;
     const static float64_t csDigitFillX = csDigitSpaceX - 2.0 * csDigitPaddingX;
     const static float64_t csDigitFillY = csDigitSpaceY - 2.0 * csDigitPaddingY;
 
     const uint32_t cTextLength = std::strlen( pText );
-    const float64_t cTextSpacingX = 2.0 * hmp::gfx::DIGIT_WIDTH;
+    const float64_t cTextSpacingX = 2.0 * llce::gfx::DIGIT_WIDTH;
     const float64_t cTextSpacingY = 0.0;
     const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
 
     const box_t cRenderBox( 0.0f, 0.0f, 1.0f, 1.0f );
-    gfx::render_context_t rrc( cRenderBox, hmp::gfx::DIGIT_ASPECT * cTextLength, pColor );
+    gfx::render_context_t rrc( cRenderBox, llce::gfx::DIGIT_ASPECT * cTextLength, pColor );
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
-        const auto cTextDigitMap = &hmp::gfx::ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
+        const auto cTextDigitMap = &llce::gfx::ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
         const uint32_t cTextIdx = pTextItr - pText;
 
         const float64_t cTextOffsetX = ( cTextFillX + cTextFillX / cTextSpacingX ) * cTextIdx;
@@ -144,8 +144,8 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
 
         const box_t cTextBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );
         gfx::render_context_t trc( cTextBox, pColor );
-        for( uint32_t yIdx = 0; yIdx < hmp::gfx::DIGIT_HEIGHT; yIdx++ ) {
-            for( uint32_t xIdx = 0; xIdx < hmp::gfx::DIGIT_WIDTH; xIdx++ ) {
+        for( uint32_t yIdx = 0; yIdx < llce::gfx::DIGIT_HEIGHT; yIdx++ ) {
+            for( uint32_t xIdx = 0; xIdx < llce::gfx::DIGIT_WIDTH; xIdx++ ) {
                 const float64_t cDigitOffsetX = csDigitPaddingX + csDigitSpaceX * xIdx;
                 const float64_t cDigitOffsetY = csDigitPaddingY + csDigitSpaceY * yIdx;
 

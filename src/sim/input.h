@@ -27,7 +27,6 @@ namespace input {
 
     bool32_t isKeyReleased( const keyboard_t& pKeyboard, const SDL_Scancode pKey );
     uint32_t isKGReleased( const keyboard_t& pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
-
 }
 
 }

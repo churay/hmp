@@ -1,16 +1,16 @@
-#ifndef HMP_GFX_H
-#define HMP_GFX_H
+#ifndef LLCE_GFX_H
+#define LLCE_GFX_H
 
-#include "hmp_box_t.h"
-#include "hmp_consts.h"
+#include "box_t.h"
+#include "consts.h"
 
-namespace hmp {
+namespace llce {
 
 namespace gfx {
 
 struct render_context_t {
-    render_context_t( const hmp::box_t& pBox, const color4u8_t* pColor );
-    render_context_t( const hmp::box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor );
+    render_context_t( const box_t& pBox, const color4u8_t* pColor );
+    render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor );
     ~render_context_t();
 
     void render() const;

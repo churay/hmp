@@ -2,9 +2,9 @@
 
 #include <glm/ext/vector_float2.hpp>
 
-#include "hmp_box_t.h"
+#include "box_t.h"
 
-namespace hmp {
+namespace llce {
 
 /// Class Functions ///
 
@@ -138,7 +138,7 @@ interval_t box_t::ybounds() const {
 
 }
 
-std::ostream& operator<<( std::ostream& pOS, const hmp::box_t& pBox ) {
+std::ostream& operator<<( std::ostream& pOS, const llce::box_t& pBox ) {
     pOS << "(x" << pBox.xbounds() << ", y" << pBox.ybounds() << ")";
     return pOS;
 }

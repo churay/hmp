@@ -4,9 +4,9 @@
 #include <sstream>
 #include <utility>
 
-#include "hmp_interval_t.h"
+#include "interval_t.h"
 
-namespace hmp {
+namespace llce {
 
 interval_t::interval_t( const float32_t pCenter ) {
     mMin = mMax = pCenter;
@@ -99,7 +99,7 @@ bool32_t interval_t::valid() const {
 
 }
 
-std::ostream& operator<<( std::ostream& pOS, const hmp::interval_t& pInt ) {
+std::ostream& operator<<( std::ostream& pOS, const llce::interval_t& pInt ) {
     pOS << "[" << pInt.mMin << ", " << pInt.mMax << "]";
     return pOS;
 }

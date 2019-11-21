@@ -1,11 +1,11 @@
-#ifndef HMP_INTERVAL_T_H
-#define HMP_INTERVAL_T_H
+#ifndef LLCE_INTERVAL_T_H
+#define LLCE_INTERVAL_T_H
 
 #include <sstream>
 
 #include "consts.h"
 
-namespace hmp {
+namespace llce {
 
 class interval_t {
     public:
@@ -40,6 +40,6 @@ class interval_t {
 
 }
 
-std::ostream& operator<<( std::ostream& pOS, const hmp::interval_t& pInt );
+std::ostream& operator<<( std::ostream& pOS, const llce::interval_t& pInt );
 
 #endif
