@@ -17,7 +17,7 @@
 file(GLOB sim_exe_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 file(GLOB sim_exe_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
-set(sim_exe_subdirs plat) # sim meta hmp)
+set(sim_exe_subdirs util plat) # meta hmp)
 foreach(sim_exe_subdir ${sim_exe_subdirs})
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${sim_exe_subdir}")
 endforeach()
@@ -30,7 +30,7 @@ set(sim_exe_target ${PROJECT_NAME}.out CACHE INTERNAL "" FORCE)
 
 add_executable(${sim_exe_target} ${sim_exe_sources})
 add_dependencies(${sim_exe_target} glm)
-target_link_libraries(${sim_exe_target} PRIVATE ${sim_cnf_target} ${plat_lib_target}) # ${sim_lib_target} ${hmp_dat_target} ${hmp_lib_target})
+target_link_libraries(${sim_exe_target} PRIVATE ${sim_cnf_target} ${util_lib_target} ${plat_lib_target}) # ${hmp_dat_target} ${hmp_lib_target})
 target_include_directories(${sim_exe_target} PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR} ${GLM_INCLUDE_DIRS})
 target_link_libraries(${sim_exe_target} PRIVATE ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
@@ -38,41 +38,6 @@ target_link_libraries(${sim_exe_target} PRIVATE ${SDL2_LIBRARIES} ${SDL2_ttf_LIB
 #     target_include_directories(${sim_exe_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/hmp")
 #     target_link_libraries(${sim_exe_target} PRIVATE ${hmp_dat_target})
 #     target_link_libraries(${sim_exe_target} PRIVATE ${hmp_lib_target})
-# endif()
-
-################################################################################
-### testing ####################################################################
-################################################################################
-
-# TODO(JRC): Add this feature once testing because useful for the project.
-
-# # This is for our testing framework,
-# # we don't add REQUIRED because it's just for testing.
-# # People who might want to build the project to use it should not be required
-# # to install testing dependencies.
-# find_package(GTest)
-# 
-# if(GTEST_FOUND)
-#   add_executable(unit_tests ${sources_test} ${sources})
-# 
-#   # This define is added to prevent collision with the main.
-#   # It might be better solved by not adding the source with the main to the
-#   # testing target.
-#   target_compile_definitions(unit_tests PUBLIC UNIT_TESTS)
-# 
-#   # This allows us to use the executable as a link library, and inherit all 
-#   # linker options and library dependencies from it, by simply adding it as dependency.
-#   set_target_properties(example PROPERTIES ENABLE_EXPORTS on)
-# 
-#   target_link_libraries(unit_tests PUBLIC
-#     ${GTEST_BOTH_LIBRARIES}
-#     example
-#   )
-# 
-#   target_include_directories(unit_tests PUBLIC
-#     ${GTEST_INCLUDE_DIRS} # doesn't do anything on linux
-#   )
-#   
 # endif()
 
 ################################################################################

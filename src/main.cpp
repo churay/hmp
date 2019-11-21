@@ -23,11 +23,13 @@
 #include "buffer_t.h"
 #include "path_t.h"
 #include "platform.h"
-// #include "input.h"
+#include "input.h"
 #include "cli.h"
 #include "consts.h"
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
+    llce::input::keyboard_t simInput;
+
     if( llce::cli::exists("-v", pArgs, pArgCount) ) {
         LLCE_INFO_RELEASE( "{Version: v" << LLCE_VERSION << ", " <<
             "Build: " << (LLCE_DEBUG ? "Debug" : "Release") << ", " <<
