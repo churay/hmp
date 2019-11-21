@@ -1,7 +1,7 @@
 #ifndef HMP_ENTITY_T_H
 #define HMP_ENTITY_T_H
 
-#include "hmp_box_t.h"
+#include "box_t.h"
 
 #include "hmp_consts.h"
 #include "consts.h"
@@ -13,7 +13,7 @@ class entity_t {
 
     /// Constructors ///
 
-    entity_t( const box_t& pBBox, const color4u8_t* pColor );
+    entity_t( const llce::box_t& pBBox, const color4u8_t* pColor );
 
     /// Class Functions ///
 
@@ -24,7 +24,7 @@ class entity_t {
 
     public:
 
-    box_t mBBox; // units: world
+    llce::box_t mBBox; // units: world
     vec2f32_t mVel; // units: world / second
     const color4u8_t* mColor; // units: (r,g,b,a)
     float64_t mLifetime; // units: seconds

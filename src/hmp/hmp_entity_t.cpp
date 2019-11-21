@@ -8,14 +8,14 @@
 
 #include <SDL2/SDL_opengl.h>
 
-#include "hmp_gfx.h"
+#include "gfx.h"
 #include "hmp_entity_t.h"
 
 namespace hmp {
 
 /// Class Functions ///
 
-entity_t::entity_t( const box_t& pBBox, const color4u8_t* pColor ) :
+entity_t::entity_t( const llce::box_t& pBBox, const color4u8_t* pColor ) :
         mBBox( pBBox ), mVel( 0.0f, 0.0f ), mColor( pColor ), mLifetime( 0.0f ) {
     
 }
@@ -28,7 +28,7 @@ void entity_t::update( const float64_t pDT ) {
 
 
 void entity_t::render() const {
-    hmp::gfx::render_context_t entityRC( mBBox, mColor );
+    llce::gfx::render_context_t entityRC( mBBox, mColor );
     entityRC.render();
 }
 

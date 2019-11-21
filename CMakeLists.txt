@@ -87,7 +87,8 @@ endforeach()
 set(sim_cnf_target ${PROJECT_NAME}.cnf CACHE INTERNAL "" FORCE)
 
 add_library(${sim_cnf_target} INTERFACE)
-target_include_directories(${sim_cnf_target} INTERFACE ${sim_cnf_dir})
+add_dependencies(${sim_cnf_target} glm)
+target_include_directories(${sim_cnf_target} INTERFACE ${sim_cnf_dir} ${GLM_INCLUDE_DIRS})
 
 ################################################################################
 ### testing ####################################################################

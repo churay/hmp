@@ -5,7 +5,7 @@
 
 #include "hmp_entities.h"
 #include "hmp_rng_t.h"
-#include "hmp_gfx.h"
+#include "gfx.h"
 #include "hmp_sfx.h"
 #include "hmp_consts.h"
 #include "input.h"
@@ -69,7 +69,7 @@ struct output_t {
     uint32_t gfxBufferCBOs[GFX_BUFFER_COUNT];   // color buffers
     uint32_t gfxBufferDBOs[GFX_BUFFER_COUNT];   // depth buffers
     vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
-    box_t gfxBufferBoxs[GFX_BUFFER_COUNT];      // buffer locations
+    llce::box_t gfxBufferBoxs[GFX_BUFFER_COUNT];// buffer locations
 
     // Audio Output //
     SDL_AudioSpec sfxConfig;

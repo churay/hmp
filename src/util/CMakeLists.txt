@@ -26,10 +26,9 @@ file(GLOB  util_lib_headers  ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(util_lib_target llceutil CACHE INTERNAL "" FORCE)
 
 add_library(${util_lib_target} ${util_lib_sources})
-add_dependencies(${util_lib_target} glm)
 target_include_directories(${util_lib_target} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(${util_lib_target} PUBLIC ${sim_cnf_target})
-target_include_directories(${util_lib_target} PUBLIC ${SDL2_INCLUDE_DIRS} ${GLM_INCLUDE_DIRS})
+target_include_directories(${util_lib_target} PUBLIC ${SDL2_INCLUDE_DIRS})
 target_link_libraries(${util_lib_target} PUBLIC ${SDL2_LIBRARIES})
 
 ################################################################################

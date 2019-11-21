@@ -13,7 +13,7 @@
 #include <glm/ext/matrix_transform.hpp>
 
 #include "hmp_modes.h"
-#include "hmp_gfx.h"
+#include "gfx.h"
 #include "hmp_sfx.h"
 #include "hmp_data.h"
 #include "hmp.h"
@@ -40,15 +40,15 @@ extern "C" bool32_t boot( hmp::output_t* pOutput ) {
     // Initialize Graphics //
 
     vec2u32_t* gfxBuffRess = &pOutput->gfxBufferRess[0];
-    hmp::box_t* gfxBuffBoxs = &pOutput->gfxBufferBoxs[0];
+    llce::box_t* gfxBuffBoxs = &pOutput->gfxBufferBoxs[0];
 
-    gfxBuffBoxs[hmp::GFX_BUFFER_MASTER] = hmp::box_t( 0.0f, 0.0f, 1.0f, 1.0f );
-    gfxBuffBoxs[hmp::GFX_BUFFER_SIM] = hmp::box_t( 0.0f, 0.0f, 1.0f, 0.85f );
-    gfxBuffBoxs[hmp::GFX_BUFFER_UI] = hmp::box_t( 0.0f, 0.85f, 1.0f, 0.15f );
+    gfxBuffBoxs[hmp::GFX_BUFFER_MASTER] = llce::box_t( 0.0f, 0.0f, 1.0f, 1.0f );
+    gfxBuffBoxs[hmp::GFX_BUFFER_SIM] = llce::box_t( 0.0f, 0.0f, 1.0f, 0.85f );
+    gfxBuffBoxs[hmp::GFX_BUFFER_UI] = llce::box_t( 0.0f, 0.85f, 1.0f, 0.15f );
 
     // NOTE(JRC): The following code ensures that buffers have consistent aspect
     // ratios relative to their output spaces in screen space. This fact is crucial
-    // in making code work in 'hmp::gfx' related to fixing aspect ratios.
+    // in making code work in 'llce::gfx' related to fixing aspect ratios.
     gfxBuffRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
     for( uint32_t gfxBufferIdx = hmp::GFX_BUFFER_MASTER + 1; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
         gfxBuffRess[gfxBufferIdx] = {
@@ -140,7 +140,7 @@ extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hm
 
 
 extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    hmp::gfx::render_context_t hmpRC( hmp::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
+    llce::gfx::render_context_t hmpRC( llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
     hmpRC.render();
 
     bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pOutput );

@@ -10,7 +10,7 @@
 #include <glm/ext/scalar_constants.hpp>
 
 #include "hmp_modes.h"
-#include "hmp_gfx.h"
+#include "gfx.h"
 #include "hmp_sfx.h"
 #include "hmp_data.h"
 #include "hmp_entities.h"
@@ -29,22 +29,22 @@ const static hmp::sfx::waveform_t SFX_MENU_SELECT(
 /// Helper Functions ///
 
 void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    hmp::gfx::fbo_context_t simFBOC(
+    llce::gfx::fbo_context_t simFBOC(
         pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
         pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
 
     if( pState->roundPaused ) {
-        hmp::gfx::render_context_t boardRC(
-            hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+        llce::gfx::render_context_t boardRC(
+            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
             &hmp::color::BACKGROUND );
         boardRC.render();
 
         const vec2f32_t cMessagePos = { 0.5f, 0.5f };
         const vec2f32_t cMessageDims = { 1.0f, 0.25f };
-        hmp::gfx::render_context_t messageRC(
-            hmp::box_t(cMessagePos, cMessageDims, hmp::box_t::anchor_e::c), 
+        llce::gfx::render_context_t messageRC(
+            llce::box_t(cMessagePos, cMessageDims, llce::box_t::anchor_e::c), 
             &hmp::color::BACKGROUND );
-        hmp::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2 );
+        llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2 );
     } else {
         pState->boundsEnt.render();
         for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
@@ -55,14 +55,14 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
         if( !pState->roundStarted ) {
             const hmp::ball_t& ball = pState->ballEnt;
-            hmp::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
+            llce::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
         }
     }
 }
 
 
 void render_scoreboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    hmp::gfx::fbo_context_t simFBOC(
+    llce::gfx::fbo_context_t simFBOC(
         pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI],
         pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI] );
 
@@ -73,15 +73,15 @@ void render_scoreboard( const hmp::state_t* pState, const hmp::input_t* pInput, 
 void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
     const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
-    hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+    llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
-    hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
+    llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
     hmpRC.render();
 
     for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
         const uint32_t gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];
         const vec2u32_t& gfxBufferRes = pOutput->gfxBufferRess[gfxBufferIdx];
-        const hmp::box_t& gfxBufferBox = pOutput->gfxBufferBoxs[gfxBufferIdx];
+        const llce::box_t& gfxBufferBox = pOutput->gfxBufferBoxs[gfxBufferIdx];
 
         glBindFramebuffer( GL_READ_FRAMEBUFFER, gfxBufferFBO );
         glBindFramebuffer( GL_DRAW_FRAMEBUFFER, masterFBO );
@@ -104,25 +104,25 @@ bool32_t game::init( hmp::state_t* pState ) {
     pState->roundServer = hmp::team::east;
 
     const vec2f32_t boundsBasePos( 0.0f, 0.0f ), boundsDims( 1.0f, 1.0f );
-    pState->boundsEnt = hmp::bounds_t( hmp::box_t(boundsBasePos, boundsDims) );
+    pState->boundsEnt = hmp::bounds_t( llce::box_t(boundsBasePos, boundsDims) );
 
     for( uint32_t ricochetIdx = 0; ricochetIdx < 2; ricochetIdx++ ) {
         const vec2f32_t boundsPos = boundsBasePos + vec2f32_t( 0.0f, (ricochetIdx != 0) ? 1.0f : -1.0f );
-        pState->ricochetEnts[ricochetIdx] = hmp::bounds_t( hmp::box_t(boundsPos, boundsDims) );
+        pState->ricochetEnts[ricochetIdx] = hmp::bounds_t( llce::box_t(boundsPos, boundsDims) );
     }
 
     const vec2f32_t scoreBasePos( 0.0f, 0.0f ), scoreDims( 1.0f, 1.0f );
-    pState->scoreEnt = hmp::scoreboard_t( hmp::box_t(scoreBasePos, scoreDims) );
+    pState->scoreEnt = hmp::scoreboard_t( llce::box_t(scoreBasePos, scoreDims) );
 
     const vec2f32_t ballDims( 2.5e-2f, 2.5e-2f );
     const vec2f32_t ballPos = vec2f32_t( 0.5f, 0.5f ) - 0.5f * ballDims;
-    pState->ballEnt = hmp::ball_t( hmp::box_t(ballPos, ballDims) );
+    pState->ballEnt = hmp::ball_t( llce::box_t(ballPos, ballDims) );
 
     const vec2f32_t paddleDims( 2.5e-2f, 1.0e-1f );
     const vec2f32_t westPos = vec2f32_t( 2.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    pState->paddleEnts[hmp::team::west] = hmp::paddle_t( hmp::box_t(westPos, paddleDims), hmp::team::west );
+    pState->paddleEnts[hmp::team::west] = hmp::paddle_t( llce::box_t(westPos, paddleDims), hmp::team::west );
     const vec2f32_t eastPos = vec2f32_t( 1.0f - 3.0f * paddleDims[0], 0.5f - 0.5f * paddleDims[1] );
-    pState->paddleEnts[hmp::team::east] = hmp::paddle_t( hmp::box_t(eastPos, paddleDims), hmp::team::east );
+    pState->paddleEnts[hmp::team::east] = hmp::paddle_t( llce::box_t(eastPos, paddleDims), hmp::team::east );
 
     return true;
 }
@@ -206,8 +206,8 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
     hmp::ball_t& ballEnt = pState->ballEnt;
 
     if( !boundsEnt.mBBox.contains(ballEnt.mBBox) ) {
-        hmp::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
-        hmp::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
+        llce::interval_t ballX = ballEnt.mBBox.xbounds(), ballY = ballEnt.mBBox.ybounds();
+        llce::interval_t boundsX = boundsEnt.mBBox.xbounds(), boundsY = boundsEnt.mBBox.ybounds();
         if( !boundsY.contains(ballY) ) {
             uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
             ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
@@ -307,9 +307,9 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
     const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
-    hmp::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
+    llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
-    hmp::gfx::render_context_t hmpRC( hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
+    llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
     hmpRC.render();
 
     { // Header //
@@ -317,9 +317,9 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
         const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
         const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
 
-        hmp::gfx::render_context_t headerRC(
-            hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
-        hmp::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
+        llce::gfx::render_context_t headerRC(
+            llce::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
+        llce::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
     }
 
     { // Items //
@@ -330,11 +330,11 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
         for( uint32_t itemIdx = 0; itemIdx < hmp::MENU_ITEM_COUNT; itemIdx++ ) {
             vec2f32_t itemPos = cItemBase -
                 static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-            hmp::gfx::render_context_t itemRC(
-                hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+            llce::gfx::render_context_t itemRC(
+                llce::box_t(itemPos, cItemDims, llce::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
 
             if( itemIdx == pState->menuIdx ) { itemRC.render(); }
-            hmp::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
+            llce::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
         }
     }
 
@@ -390,11 +390,11 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
 bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     { // Render Reset Menu //
-        hmp::gfx::fbo_context_t menuFBOC(
+        llce::gfx::fbo_context_t menuFBOC(
             pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
             pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
-        hmp::gfx::render_context_t menuRC(
-            hmp::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+        llce::gfx::render_context_t menuRC(
+            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
             &hmp::color::BACKGROUND );
         menuRC.render();
 
@@ -412,9 +412,9 @@ bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, 
             const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
             const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
 
-            hmp::gfx::render_context_t headerRC(
-                hmp::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
-            hmp::gfx::text::render( headerText, headerColor );
+            llce::gfx::render_context_t headerRC(
+                llce::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
+            llce::gfx::text::render( headerText, headerColor );
         }
 
         { // Items //
@@ -425,11 +425,11 @@ bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, 
             for( uint32_t itemIdx = 0; itemIdx < hmp::RESET_ITEM_COUNT; itemIdx++ ) {
                 vec2f32_t itemPos = cItemBase -
                     static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-                hmp::gfx::render_context_t itemRC(
-                    hmp::box_t(itemPos, cItemDims, hmp::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+                llce::gfx::render_context_t itemRC(
+                    llce::box_t(itemPos, cItemDims, llce::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
 
                 if( itemIdx == pState->menuIdx ) { itemRC.render(); }
-                hmp::gfx::text::render( hmp::RESET_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
+                llce::gfx::text::render( hmp::RESET_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
             }
         }
     }

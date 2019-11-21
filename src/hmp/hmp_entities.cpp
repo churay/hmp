@@ -10,14 +10,14 @@
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
 
-#include "hmp_gfx.h"
+#include "gfx.h"
 #include "hmp_entities.h"
 
 namespace hmp {
 
 /// 'hmp::team_entity_t' Functions ///
 
-team_entity_t::team_entity_t( const box_t& pBBox, const team::team_e& pTeam ) :
+team_entity_t::team_entity_t( const llce::box_t& pBBox, const team::team_e& pTeam ) :
         entity_t( pBBox, &hmp::color::TEAM[pTeam] ), mTeam( pTeam ) {
     
 }
@@ -29,28 +29,28 @@ void team_entity_t::change( const team::team_e& pTeam ) {
 
 /// 'hmp::bounds_t' Functions ///
 
-bounds_t::bounds_t( const box_t& pBBox ) :
+bounds_t::bounds_t( const llce::box_t& pBBox ) :
         entity_t( pBBox, &hmp::color::BACKGROUND ) {
     
 }
 
 
 void bounds_t::render() const {
-    hmp::gfx::render_context_t baseRC( mBBox, mColor );
+    llce::gfx::render_context_t baseRC( mBBox, mColor );
     baseRC.render();
 
     // TODO(JRC): This 'brighten' operation only works because the source color
     // for the 'bounds_t' object is such that values don't overflow. In the future,
     // we need a more proper 'brighten' function that puts a ceiling on color values.
     const color4u8_t entityColor = static_cast<uint8_t>( 2 ) * *mColor;
-    hmp::gfx::render_context_t lineRC(
-        box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, box_t::anchor_e::c), &entityColor );
+    llce::gfx::render_context_t lineRC(
+        llce::box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, llce::box_t::anchor_e::c), &entityColor );
     lineRC.render();
 }
 
 /// 'hmp::ball_t' Functions ///
 
-ball_t::ball_t( const box_t& pBBox ) :
+ball_t::ball_t( const llce::box_t& pBBox ) :
         team_entity_t( pBBox, hmp::team::neutral ) {
     
 }
@@ -59,8 +59,8 @@ ball_t::ball_t( const box_t& pBBox ) :
 void ball_t::ricochet( const entity_t* pSurface ) {
     vec2f32_t contactVec = mBBox.center() - pSurface->mBBox.center();
     vec2f32_t contactNormal = contactVec; {
-        interval_t ballBoundsX = mBBox.xbounds(), ballBoundsY = mBBox.ybounds();
-        interval_t surfBoundsX = pSurface->mBBox.xbounds(), surfBoundsY = pSurface->mBBox.ybounds();
+        llce::interval_t ballBoundsX = mBBox.xbounds(), ballBoundsY = mBBox.ybounds();
+        llce::interval_t surfBoundsX = pSurface->mBBox.xbounds(), surfBoundsY = pSurface->mBBox.ybounds();
 
         // TODO(JRC): If it becomes relevant, fix the case where the ball
         // is completely contained in the surface; these cases will need
@@ -112,7 +112,7 @@ void ball_t::ricochet( const entity_t* pSurface ) {
 
 /// 'hmp::paddle_t' Functions ///
 
-paddle_t::paddle_t( const box_t& pBBox, const team::team_e& pTeam ) :
+paddle_t::paddle_t( const llce::box_t& pBBox, const team::team_e& pTeam ) :
         team_entity_t( pBBox, pTeam ), mDX( 0 ), mDY( 0 ) {
     
 }
@@ -134,7 +134,7 @@ void paddle_t::update( const float64_t pDT ) {
 
 /// 'hmp::scoreboard_t' Functions ///
 
-scoreboard_t::scoreboard_t( const box_t& pBBox ) :
+scoreboard_t::scoreboard_t( const llce::box_t& pBBox ) :
         entity_t( pBBox, &hmp::color::BORDER ) {
     mScores[hmp::team::west] = hmp::WINNING_SCORE;
     mScores[hmp::team::east] = hmp::WINNING_SCORE;
@@ -148,7 +148,7 @@ void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
 
 
 void scoreboard_t::render() const {
-    hmp::gfx::render_context_t entityRC( mBBox, mColor );
+    llce::gfx::render_context_t entityRC( mBBox, mColor );
     entityRC.render();
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
@@ -159,27 +159,27 @@ void scoreboard_t::render() const {
         const bool8_t isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
-        const auto teamAnchor = isTeamWest ? box_t::anchor_e::se : box_t::anchor_e::sw;
+        const auto teamAnchor = isTeamWest ? llce::box_t::anchor_e::se : llce::box_t::anchor_e::sw;
         const vec2f32_t teamBasePos = vec2f32_t( 0.5f, scoreboard_t::PADDING_WIDTH ) +
             teamOrient * vec2f32_t( scoreboard_t::PADDING_WIDTH, 0.0f );
         const vec2f32_t teamBaseDims = vec2f32_t( 0.5f, 1.0f ) -
             ( 2.0f * scoreboard_t::PADDING_WIDTH * vec2f32_t(1.0f, 1.0f) );
 
-        const hmp::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
-            hmp::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
+        const llce::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
+            llce::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
             teamRC.render();
 
-            const hmp::box_t scoreBox( isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor ); {
-                hmp::gfx::render_context_t scoreRC( scoreBox, &teamColorScaled );
+            const llce::box_t scoreBox( isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor ); {
+                llce::gfx::render_context_t scoreRC( scoreBox, &teamColorScaled );
                 scoreRC.render();
             }
 
-            const hmp::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
-                hmp::gfx::render_context_t textRC( textBox, 1.0f, &hmp::color::INTERFACE );
+            const llce::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
+                llce::gfx::render_context_t textRC( textBox, 1.0f, &hmp::color::INTERFACE );
 
                 char teamScoreBuffer[2];
                 std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
-                hmp::gfx::text::render( &teamScoreBuffer[0], teamColor );
+                llce::gfx::text::render( &teamScoreBuffer[0], teamColor );
             }
         }
     }

@@ -5,7 +5,7 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "hmp_entity_t.h"
-#include "hmp_box_t.h"
+#include "box_t.h"
 
 #include "hmp_consts.h"
 #include "consts.h"
@@ -17,7 +17,7 @@ class team_entity_t : public entity_t {
 
     /// Constructors ///
 
-    team_entity_t( const box_t& pBBox, const team::team_e& pTeam );
+    team_entity_t( const llce::box_t& pBBox, const team::team_e& pTeam );
 
     /// Class Functions ///
 
@@ -39,7 +39,7 @@ class bounds_t : public entity_t {
 
     /// Constructors ///
 
-    bounds_t( const box_t& pBBox );
+    bounds_t( const llce::box_t& pBBox );
 
     /// Class Functions ///
 
@@ -62,7 +62,7 @@ class ball_t : public team_entity_t {
 
     /// Constructors ///
 
-    ball_t( const box_t& pBBox );
+    ball_t( const llce::box_t& pBBox );
 
     /// Class Functions ///
 
@@ -83,7 +83,7 @@ class paddle_t : public team_entity_t {
 
     /// Constructors ///
 
-    paddle_t( const box_t& pBBox, const team::team_e& pTeam );
+    paddle_t( const llce::box_t& pBBox, const team::team_e& pTeam );
 
     /// Class Functions ///
 
@@ -109,7 +109,7 @@ class scoreboard_t : public entity_t {
 
     /// Constructors ///
 
-    scoreboard_t( const box_t& pBBox );
+    scoreboard_t( const llce::box_t& pBBox );
 
     /// Class Functions ///
 
