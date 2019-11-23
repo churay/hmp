@@ -19,6 +19,14 @@ option(LLCE_CAPTURE "Enable screen/state capture features (requires libpng/libff
 set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
 set(LLCE_FPS "60" CACHE STRING "The target frames per second for the application.")
 
+# TODO(JRC): This is a hacky way of determining if CMake was configured to build
+# in debug or release mode that should be replaced with something more robust.
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    set(LLCE_DEBUG ON CACHE BOOL "")
+else()
+    set(LLCE_DEBUG OFF CACHE BOOL "")
+endif()
+
 ################################################################################
 ### compiler/linker ############################################################
 ################################################################################

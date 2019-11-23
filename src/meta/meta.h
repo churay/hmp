@@ -12,10 +12,11 @@ namespace meta {
 /// State Types/Variables ///
 
 constexpr static uint32_t UI_FPS_FRAME_COUNT = 2 * LLCE_FPS;
+constexpr static color4u8_t UI_FPS_BACKGROUND_COLOR = { 0xFF, 0xFF, 0xFF, 0xFF };
 
 struct state_t {
     // FPS State //
-    llce::deque<float64_t, UI_FPS_FRAME_COUNT> dts;
+    llce::deque<float64_t, meta::UI_FPS_FRAME_COUNT> dts;
 };
 
 /// Input Types/Variables ///
@@ -37,13 +38,14 @@ struct output_t {
     vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
 };
 
+/// Functions ///
+
+bool32_t init( meta::state_t* pState, meta::input_t* pInput );
+bool32_t boot( meta::output_t* pOutput );
+bool32_t update( meta::state_t* pState, meta::input_t* pInput, const meta::output_t* pOutput, const float64_t pDT );
+bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const meta::output_t* pOutput );
+
 }
 
-extern "C" {
-    bool32_t init( hmp::state_t* pState, hmp::input_t* pInput );
-    bool32_t boot( hmp::output_t* pOutput );
-    bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hmp::output_t* pOutput, const float64_t pDT );
-    bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput );
-};
 
 #endif

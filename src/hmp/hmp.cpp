@@ -58,34 +58,15 @@ extern "C" bool32_t boot( hmp::output_t* pOutput ) {
     }
 
     for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-        uint32_t& gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];
-        uint32_t& gfxBufferCBO = pOutput->gfxBufferCBOs[gfxBufferIdx];
-        uint32_t& gfxBufferDBO = pOutput->gfxBufferDBOs[gfxBufferIdx];
-        const vec2u32_t& gfxBufferRes = pOutput->gfxBufferRess[gfxBufferIdx];
+        llce::gfx::fbo_t gfxBufferFBO( pOutput->gfxBufferRess[gfxBufferIdx] );
 
-        glGenFramebuffers( 1, &gfxBufferFBO );
-        glBindFramebuffer( GL_FRAMEBUFFER, gfxBufferFBO );
-
-        glGenTextures( 1, &gfxBufferCBO );
-        glBindTexture( GL_TEXTURE_2D, gfxBufferCBO );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-        glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA8, gfxBufferRes.x, gfxBufferRes.y,
-            0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, nullptr );
-        glFramebufferTexture2D( GL_FRAMEBUFFER,
-            GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gfxBufferCBO, 0 );
-
-        glGenTextures( 1, &gfxBufferDBO );
-        glBindTexture( GL_TEXTURE_2D, gfxBufferDBO );
-        glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32, gfxBufferRes.x, gfxBufferRes.y,
-            0, GL_DEPTH_COMPONENT, GL_UNSIGNED_INT, nullptr );
-        glFramebufferTexture2D( GL_FRAMEBUFFER,
-            GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gfxBufferDBO, 0 );
-
-        LLCE_ASSERT_ERROR(
-            glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE,
+        LLCE_ASSERT_ERROR( gfxBufferFBO.valid(),
             "Failed to initialize HMP frame buffer " << gfxBufferIdx << "; " <<
             "failed with frame buffer error " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << "." );
+
+        pOutput->gfxBufferFBOs[gfxBufferIdx] = gfxBufferFBO.mFrameID;
+        pOutput->gfxBufferCBOs[gfxBufferIdx] = gfxBufferFBO.mColorID;
+        pOutput->gfxBufferDBOs[gfxBufferIdx] = gfxBufferFBO.mDepthID;
     }
 
     glBindFramebuffer( GL_FRAMEBUFFER, 0 );

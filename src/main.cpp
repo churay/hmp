@@ -13,10 +13,9 @@
 #include <fstream>
 
 #include "hmp/hmp.h"
-// TODO(JRC): Add this once the build system is ready.
-// #ifdef LLCE_DEBUG
-// #include "meta/meta.h"
-// #endif
+#ifdef LLCE_DEBUG
+#include "meta/meta.h"
+#endif
 
 #include "timer_t.h"
 #include "memory_t.h"
@@ -45,9 +44,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
     const static float64_t csSimFPS = static_cast<float64_t>( LLCE_FPS );
-// #if LLCE_DEBUG
-//     static llce::deque<float64_t, csFPS> sBackupFTs;
-// #endif
 
     /// Parse Input Arguments ///
 
@@ -88,6 +84,16 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #if LLCE_DEBUG
     hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
     hmp::state_t* backupStates = (hmp::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::state_t) );
+#endif
+
+#if LLCE_DEBUG
+    // NOTE(JRC): The 'meta' module doesn't participate in loop-live editing, so its
+    // initialized with local data and the application's input.
+    meta::state_t metaStateData;
+    meta::output_t metaOutputData;
+    meta::state_t* metaState = &metaStateData;
+    meta::input_t* metaInput = (meta::input_t*)&inputs[1];
+    meta::output_t* metaOutput = &metaOutputData;
 #endif
 
     std::fstream recStateStream, recInputStream;
@@ -484,6 +490,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     isRunning &= dllInit( simState, simInput );
     isRunning &= dllBoot( simOutput );
+#if LLCE_DEBUG
+    if( cShowMeta ) {
+        isRunning &= meta::init( metaState, metaInput );
+        isRunning &= meta::boot( metaOutput );
+    }
+#endif
 
     // TODO(JRC): This isn't a great solution and it should be improved
     // if at all possible to be less 'raw'.
@@ -797,68 +809,34 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 #endif
 
 #if LLCE_DEBUG
-        // if( cShowMeta ) {
-        //     cResetViewport( cMetaViewportID );
+        if( cShowMeta ) {
+            cResetViewport( cMetaViewportID );
 
-        //     sBackupFTs.push_back( 1.0 / (simDT - std::min(0.0, simWT)) );
+            isRunning &= meta::update( metaState, metaInput, metaOutput, simDT );
+            isRunning &= meta::render( metaState, metaInput, metaOutput );
 
-        //     const static float32_t csMetaUILineWidth = 5.0f;
-        //     const static vec2f32_t csMetaUITargetPadding = { 0.0f, 0.25f };
+            glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+            glPushMatrix(); {
+                glm::mat4 matWorldView( 1.0f );
+                matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
+                matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+                glMultMatrixf( &matWorldView[0][0] );
 
-        //     glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-        //     glPushMatrix(); {
-        //         glm::mat4 matWorldView( 1.0f );
-        //         matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-        //         matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-        //         glMultMatrixf( &matWorldView[0][0] );
-
-        //         glPushMatrix(); { // Render Background //
-        //             const static color4u8_t* csMetaUIBackgroundColor = &csWhiteColor;
-
-        //             glColor4ubv( (uint8_t*)csMetaUIBackgroundColor );
-        //             glBegin( GL_QUADS ); {
-        //                 glVertex2f( 0.0f, 0.0f );
-        //                 glVertex2f( 0.0f, 1.0f );
-        //                 glVertex2f( 1.0f, 1.0f );
-        //                 glVertex2f( 1.0f, 0.0f );
-        //             } glEnd();
-        //         } glPopMatrix();
-
-        //         glPushMatrix(); { // Render Trend Line //
-        //             const static color4u8_t* csMetaUITrendColor = &csRedColor;
-        //             const static uint16_t csMetaUITrendPattern = 0xFFFF;
-
-        //             glm::mat4 matWorldView( 1.0f );
-        //             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(1.0f, 1.0f - csMetaUITargetPadding.y, 1.0f) );
-        //             glMultMatrixf( &matWorldView[0][0] );
-
-        //             glLineWidth( csMetaUILineWidth );
-        //             glLineStipple( 1, csMetaUITrendPattern );
-        //             glColor4ubv( (uint8_t*)csMetaUITrendColor );
-        //             glBegin( GL_LINE_STRIP ); {
-        //                 for( uint32_t frameIdx = 0; frameIdx < sBackupFTs.size(); frameIdx++ ) {
-        //                     float64_t frameU = 1.0f - ( (frameIdx + 0.0f) / sBackupFTs.capacity() );
-        //                     float64_t frameV = sBackupFTs.back( frameIdx ) / sBackupFTs.capacity();
-        //                     glVertex2f( frameU, frameV );
-        //                 }
-        //             } glEnd();
-        //         } glPopMatrix();
-
-        //         glPushMatrix(); { // Render UI Elements //
-        //             const static color4u8_t* csMetaUITargetColor = &csBlueColor;
-        //             const static uint16_t csMetaUITargetPattern = 0x00FF;
-
-        //             glLineWidth( csMetaUILineWidth );
-        //             glLineStipple( 1, csMetaUITargetPattern );
-        //             glColor4ubv( (uint8_t*)csMetaUITargetColor );
-        //             glBegin( GL_LINES ); {
-        //                 glVertex2f( 0.0f - csMetaUITargetPadding.x, 1.0f - csMetaUITargetPadding.y );
-        //                 glVertex2f( 1.0f + csMetaUITargetPadding.x, 1.0f - csMetaUITargetPadding.y );
-        //             } glEnd();
-        //         } glPopMatrix();
-
-        //     } glPopMatrix();
-        // }
+                glEnable( GL_TEXTURE_2D ); {
+                    // NOTE(JRC): This is required to get the expected/correct texture color,
+                    // but it's unclear as to why. OpenGL may perform color mixing by default?
+                    glColor4ubv( (uint8_t*)&csWhiteColor );
+                    glBindTexture( GL_TEXTURE_2D, metaOutput->gfxBufferCBOs[meta::GFX_BUFFER_MASTER] );
+                    glBegin( GL_QUADS ); {
+                        glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
+                        glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
+                        glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
+                        glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+                    } glEnd();
+                    glBindTexture( GL_TEXTURE_2D, 0 );
+                } glDisable( GL_TEXTURE_2D );
+            } glPopMatrix();
+        }
 #endif
 
         SDL_GL_SwapWindow( window );

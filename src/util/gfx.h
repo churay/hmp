@@ -21,6 +21,16 @@ struct render_context_t {
 };
 
 
+struct fbo_t {
+    fbo_t( const vec2u32_t pFBRes );
+    ~fbo_t();
+
+    bool32_t valid() const;
+
+    uint32_t mFrameID, mColorID, mDepthID;
+};
+
+
 struct fbo_context_t {
     fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes );
     ~fbo_context_t();
