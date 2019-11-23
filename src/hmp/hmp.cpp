@@ -69,9 +69,6 @@ extern "C" bool32_t boot( hmp::output_t* pOutput ) {
         pOutput->gfxBufferDBOs[gfxBufferIdx] = gfxBufferFBO.mDepthID;
     }
 
-    glBindFramebuffer( GL_FRAMEBUFFER, 0 );
-    glBindTexture( GL_TEXTURE_2D, 0 );
-
     return true;
 }
 

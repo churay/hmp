@@ -84,7 +84,7 @@ bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const
         glBegin( GL_LINE_STRIP ); {
             for( uint32_t frameIdx = 0; frameIdx < pState->dts.size(); frameIdx++ ) {
                 float64_t frameU = 1.0f - ( (frameIdx + 0.0f) / pState->dts.capacity() );
-                float64_t frameV = pState->dts.back( frameIdx ) / pState->dts.capacity();
+                float64_t frameV = ( 1.0 / pState->dts.back(frameIdx) ) / LLCE_FPS;
                 glVertex2f( frameU, frameV );
             }
         } glEnd();

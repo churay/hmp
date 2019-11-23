@@ -812,7 +812,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( cShowMeta ) {
             cResetViewport( cMetaViewportID );
 
-            isRunning &= meta::update( metaState, metaInput, metaOutput, simDT );
+            isRunning &= meta::update( metaState, metaInput, metaOutput, simDT - std::min(0.0, simWT) );
             isRunning &= meta::render( metaState, metaInput, metaOutput );
 
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -828,10 +828,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     glColor4ubv( (uint8_t*)&csWhiteColor );
                     glBindTexture( GL_TEXTURE_2D, metaOutput->gfxBufferCBOs[meta::GFX_BUFFER_MASTER] );
                     glBegin( GL_QUADS ); {
-                        glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
-                        glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
+                        // TODO(JRC): Figure out why -1 is needed for the base instead
+                        // of 0 but only when rendering the frame buffer texture.
+                        glTexCoord2f( 0.0f, 0.0f ); glVertex2f( -1.0f, -1.0f );
+                        glTexCoord2f( 0.0f, 1.0f ); glVertex2f( -1.0f, 1.0f );
                         glTexCoord2f( 1.0f, 1.0f ); glVertex2f( 1.0f, 1.0f );
-                        glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, 0.0f );
+                        glTexCoord2f( 1.0f, 0.0f ); glVertex2f( 1.0f, -1.0f );
                     } glEnd();
                     glBindTexture( GL_TEXTURE_2D, 0 );
                 } glDisable( GL_TEXTURE_2D );
