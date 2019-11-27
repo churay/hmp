@@ -193,8 +193,11 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         // but slightly lower fidelity won't be too important at the scale of this sim.
         float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
         float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
+        pState->ballEnt.mBBox.mPos =
+            vec2f32_t( 0.5f, 0.5f ) - 0.5f * pState->ballEnt.mBBox.mDims;
         pState->ballEnt.mVel = hmp::ball_t::HINT_VEL *
             vec2f32_t( roundDir * glm::cos(ballTheta), glm::sin(ballTheta) );
+        pState->ballEnt.change( hmp::team::team_e::neutral );
     } if( !pState->roundStarted && pState->rt >= hmp::ROUND_START_TIME ) {
         pState->ballEnt.mVel *= hmp::ball_t::MOVE_VEL / glm::length( pState->ballEnt.mVel );
         pState->roundStarted = true;
@@ -218,9 +221,9 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
             pState->roundServer = isWestScore ? hmp::team::east : hmp::team::west;
 
-            ballEnt.mBBox.mPos = vec2f32_t( 0.5f, 0.5f ) - 0.5f * ballEnt.mBBox.mDims;
+            // NOTE(JRC): Triggers the simulation loop to set the new speed and
+            // location for the ball.
             ballEnt.mVel = vec2f32_t( 0.0f, 0.0f );
-            ballEnt.change( hmp::team::team_e::neutral );
 
             pState->rt = 0.0f;
             pState->roundStarted = false;
