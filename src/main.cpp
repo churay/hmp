@@ -58,6 +58,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     // -m: display a second window w/ meta information
     const bool32_t cShowMeta = LLCE_DEBUG ? llce::cli::exists( "-m", pArgs, pArgCount ) : false;
+    const float32_t cShowMetaF = static_cast<float32_t>( cShowMeta );
 
     // -r [replay-id]: replay in simulation state
     const char8_t* cSimStateArg = llce::cli::value( "-r", pArgs, pArgCount );
@@ -231,27 +232,40 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         SDL_GL_SetSwapInterval( 1 ); // vsync
     }
 
-    // TODO(JRC): This code will need to be updated to be more flexible should a
-    // more general HUD solution (e.g. viewports at arbitrary positions around the
-    // sim viewport) be ultimately desirable.
+    const vec2i32_t cWindowInitDims = { 640, 480 + cShowMetaF * (640 - 480) };
+    // NOTE(JRC): This could become non-const if the window positions ever
+    // become configurable.
+    const llce::box_t cViewportBoxs[] = {
+        llce::box_t(cShowMetaF * vec2f32_t(0.0f, 0.25f), vec2f32_t(1.0f, 1.0f) - cShowMetaF * vec2f32_t(0.0f, 0.25f)),
+        llce::box_t(vec2f32_t(0.0f, 0.0f), cShowMetaF * vec2f32_t(1.0f, 0.25f)) };
+
+    vec2i32_t windowDims = cWindowInitDims;
+    vec2i32_t viewportRess[] = { {0, 0}, {0, 0} };
+    vec2i32_t viewportPoss[] = { {0, 0}, {0, 0} };
     const uint32_t cSimViewportID = 0, cMetaViewportID = 1;
-    vec2i32_t viewportDims[] = { {640, 480}, {cShowMeta * 640, cShowMeta * (640 - 480)} };
-    vec2i32_t viewportPoss[] = { {0, viewportDims[cMetaViewportID].y}, {0, 0} };
-    const uint32_t cViewportCount = ARRAY_LEN( viewportDims );
+    const uint32_t cViewportCount = ARRAY_LEN( viewportRess );
 
-    SDL_Window* window = nullptr;
-    SDL_GLContext windowGL = nullptr;
-    vec2i32_t windowDims = {
-        viewportDims[cSimViewportID].x,
-        viewportDims[cSimViewportID].y + viewportDims[cMetaViewportID].y };
+    const auto cRecalcViewports = [ &cViewportBoxs, &windowDims, &viewportRess, &viewportPoss ] () {
+        const uint32_t cViewportCount = ARRAY_LEN( viewportRess );
+        for( uint32_t viewportIdx = 0; viewportIdx < cViewportCount; viewportIdx++ ) {
+            viewportRess[viewportIdx] = {
+                cViewportBoxs[viewportIdx].mDims.x * windowDims.x,
+                cViewportBoxs[viewportIdx].mDims.y * windowDims.y
+            };
+            viewportPoss[viewportIdx] = {
+                cViewportBoxs[viewportIdx].mPos.x * windowDims.x,
+                cViewportBoxs[viewportIdx].mPos.y * windowDims.y
+            };
+        }
+    };
 
-    const auto cResetViewport = [ &viewportDims, &viewportPoss ] ( const uint32_t pViewportIdx ) {
+    const auto cResetViewport = [ &viewportRess, &viewportPoss ] ( const uint32_t pViewportIdx ) {
         glViewport(
             viewportPoss[pViewportIdx].x, viewportPoss[pViewportIdx].y,
-            viewportDims[pViewportIdx].x, viewportDims[pViewportIdx].y );
+            viewportRess[pViewportIdx].x, viewportRess[pViewportIdx].y );
         glScissor(
             viewportPoss[pViewportIdx].x, viewportPoss[pViewportIdx].y,
-            viewportDims[pViewportIdx].x, viewportDims[pViewportIdx].y );
+            viewportRess[pViewportIdx].x, viewportRess[pViewportIdx].y );
 
         glMatrixMode( GL_PROJECTION );
         glLoadIdentity();
@@ -261,9 +275,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         glLoadIdentity();
     };
 
-    // TODO(JRC): Re-enable window resizing once the windows are converted to
-    // be in terms of ratios instead of absolute pixel amounts.
-    const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | // SDL_WINDOW_RESIZABLE |
+    SDL_Window* window = nullptr;
+    SDL_GLContext windowGL = nullptr;
+
+    const uint32_t cWindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE |
         ( cIsSimulating ? SDL_WINDOW_HIDDEN : 0 );
 
     { // Initialize Window //
@@ -276,6 +291,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             cWindowFlags );                             // Window Flags
         LLCE_ASSERT_ERROR( window != nullptr,
             "SDL failed to create window instance; " << SDL_GetError() );
+
+        cRecalcViewports();
 
         const path_t cIconPath( 2, cAssetPath.cstr(), "icon.png" );
         static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION];
@@ -540,9 +557,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } else if( event.type == SDL_WINDOWEVENT  && (
                    event.window.event == SDL_WINDOWEVENT_RESIZED ||
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
-                // TODO(JRC): Re-enable window resizing once the windows are converted to
-                // be in terms of ratios instead of absolute pixel amounts.
-                // SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+                SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+                cRecalcViewports();
             }
         }
 
@@ -687,7 +703,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
-            const float32_t viewRatio = ( viewportDims[cSimViewportID].y + 0.0f ) / ( viewportDims[cSimViewportID].x + 0.0f );
+            const float32_t viewRatio = ( viewportRess[cSimViewportID].y + 0.0f ) / ( viewportRess[cSimViewportID].x + 0.0f );
             glm::mat4 matWorldView( 1.0f );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
