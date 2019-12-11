@@ -15,4 +15,12 @@ typedef double real;
 #define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
 #define LLCE_FPS @LLCE_FPS@
 
+// FIXME(JRC): This should really be spruced up if possible; using an include
+// definition that depends on the relative locations of the main source file
+// and the simulation header feels pretty confusing and fragile.
+#define LLCE_SIMULATION @LLCE_SIMULATION@
+#define LLCE_SIMULATION_HEADER "@LLCE_SIMULATION@/@LLCE_SIMULATION@.h"
+#define LLCE_SIMULATION_DATA_LIBRARY "lib@LLCE_SIMULATION@data.so"
+#define LLCE_SIMULATION_SOURCE_LIBRARY "lib@LLCE_SIMULATION@.so"
+
 #endif

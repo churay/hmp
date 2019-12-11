@@ -12,11 +12,6 @@
 #include <cstdio>
 #include <fstream>
 
-#include "hmp/hmp.h"
-#ifdef LLCE_DEBUG
-#include "meta/meta.h"
-#endif
-
 #include "timer_t.h"
 #include "memory_t.h"
 #include "buffer_t.h"
@@ -26,16 +21,23 @@
 #include "cli.h"
 #include "consts.h"
 
+#include LLCE_SIMULATION_HEADER
+#ifdef LLCE_DEBUG
+#include "meta/meta.h"
+#endif
+
+namespace llsim = LLCE_SIMULATION;
+
 typedef std::ios_base::openmode ioflag_t;
 typedef llce::platform::path_t path_t;
 typedef llce::buffer_t buffer_t;
 
 typedef const int64_t& (*reduce_f)( const int64_t&, const int64_t& );
 
-typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
-typedef bool32_t (*boot_f)( hmp::output_t* );
-typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const hmp::output_t*, const float64_t );
-typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::output_t* );
+typedef bool32_t (*init_f)( llsim::state_t*, llsim::input_t* );
+typedef bool32_t (*boot_f)( llsim::output_t* );
+typedef bool32_t (*update_f)( llsim::state_t*, llsim::input_t*, const llsim::output_t*, const float64_t );
+typedef bool32_t (*render_f)( const llsim::state_t*, const llsim::input_t*, const llsim::output_t* );
 
 typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
 typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
@@ -76,15 +78,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
 
     llce::memory_t mem( 2, &cBufferLengths[0], cBufferAddress );
-    hmp::input_t* inputs = (hmp::input_t*)mem.allocate( cSimBufferIdx, 2 * sizeof(hmp::input_t) );
+    llsim::input_t* inputs = (llsim::input_t*)mem.allocate( cSimBufferIdx, 2 * sizeof(llsim::input_t) );
 
-    hmp::state_t* simState = (hmp::state_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::state_t) );
-    hmp::input_t* simInput = &inputs[0];
-    hmp::output_t* simOutput = (hmp::output_t*)mem.allocate( cSimBufferIdx, sizeof(hmp::output_t) );
+    llsim::state_t* simState = (llsim::state_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::state_t) );
+    llsim::input_t* simInput = &inputs[0];
+    llsim::output_t* simOutput = (llsim::output_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
-    hmp::input_t* backupInputs = (hmp::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::input_t) );
-    hmp::state_t* backupStates = (hmp::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(hmp::state_t) );
+    llsim::input_t* backupInputs = (llsim::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::input_t) );
+    llsim::state_t* backupStates = (llsim::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::state_t) );
 #endif
 
 #if LLCE_DEBUG
@@ -125,7 +127,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Load Dynamic Shared Libraries ///
 
-    const static char8_t* csDLLFileNames[] = { "libhmpdata.so", "libhmp.so" };
+    const static char8_t* csDLLFileNames[] = { LLCE_SIMULATION_DATA_LIBRARY, LLCE_SIMULATION_SOURCE_LIBRARY };
     const static uint32_t csDLLCount = ARRAY_LEN( csDLLFileNames );
     const uint32_t cDataDLLID = 0, cCodeDLLID = 1;
 
@@ -386,7 +388,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /*
     const auto cResetAudio = [ &audioDeviceID, &audioBuffer, &simOutput ] () {
         SDL_ClearQueuedAudio( audioDeviceID );
-        simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
+        simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
         std::memset( &audioBuffer[0], 0, sizeof(audioBuffer) );
     };
     */
@@ -471,7 +473,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // NOTE(JRC): This is the true input stream for the application.
     // The simulation stream is kept separate so its inputs don't interfere
     // with application-level functionality (e.g. debugging contexts, etc.).
-    hmp::input_t* appInput = &inputs[1];
+    llsim::input_t* appInput = &inputs[1];
 
     const SDL_Scancode cFXKeyGroup[] = {
         SDL_SCANCODE_F1, SDL_SCANCODE_F2, SDL_SCANCODE_F3, SDL_SCANCODE_F4,
@@ -517,8 +519,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // TODO(JRC): This isn't a great solution and it should be improved
     // if at all possible to be less 'raw'.
     simOutput->sfxConfig = realAudioConfig;
-    simOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
-    simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
+    simOutput->sfxBuffers[llsim::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
+    simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
 
     while( isRunning ) {
         simTimer.split();
@@ -573,8 +575,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 #if LLCE_DEBUG
         uint64_t backupIdx = simFrame % cBackupBufferCount;
-        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(hmp::input_t) );
-        std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(hmp::state_t) );
+        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
+        std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
 
         if( isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
@@ -611,7 +613,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     recFrameCount = (uint32_t)recInputStream.tellg();
                     recInputStream.seekg( 0, std::ios_base::end );
                     recFrameCount = (uint32_t)recInputStream.tellg() - recFrameCount;
-                    recFrameCount /= sizeof( hmp::input_t );
+                    recFrameCount /= sizeof( llsim::input_t );
                 } else {
                     repFrameIdx = 0;
                     recStateStream.close();
@@ -627,7 +629,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 } else {
                     recStateStream.open( slotStateFilePath, cIOModeR );
                     recInputStream.seekg( 0 );
-                    recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
+                    recStateStream.read( (bit8_t*)simState, sizeof(llsim::state_t) );
                     recStateStream.close();
                 }
             } else if( recSlotIdx != 1 && !isReplaying ) {
@@ -636,7 +638,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 if( !isRecording ) {
                     recFrameCount = 0;
                     recStateStream.open( slotStateFilePath, cIOModeW );
-                    recStateStream.write( (bit8_t*)simState, sizeof(hmp::state_t) );
+                    recStateStream.write( (bit8_t*)simState, sizeof(llsim::state_t) );
                     recStateStream.close();
                     recInputStream.open( slotInputFilePath, cIOModeW );
                 } else {
@@ -651,13 +653,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // that hot-saving before the number of total backups is possible.
                 uint64_t backupStartIdx = ( backupIdx + 1 ) % cBackupBufferCount;
                 recStateStream.open( slotStateFilePath, cIOModeW );
-                recStateStream.write( (bit8_t*)&backupStates[backupStartIdx], sizeof(hmp::state_t) );
+                recStateStream.write( (bit8_t*)&backupStates[backupStartIdx], sizeof(llsim::state_t) );
                 recStateStream.close();
 
                 recInputStream.open( slotInputFilePath, cIOModeW );
                 for( uint32_t bufferIdx = 0; bufferIdx < cBackupBufferCount; bufferIdx++ ) {
                     uint64_t bbIdx = (backupStartIdx + bufferIdx) % cBackupBufferCount;
-                    recInputStream.write( (bit8_t*)&backupInputs[bbIdx], sizeof(hmp::input_t) );
+                    recInputStream.write( (bit8_t*)&backupInputs[bbIdx], sizeof(llsim::input_t) );
                 }
                 recInputStream.close();
             }
@@ -673,7 +675,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
             const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
-            simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = csAudioBufferFrames - cQueuedAudioFrames;
+            simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = csAudioBufferFrames - cQueuedAudioFrames;
         }
 
         if( doStep ) {
@@ -682,17 +684,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             llce::input::readKeyboard( simInput->keyboard );
 #if LLCE_DEBUG
             if( isRecording ) {
-                recInputStream.write( (bit8_t*)simInput, sizeof(hmp::input_t) );
+                recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );
                 recFrameCount++;
             } if( isReplaying ) {
                 if( recInputStream.peek() == EOF || recInputStream.eof() ) {
                     isRunning = !( cIsSimulating && repFrameIdx != 0 );
                     repFrameIdx = 0;
                     recStateStream.seekg( 0 );
-                    recStateStream.read( (bit8_t*)simState, sizeof(hmp::state_t) );
+                    recStateStream.read( (bit8_t*)simState, sizeof(llsim::state_t) );
                     recInputStream.seekg( 0 );
                 }
-                recInputStream.read( (bit8_t*)simInput, sizeof(hmp::input_t) );
+                recInputStream.read( (bit8_t*)simInput, sizeof(llsim::input_t) );
                 repFrameIdx++;
             }
 #endif
@@ -715,7 +717,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?
                 glColor4ubv( (uint8_t*)&csWhiteColor );
-                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
+                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llsim::GFX_BUFFER_MASTER] );
                 glBegin( GL_QUADS ); {
                     glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
                     glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
@@ -726,10 +728,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
-        if( simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] > 0 && !cIsSimulating ) {
+        if( simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] > 0 && !cIsSimulating ) {
             SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
-                simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] * csAudioBytesPerFrame );
-            simOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] = 0;
+                simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] * csAudioBytesPerFrame );
+            simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
         }
 
 #if LLCE_DEBUG
@@ -786,7 +788,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
             glEnable( GL_TEXTURE_2D );
-            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[hmp::GFX_BUFFER_MASTER] );
+            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llsim::GFX_BUFFER_MASTER] );
 
             char8_t slotCaptureFileName[csOutputFileNameLength];
             std::snprintf( &slotCaptureFileName[0],
@@ -798,7 +800,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             // but it's unclear why this is necessary given that they're stored
             // internally in the order requested. Debugging may be required in the
             // future when adapting this code to work on multiple platforms.
-            vec2u32_t captureDims = simOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
+            vec2u32_t captureDims = simOutput->gfxBufferRess[llsim::GFX_BUFFER_MASTER];
             glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
             // TODO(JRC): Ultimately, it would be best if the data could just

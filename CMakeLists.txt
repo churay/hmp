@@ -12,12 +12,13 @@ include(ExternalProject)
 ### user config ################################################################
 ################################################################################
 
-option(LLCE_DYLOAD "Enable dynamic loading of loop-live library." ON)
-option(LLCE_FDOUBLE "Enable double precision floating-point values." OFF)
-option(LLCE_CAPTURE "Enable screen/state capture features (requires libpng/libffmpeg)." OFF)
+set(LLCE_DYLOAD ON CACHE BOOL "Enable dynamic loading of loop-live library.")
+set(LLCE_FDOUBLE OFF CACHE BOOL "Enable double precision floating-point values.")
+set(LLCE_CAPTURE OFF CACHE BOOL "Enable screen/state capture features (requires libpng).")
 
-set(LLCE_MAX_RESOLUTION "1048576" CACHE STRING "The maximum resolution for application graphics buffers.")
-set(LLCE_FPS "60" CACHE STRING "The target frames per second for the application.")
+set(LLCE_MAX_RESOLUTION 1048576 CACHE STRING "The maximum resolution for application graphics buffers.")
+set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
+set(LLCE_SIMULATION demo CACHE STRING "The name of the hardness simulation (e.g. 'demo' for 'hmp/src/demo').")
 
 # TODO(JRC): This is a hacky way of determining if CMake was configured to build
 # in debug or release mode that should be replaced with something more robust.

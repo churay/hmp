@@ -17,14 +17,15 @@
 file(GLOB sim_exe_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
 file(GLOB sim_exe_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
-set(sim_exe_subdirs util plat hmp)
-foreach(sim_exe_subdir ${sim_exe_subdirs})
+foreach(sim_exe_subdir util plat)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${sim_exe_subdir}")
 endforeach()
 
 if(LLCE_DEBUG)
     add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/meta")
 endif()
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${LLCE_SIMULATION}")
 
 ################################################################################
 ### targets ####################################################################
@@ -40,11 +41,11 @@ if(LLCE_DEBUG)
     target_link_libraries(${sim_exe_target} PRIVATE ${meta_lib_target})
 endif()
 
-target_include_directories(${sim_exe_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/hmp")
+target_include_directories(${sim_exe_target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${LLCE_SIMULATION}")
 if(LLCE_DYLOAD)
-    add_dependencies(${sim_exe_target} ${hmp_dat_target} ${hmp_lib_target})
+    add_dependencies(${sim_exe_target} ${${LLCE_SIMULATION}_dat_target} ${${LLCE_SIMULATION}_lib_target})
 else()
-    target_link_libraries(${sim_exe_target} PRIVATE ${hmp_dat_target} ${hmp_lib_target})
+    target_link_libraries(${sim_exe_target} PRIVATE ${${LLCE_SIMULATION}_dat_target} ${${LLCE_SIMULATION}_lib_target})
 endif()
 
 ################################################################################
