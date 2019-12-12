@@ -19,6 +19,7 @@
 #include "platform.h"
 #include "input.h"
 #include "cli.h"
+#include "box_t.h"
 #include "consts.h"
 
 #include LLCE_SIMULATION_HEADER

@@ -20,6 +20,8 @@ typedef double real;
 // and the simulation header feels pretty confusing and fragile.
 #define LLCE_SIMULATION @LLCE_SIMULATION@
 #define LLCE_SIMULATION_HEADER "@LLCE_SIMULATION@/@LLCE_SIMULATION@.h"
+// FIXME(JRC): In general, it shouldn't be assumed that there will always be two
+// libraries for each simulation with the same name template.
 #define LLCE_SIMULATION_DATA_LIBRARY "lib@LLCE_SIMULATION@data.so"
 #define LLCE_SIMULATION_SOURCE_LIBRARY "lib@LLCE_SIMULATION@.so"
 
