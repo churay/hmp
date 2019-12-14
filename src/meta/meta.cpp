@@ -64,7 +64,7 @@ bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const
         pOutput->gfxBufferRess[meta::GFX_BUFFER_MASTER] );
 
     llce::gfx::render_context_t metaRC(
-        llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+        llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),
         &meta::UI_FPS_BACKGROUND_COLOR );
     metaRC.render();
 
