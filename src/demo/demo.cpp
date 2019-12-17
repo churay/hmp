@@ -2,6 +2,8 @@
 #include <SDL2/SDL_opengl.h>
 #include <SDL2/SDL_opengl_glext.h>
 
+#include <glm/common.hpp>
+
 #include <cmath>
 #include <cstring>
 
@@ -54,8 +56,10 @@ extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
 
 
 extern "C" bool32_t update( demo::state_t* pState, demo::input_t* pInput, const demo::output_t* pOutput, const float64_t pDT ) {
-    pState->hsvColor.x = std::fmod( 
-        pState->hsvColor.x + demo::COLOR_VELOCITY * pDT, 360.0f );
+    // NOTE(JRC): The hue is normalized from the standard [0.0, 360.0) range
+    // in simplify conversion calculations.
+    pState->hsvColor.x = std::fmod(
+        pState->hsvColor.x + demo::COLOR_VELOCITY * pDT, 1.0f );
     pState->hsvColor.y = demo::COLOR_SATURATION;
     pState->hsvColor.z = demo::COLOR_VALUE;
     pState->hsvColor.w = 1.0f;
@@ -65,48 +69,18 @@ extern "C" bool32_t update( demo::state_t* pState, demo::input_t* pInput, const 
 
 
 extern "C" bool32_t render( const demo::state_t* pState, const demo::input_t* pInput, const demo::output_t* pOutput ) {
-    // NOTE(JRC): This code was adapted taken from this GitHub snippet:
-    // https://gist.github.com/fairlight1337/4935ae72bcbcc1ba5c72
+    // NOTE(JRC): This code was adapted taken from this tutorial:
+    // https://www.ronja-tutorials.com/2019/04/16/hsv-colorspace.html
     const static auto hsv2rgb = [] ( const color4f32_t& hsv ) {
-        color4f32_t rgb = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-        float fC = hsv.z * hsv.y; // Chroma
-        float fHPrime = std::fmod( hsv.x / 60.0, 6 );
-        float fX = fC * (1 - fabs(fmod(fHPrime, 2) - 1));
-        float fM = hsv.z - fC;
-
-        if(0 <= fHPrime && fHPrime < 1) {
-            rgb.x = fC;
-            rgb.y = fX;
-            rgb.z = 0;
-        } else if(1 <= fHPrime && fHPrime < 2) {
-            rgb.x = fX;
-            rgb.y = fC;
-            rgb.z = 0;
-        } else if(2 <= fHPrime && fHPrime < 3) {
-            rgb.x = 0;
-            rgb.y = fC;
-            rgb.z = fX;
-        } else if(3 <= fHPrime && fHPrime < 4) {
-            rgb.x = 0;
-            rgb.y = fX;
-            rgb.z = fC;
-        } else if(4 <= fHPrime && fHPrime < 5) {
-            rgb.x = fX;
-            rgb.y = 0;
-            rgb.z = fC;
-        } else if(5 <= fHPrime && fHPrime < 6) {
-            rgb.x = fC;
-            rgb.y = 0;
-            rgb.z = fX;
-        } else {
-            rgb.x = 0;
-            rgb.y = 0;
-            rgb.z = 0;
-        }
-
-        rgb += fM * color4f32_t{ 1.0f, 1.0f, 1.0f, 0.0f };
-
+        color4f32_t rgb = {
+            std::fabs( hsv.x * 6.0f - 3.0f ) - 1.0f,
+            2.0f - std::fabs( hsv.x * 6.0f - 2.0f ),
+            2.0f - std::fabs( hsv.x * 6.0f - 4.0f ),
+            1.0f
+        };
+        rgb = glm::clamp( rgb, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
+        rgb = glm::mix( {1.0f, 1.0f, 1.0f, 1.0f}, rgb, hsv.y );
+        rgb = hsv.z * rgb;
         return rgb;
     };
 
