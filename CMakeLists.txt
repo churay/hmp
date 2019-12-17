@@ -28,6 +28,12 @@ else()
     set(LLCE_DEBUG OFF CACHE BOOL "")
 endif()
 
+if(LLCE_DYLOAD)
+    set(BUILD_SHARED_LIBS ON)
+else()
+    set(BUILD_SHARED_LIBS OFF)
+endif()
+
 ################################################################################
 ### compiler/linker ############################################################
 ################################################################################
@@ -47,7 +53,6 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "Default install path." FORCE)
 endif()
 
-set(BUILD_SHARED_LIBS ON)
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
