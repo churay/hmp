@@ -14,25 +14,22 @@
 ### sources ####################################################################
 ################################################################################
 
-file(GLOB meta_lib_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB meta_lib_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB meta_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB meta_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
-set(meta_lib_target llcemeta CACHE INTERNAL "" FORCE)
-
-add_library(${meta_lib_target} ${meta_lib_sources})
-target_link_libraries(${meta_lib_target} PUBLIC ${util_lib_target})
-target_include_directories(${meta_lib_target} PRIVATE ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-target_link_libraries(${meta_lib_target} PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+add_library(llcemeta ${meta_sources})
+target_include_directories(llcemeta PRIVATE ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
+target_link_libraries(llcemeta PUBLIC llceutil ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 
 ################################################################################
 ### packaging ##################################################################
 ################################################################################
 
-install(TARGETS ${meta_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS llcemeta DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 ################################################################################
 ### sub-packaging ##############################################################

@@ -16,26 +16,22 @@
 ### sources ####################################################################
 ################################################################################
 
-file(GLOB  util_lib_sources  ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB  util_lib_headers  ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB util_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB util_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
-set(util_lib_target llceutil CACHE INTERNAL "" FORCE)
-
-add_library(${util_lib_target} ${util_lib_sources})
-target_include_directories(${util_lib_target} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(${util_lib_target} PUBLIC ${sim_cnf_target})
-target_include_directories(${util_lib_target} PUBLIC ${SDL2_INCLUDE_DIRS})
-target_link_libraries(${util_lib_target} PUBLIC ${SDL2_LIBRARIES})
+add_library(llceutil ${util_sources})
+target_include_directories(llceutil PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${SDL2_INCLUDE_DIRS})
+target_link_libraries(llceutil PUBLIC llceconfig ${SDL2_LIBRARIES})
 
 ################################################################################
 ### packaging ##################################################################
 ################################################################################
 
-install(TARGETS ${util_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS llceutil DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 ################################################################################
 ### sub-packaging ##############################################################

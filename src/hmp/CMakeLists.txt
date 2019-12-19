@@ -25,22 +25,19 @@ list(REMOVE_ITEM  hmp_lib_headers     ${hmp_dat_headers})
 ### targets ####################################################################
 ################################################################################
 
-set(hmp_dat_target hmpdata CACHE INTERNAL "" FORCE)
-set(hmp_lib_target hmp CACHE INTERNAL "" FORCE)
-if(LLCE_DYLOAD)
+if(BUILD_SHARED_LIBS)
     set(hmp_lib_type MODULE)
 endif()
 
-add_library(${hmp_dat_target} ${hmp_lib_type} ${hmp_dat_sources})
-add_library(${hmp_lib_target} ${hmp_lib_type} ${hmp_lib_sources})
-foreach(hmp_target ${hmp_dat_target} ${hmp_lib_target})
-    target_link_libraries(${hmp_target} PUBLIC ${util_lib_target})
+add_library(hmpdata ${hmp_lib_type} ${hmp_dat_sources})
+add_library(hmp ${hmp_lib_type} ${hmp_lib_sources})
+foreach(hmp_target hmpdata hmp)
     target_include_directories(${hmp_target} PRIVATE ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-    target_link_libraries(${hmp_target} PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+    target_link_libraries(${hmp_target} PUBLIC llceutil ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 endforeach()
 
-if(NOT LLCE_DYLOAD)
-    target_link_libraries(${hmp_lib_target} PRIVATE ${hmp_dat_target})
+if(NOT BUILD_SHARED_LIBS)
+    target_link_libraries(hmp PRIVATE hmpdata)
 endif()
 
 ################################################################################
@@ -54,8 +51,8 @@ endif()
 # extend to parallel builds (though they probably do at least for Makefile outputs).
 
 install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
-install(TARGETS ${hmp_dat_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(TARGETS ${hmp_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS hmpdata DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS hmp DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 
 ################################################################################

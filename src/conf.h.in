@@ -24,5 +24,7 @@ typedef double real;
 // libraries for each simulation with the same name template.
 #define LLCE_SIMULATION_DATA_LIBRARY "lib@LLCE_SIMULATION@data.so"
 #define LLCE_SIMULATION_SOURCE_LIBRARY "lib@LLCE_SIMULATION@.so"
+// TODO(JRC): Include string indicating the header for the window and other
+// such metadata.
 
 #endif

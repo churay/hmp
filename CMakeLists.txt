@@ -2,7 +2,7 @@
 ### metadata ###################################################################
 ################################################################################
 
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 
 project(hmp VERSION "0.2.0" LANGUAGES C CXX)
 
@@ -20,18 +20,10 @@ set(LLCE_MAX_RESOLUTION 1048576 CACHE STRING "The maximum resolution for applica
 set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
 set(LLCE_SIMULATION demo CACHE STRING "The name of the hardness simulation (e.g. 'demo' for 'hmp/src/demo').")
 
-# TODO(JRC): This is a hacky way of determining if CMake was configured to build
-# in debug or release mode that should be replaced with something more robust.
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    set(LLCE_DEBUG ON CACHE BOOL "")
+    set(LLCE_DEBUG ON CACHE BOOL "An internal flag that controls the debug state for the application." FORCE)
 else()
-    set(LLCE_DEBUG OFF CACHE BOOL "")
-endif()
-
-if(LLCE_DYLOAD)
-    set(BUILD_SHARED_LIBS ON)
-else()
-    set(BUILD_SHARED_LIBS OFF)
+    set(LLCE_DEBUG OFF CACHE BOOL "An internal flag that controls the debug state for the application." FORCE)
 endif()
 
 ################################################################################
@@ -53,6 +45,7 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "Default install path." FORCE)
 endif()
 
+set(BUILD_SHARED_LIBS ${LLCE_DYLOAD})
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
@@ -86,23 +79,23 @@ set(GLM_INCLUDE_DIRS ${PROJECT_BINARY_DIR}/glm)
 ### sources ####################################################################
 ################################################################################
 
-set(sim_cnf_dir ${PROJECT_BINARY_DIR}/config)
-file(GLOB_RECURSE sim_cnf_files ${PROJECT_SOURCE_DIR}/src/*.h*.in)
-foreach(sim_cnf_file ${sim_cnf_files})
-    get_filename_component(sim_cnf_filename ${sim_cnf_file} NAME)
-    string(REGEX REPLACE "\.in" "" sim_cnf_basename ${sim_cnf_filename})
-    configure_file(${sim_cnf_file} ${sim_cnf_dir}/${sim_cnf_basename})
+set(llce_config_dir ${PROJECT_BINARY_DIR}/config)
+file(GLOB_RECURSE llce_config_files ${PROJECT_SOURCE_DIR}/src/*.h*.in)
+foreach(llce_config_file ${llce_config_files})
+    get_filename_component(llce_config_filename ${llce_config_file} NAME)
+    string(REGEX REPLACE "\.in" "" llce_config_basename ${llce_config_filename})
+    configure_file(${llce_config_file} ${llce_config_dir}/${llce_config_basename})
 endforeach()
 
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
-set(sim_cnf_target ${PROJECT_NAME}.cnf CACHE INTERNAL "" FORCE)
+add_library(llceconfig INTERFACE)
+add_dependencies(llceconfig glm)
+target_include_directories(llceconfig INTERFACE ${llce_config_dir} ${GLM_INCLUDE_DIRS})
 
-add_library(${sim_cnf_target} INTERFACE)
-add_dependencies(${sim_cnf_target} glm)
-target_include_directories(${sim_cnf_target} INTERFACE ${sim_cnf_dir} ${GLM_INCLUDE_DIRS})
+add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 
 ################################################################################
 ### testing ####################################################################
@@ -116,12 +109,6 @@ target_include_directories(${sim_cnf_target} INTERFACE ${sim_cnf_dir} ${GLM_INCL
 
 install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
-
-################################################################################
-### sub-packaging ##############################################################
-################################################################################
-
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 
 ################################################################################
 ### finalizing #################################################################

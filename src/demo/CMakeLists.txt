@@ -25,22 +25,19 @@ list(REMOVE_ITEM  demo_lib_headers     ${demo_dat_headers})
 ### targets ####################################################################
 ################################################################################
 
-set(demo_dat_target demodata CACHE INTERNAL "" FORCE)
-set(demo_lib_target demo CACHE INTERNAL "" FORCE)
-if(LLCE_DYLOAD)
+if(BUILD_SHARED_LIBS)
     set(demo_lib_type MODULE)
 endif()
 
-add_library(${demo_dat_target} ${demo_lib_type} ${demo_dat_sources})
-add_library(${demo_lib_target} ${demo_lib_type} ${demo_lib_sources})
-foreach(demo_target ${demo_dat_target} ${demo_lib_target})
-    target_link_libraries(${demo_target} PUBLIC ${util_lib_target})
+add_library(demodata ${demo_lib_type} ${demo_dat_sources})
+add_library(demo ${demo_lib_type} ${demo_lib_sources})
+foreach(demo_target demodata demo)
     target_include_directories(${demo_target} PRIVATE ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-    target_link_libraries(${demo_target} PUBLIC ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
+    target_link_libraries(${demo_target} PUBLIC llceutil ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
 endforeach()
 
-if(NOT LLCE_DYLOAD)
-    target_link_libraries(${demo_lib_target} PRIVATE ${demo_dat_target})
+if(NOT BUILD_SHARED_LIBS)
+    target_link_libraries(demo PRIVATE demodata)
 endif()
 
 ################################################################################
@@ -54,8 +51,8 @@ endif()
 # extend to parallel builds (though they probably do at least for Makefile outputs).
 
 install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
-install(TARGETS ${demo_dat_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(TARGETS ${demo_lib_target} DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS demodata DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(TARGETS demo DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 
 ################################################################################

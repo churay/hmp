@@ -25,8 +25,7 @@ cmake -DCMAKE_C_COMPILER=/usr/bin/clang -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -D
     ${PROJ_PATH}
 make -j${BUILD_TASKS} && make -j${BUILD_TASKS} install
 
-if [[ ! -f ${PROJ_PATH}/hmp.out ]]; then
-    ln -s ${PROJ_PATH}/build/install/hmp.out ${PROJ_PATH}/hmp.out
-fi
+rm -f ${PROJ_PATH}/llce.out
+ln -s ${PROJ_PATH}/build/install/llcesim ${PROJ_PATH}/llce.out
 
 popd &> /dev/null
