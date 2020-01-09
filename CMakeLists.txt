@@ -118,11 +118,10 @@ install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 # there are a lot more variables you can set, and some
 # you need to set for some package types, but we want to
 # be minimal here.
-set(CPACK_PACKAGE_NAME "hmp")
-set(CPACK_PACKAGE_VERSION "0.0.1")
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
 
 # We don't want to split our program up into several incomplete pieces.
 set(CPACK_MONOLITHIC_INSTALL TRUE)
 
-# This must be last
 include(CPack)

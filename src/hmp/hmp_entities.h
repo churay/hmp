@@ -90,7 +90,6 @@ class paddle_t : public team_entity_t {
     void update( const float64_t pDT );
     void move( const int32_t pDX, const int32_t pDY );
 
-
     /// Class Fields ///
 
     public:
