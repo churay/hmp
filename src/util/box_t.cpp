@@ -61,7 +61,7 @@ bool32_t box_t::exbed( const box_t& pOther ) {
         mDims = vec2f32_t( mDims[0], ty.mMax - ty.mMin );
     }
 
-    return false;
+    return true;
 }
 
 
