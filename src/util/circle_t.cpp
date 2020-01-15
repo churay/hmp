@@ -29,7 +29,7 @@ bool32_t circle_t::embed( const circle_t& pOther ) {
     if( success && !pOther.contains(*this) ) {
         vec2f32_t toOther = pOther.mCenter - mCenter;
         vec2f32_t toEmbed = glm::normalize( toOther ) *
-            ( std::abs(glm::length(toOther) - pOther.mRadius) - mRadius );
+            ( glm::length(toOther) - mRadius + pOther.mRadius );
         mCenter += toEmbed;
     }
 
@@ -41,7 +41,7 @@ bool32_t circle_t::exbed( const circle_t& pOther ) {
     if( (*this).overlaps(pOther) ) {
         vec2f32_t toSelf = mCenter - pOther.mCenter;
         vec2f32_t toExbed = glm::normalize( toSelf ) *
-            ( std::abs(pOther.mRadius - glm::length(toSelf)) + mRadius );
+            ( mRadius + pOther.mRadius - glm::length(toSelf) );
         mCenter += toExbed;
     }
 
