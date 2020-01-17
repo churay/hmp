@@ -32,3 +32,7 @@ lib/*
 
 ## Data Files ##
 out/*
+
+dat/*
+!dat/*.tff
+!dat/demo.png

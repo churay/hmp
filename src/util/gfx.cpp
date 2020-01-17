@@ -195,6 +195,8 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
     }
 }
 
+/// 'llce::gfx::vector' Functions ///
+
 void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor ) {
     const static float64_t csHeadRatio = 2.5 / 10.0;
     const static float64_t csTailRatio = 1.0 - csHeadRatio;

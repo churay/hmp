@@ -26,7 +26,7 @@ elif ! [[ -f "${OUTPUT_PATH}/input${REPLAY_ID}.dat" && -f "${OUTPUT_PATH}/state$
     echo "ERROR: Replay doesn't exist for replay number ${REPLAY_ID}"
     EXIT_CODE=2
 else
-    ${PROJ_PATH}/hmp.out -r ${REPLAY_ID}
+    ${PROJ_PATH}/llce.out -r ${REPLAY_ID}
     ${FFMPEG} -framerate ${REPLAY_FPS} -r ${REPLAY_FPS} \
         -i ${OUTPUT_PATH}/render${REPLAY_ID}-%d.png -c:v libx264 \
         -pix_fmt yuv420p -y -crf 0 ${REPLAY_BASE_PATH}

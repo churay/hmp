@@ -20,7 +20,7 @@ set(LLCE_MAX_RESOLUTION 1048576 CACHE STRING "The maximum resolution for applica
 set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
 set(LLCE_SIMULATION demo CACHE STRING "The name of the hardness simulation (e.g. 'demo' for 'hmp/src/demo').")
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(LLCE_DEBUG ON CACHE BOOL "An internal flag that controls the debug state for the application." FORCE)
 else()
     set(LLCE_DEBUG OFF CACHE BOOL "An internal flag that controls the debug state for the application." FORCE)
@@ -107,7 +107,8 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/src")
 ### packaging ##################################################################
 ################################################################################
 
-install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(DIRECTORY dat DESTINATION ${CMAKE_INSTALL_PREFIX} FILES_MATCHING REGEX ".*\.ttf$")
+install(FILES dat/${LLCE_SIMULATION}.png DESTINATION ${CMAKE_INSTALL_PREFIX}/dat RENAME "icon.png")
 install(DIRECTORY DESTINATION ${CMAKE_INSTALL_PREFIX}/out)
 
 ################################################################################

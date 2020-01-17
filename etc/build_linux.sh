@@ -4,7 +4,7 @@
 
 BUILD_TYPE=${1:-Debug}
 CONFIG_TYPE=${2:-Default}
-SIM_TYPE=${3:-hmp}
+SIM_TYPE=${3:-demo}
 BUILD_TASKS=$(lscpu | sed -r -n 's/(^CPU[(]s[)]:.*([0-9]+).*$)/\2/p')
 
 SCRIPT_PATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
