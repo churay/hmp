@@ -498,7 +498,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
-    bool32_t isCapturing = LLCE_CAPTURE && cIsSimulating;
+    bool32_t isCapturing = LLCE_CAPTURE & cIsSimulating;
     uint32_t currCaptureIdx = 0;
 
     llce::timer_t simTimer( csSimFPS, llce::timer_t::ratio_e::fps );

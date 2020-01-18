@@ -29,7 +29,7 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${LLCE_SIMULATION}")
 
 add_executable(llcesim ${llce_sources})
-target_link_libraries(llcesim PRIVATE llceutil llceplat $<$<BOOL:LLCE_DEBUG>:llcemeta>)
+target_link_libraries(llcesim PRIVATE llceutil llceplat $<$<BOOL:${LLCE_DEBUG}>:llcemeta>)
 target_include_directories(llcesim PRIVATE ${SDL2_INCLUDE_DIRS} ${SDL2_ttf_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
 target_link_libraries(llcesim PRIVATE ${SDL2_LIBRARIES} ${SDL2_ttf_LIBRARIES} ${OPENGL_LIBRARIES} ${CMAKE_DL_LIBS})
 
