@@ -1,12 +1,17 @@
 #include <sstream>
 
-#include <glm/ext/vector_float2.hpp>
+#include <glm/common.hpp>
 
 #include "box_t.h"
 
 namespace llce {
 
 /// Class Functions ///
+
+box_t::box_t() :
+        mPos( 0.0f, 0.0f ), mDims( 0.0f, 0.0f ) {
+    
+}
 
 box_t::box_t(
         const vec2f32_t& pPos, const vec2f32_t& pDims, const box_t::anchor_e pAnchor ) :

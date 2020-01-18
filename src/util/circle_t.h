@@ -14,6 +14,7 @@ class circle_t {
 
     /// Constructors ///
 
+    circle_t();
     circle_t( const vec2f32_t& pCenter, const float32_t pRadius );
     circle_t( const float32_t pCenterX, const float32_t pCenterY, const float32_t pRadius );
 

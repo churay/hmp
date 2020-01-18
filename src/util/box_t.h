@@ -20,6 +20,7 @@ class box_t {
 
     /// Constructors ///
 
+    box_t();
     box_t(
         const vec2f32_t& pPos, const vec2f32_t& pDims,
         const anchor_e pAnch = anchor_e::sw );

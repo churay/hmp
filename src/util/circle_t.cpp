@@ -11,6 +11,11 @@ namespace llce {
 
 /// Class Functions ///
 
+circle_t::circle_t() :
+        mCenter( 0.0f, 0.0f ), mRadius( 0.0f ) {
+    
+}
+
 circle_t::circle_t( const vec2f32_t& pCenter, const float32_t pRadius ) :
         mCenter( pCenter ), mRadius( pRadius ) {
     
