@@ -2,6 +2,7 @@
 #define LLCE_GFX_H
 
 #include "box_t.h"
+#include "circle_t.h"
 #include "consts.h"
 
 namespace llce {
@@ -44,6 +45,10 @@ namespace text {
 
 namespace vector {
     void render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor );
+};
+
+namespace circle {
+    void render( const circle_t& pCircle, const color4u8_t* pColor );
 };
 
 };

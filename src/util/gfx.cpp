@@ -233,7 +233,38 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
     }
 
     // GFX Environment Teardown //
-    
+
+    glPopAttrib();
+    glPopMatrix();
+}
+
+/// 'llce::gfx::circle' Functions ///
+
+void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
+    const static uint32_t csSegmentCount = 20;
+
+    // GFX Environment Setup //
+
+    glPushMatrix();
+    glm::mat4 matCircleSpace( 1.0f );
+    matCircleSpace *= glm::translate( glm::mat4(1.0f), vec3f32_t(pCircle.mCenter.x, pCircle.mCenter.y, 0.0f) );
+    matCircleSpace *= glm::scale( glm::mat4(1.0f), glm::vec3(pCircle.mRadius / 2.0f, pCircle.mRadius / 2.0f, 1.0f) );
+    glMultMatrixf( &matCircleSpace[0][0] );
+
+    glPushAttrib( GL_CURRENT_BIT );
+    glColor4ubv( (uint8_t*)pColor );
+
+    { // Rendering //
+        glBegin( GL_POLYGON );
+        for( uint32_t segmentIdx = 0; segmentIdx < csSegmentCount; segmentIdx++ ) {
+            float32_t segmentRadians = 2.0f * M_PI * ( segmentIdx / (csSegmentCount + 0.0f) );
+            glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
+        }
+        glEnd();
+    }
+
+    // GFX Environment Teardown //
+
     glPopAttrib();
     glPopMatrix();
 }
