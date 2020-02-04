@@ -89,7 +89,7 @@ float32_t interval_t::length() const {
 
 bool32_t interval_t::empty() const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
-    return mMin > mMax || !valid();
+    return mMin >= mMax || !valid();
 }
 
 
