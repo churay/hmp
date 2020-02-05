@@ -54,6 +54,12 @@ float32_t interval_t::exbed( const interval_t& pOther ) {
 }
 
 
+float32_t interval_t::wrap( const float32_t pValue ) const {
+    float32_t wrapValue = std::fmod( pValue, mMax - mMin );
+    return ( wrapValue < 0.0f ) ? mMax + wrapValue : mMin + wrapValue;
+}
+
+
 bool32_t interval_t::contains( const float32_t pValue ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin <= pValue && pValue <= mMax;
