@@ -25,6 +25,7 @@ class interval_t {
     float32_t exbed( const interval_t& pOther );
 
     float32_t wrap( const float32_t pValue ) const;
+    float32_t interp( const float32_t pValue ) const;
 
     bool32_t contains( const float32_t pValue ) const;
     bool32_t contains( const interval_t& pOther ) const;
