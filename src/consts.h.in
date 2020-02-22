@@ -34,6 +34,12 @@ typedef glm::vec<2, real_t, glm::defaultp> vec2rBW_t;
 typedef glm::vec<3, real_t, glm::defaultp> vec3rBW_t;
 typedef glm::vec<4, real_t, glm::defaultp> vec4rBW_t;
 
+// NOTE(JRC): These truncated arrays are generally used for 2D directional
+// or boolean calculations. They can be replaced with 4-component equivalents
+// if needed.
+typedef glm::vec<2, uint8_t, glm::defaultp> vec2u8_t;
+typedef glm::vec<2, int8_t, glm::defaultp> vec2i8_t;
+
 // NOTE(JRC): These can only be passed directly to OpenGL's color array functions
 // using '(uint8_t*)&color4u8_t', but this is only because 'GLM_FORCE_XYZW_ONLY' is enabled.
 typedef vec4u8_t color4u8_t;
