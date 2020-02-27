@@ -49,6 +49,7 @@ namespace vector {
 
 namespace circle {
     void render( const circle_t& pCircle, const color4u8_t* pColor );
+    void render( const circle_t& pCircle, const float32_t pStartRadians, const float32_t pEndRadians, const color4u8_t* pColor );
 };
 
 };

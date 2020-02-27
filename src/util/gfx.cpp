@@ -241,7 +241,12 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
 /// 'llce::gfx::circle' Functions ///
 
 void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
-    const static uint32_t csSegmentCount = 20;
+    circle::render( pCircle, 0.0f, 2.0f * M_PI, pColor );
+}
+
+
+void circle::render( const circle_t& pCircle, const float32_t pStartRadians, const float32_t pEndRadians, const color4u8_t* pColor ) {
+    const static uint32_t csSegmentsPer2PI = 20;
 
     // GFX Environment Setup //
 
@@ -254,10 +259,14 @@ void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
     glPushAttrib( GL_CURRENT_BIT );
     glColor4ubv( (uint8_t*)pColor );
 
+    // FIXME(JRC): The following code crashes for very small intervals as they cause
+    // the interpolation scheme to divide by zero.
     { // Rendering //
+        const interval_t cRadianInterval( pStartRadians, pEndRadians );
+        const uint32_t cSegmentCount = std::ceil( cRadianInterval.length() * csSegmentsPer2PI );
         glBegin( GL_POLYGON );
-        for( uint32_t segmentIdx = 0; segmentIdx < csSegmentCount; segmentIdx++ ) {
-            float32_t segmentRadians = 2.0f * M_PI * ( segmentIdx / (csSegmentCount + 0.0f) );
+        for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
+            float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
             glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
         }
         glEnd();
