@@ -305,10 +305,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             llce::platform::pngLoad(cIconPath, (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight),
             "Failed to load icon at path '" << cIconPath << "'." );
 
-        const uint32_t cRMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0xFF000000 : 0x000000FF;
-        const uint32_t cGMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x00FF0000 : 0x0000FF00;
-        const uint32_t cBMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x0000FF00 : 0x00FF0000;
-        const uint32_t cAMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x000000FF : 0xFF000000;
+        const uint32_t cRMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0xff000000 : 0x000000ff;
+        const uint32_t cGMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x00ff0000 : 0x0000ff00;
+        const uint32_t cBMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x0000ff00 : 0x00ff0000;
+        const uint32_t cAMask = (SDL_BYTEORDER == SDL_BIG_ENDIAN) ? 0x000000ff : 0xff000000;
 
         SDL_Surface* windowIcon = nullptr;
         windowIcon = SDL_CreateRGBSurfaceFrom( (bit8_t*)&sIconBuffer[0], iconWidth, iconHeight,
@@ -409,15 +409,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         "SDL-TTF failed to create font; " << TTF_GetError() );
 
     const static color4u8_t csBlackColor = { 0x00, 0x00, 0x00, 0x00 };
-    const static color4u8_t csWhiteColor = { 0xFF, 0xFF, 0xFF, 0xFF };
-    const static color4u8_t csRedColor = { 0xFF, 0x00, 0x00, 0xFF };
-    const static color4u8_t csGreenColor = { 0x00, 0xFF, 0x00, 0xFF };
-    const static color4u8_t csBlueColor = { 0x00, 0x00, 0xFF, 0xFF };
+    const static color4u8_t csWhiteColor = { 0xff, 0xff, 0xff, 0xff };
+    const static color4u8_t csRedColor = { 0xff, 0x00, 0x00, 0xff };
+    const static color4u8_t csGreenColor = { 0x00, 0xff, 0x00, 0xff };
+    const static color4u8_t csBlueColor = { 0x00, 0x00, 0xff, 0xff };
 
 #if LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
     uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
-    color4u8_t textureColors[] = { {0xFF, 0x00, 0x00, 0xFF}, {0x00, 0xFF, 0x00, 0xFF}, {0x00, 0x00, 0xFF, 0xFF} };
+    color4u8_t textureColors[] = { {0xff, 0x00, 0x00, 0xff}, {0x00, 0xff, 0x00, 0xff}, {0x00, 0x00, 0xff, 0xff} };
     char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
 

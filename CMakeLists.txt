@@ -18,7 +18,7 @@ set(LLCE_CAPTURE OFF CACHE BOOL "Enable screen/state capture features (requires 
 
 set(LLCE_MAX_RESOLUTION 1048576 CACHE STRING "The maximum resolution for application graphics buffers.")
 set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
-set(LLCE_SIMULATION demo CACHE STRING "The name of the hardness simulation (e.g. 'demo' for 'hmp/src/demo').")
+set(LLCE_SIMULATION demo CACHE STRING "The name of the harness simulation (e.g. 'demo' for 'hmp/src/demo').")
 
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(LLCE_DEBUG ON CACHE BOOL "An internal flag that controls the debug state for the application." FORCE)
