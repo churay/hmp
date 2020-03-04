@@ -1,0 +1,23 @@
+#ifndef LLCE_UTIL_H
+#define LLCE_UTIL_H
+
+#include <glm/glm.hpp>
+#include <glm/common.hpp>
+
+namespace llce {
+
+namespace util {
+
+/// Namespace Functions ///
+
+template <typename T>
+T normalize( const T& pVector ) {
+    return ( glm::length(pVector) > glm::epsilon<float32_t>() ) ?
+        glm::normalize( pVector ) : pVector;
+}
+
+};
+
+};
+
+#endif
