@@ -264,7 +264,8 @@ void circle::render( const circle_t& pCircle, const float32_t pStartRadians, con
     { // Rendering //
         const interval_t cRadianInterval( pStartRadians, pEndRadians );
         const uint32_t cSegmentCount = std::ceil( cRadianInterval.length() * csSegmentsPer2PI );
-        glBegin( GL_POLYGON );
+        glBegin( GL_TRIANGLE_FAN );
+        glVertex2f( 0.0f, 0.0f );
         for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
             float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
             glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
