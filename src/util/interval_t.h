@@ -10,10 +10,15 @@ namespace llce {
 class interval_t {
     public:
 
+    /// Class Attributes ///
+
+    enum class anchor_e : uint8_t { avg = 0, ext = 1 };
+
     /// Constructors ///
 
     interval_t( const float32_t pCenter = 0.0f );
-    interval_t( const float32_t pMin, const float32_t pMax );
+    interval_t( const float32_t pValue1, const float32_t pValue2,
+        const anchor_e pAnch = anchor_e::ext );
 
     /// Operators ///
 

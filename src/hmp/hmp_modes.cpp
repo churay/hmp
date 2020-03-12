@@ -191,7 +191,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
         // NOTE(JRC): I'm not convinced that I've chosen the correct scale value
         // for the random number to bring it into a reasonable floating point range,
         // but slightly lower fidelity won't be too important at the scale of this sim.
-        float64_t ballThetaSeed = ( pState->rng.next() % (1 << 16) ) / ( (1 << 16) + 0.0 );
+        float64_t ballThetaSeed = pState->rng.nextf();
         float64_t ballTheta = 2 * ballMaxTheta * ballThetaSeed - ballMaxTheta;
         pState->ballEnt.mBBox.mPos =
             vec2f32_t( 0.5f, 0.5f ) - 0.5f * pState->ballEnt.mBBox.mDims;

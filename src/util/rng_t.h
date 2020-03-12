@@ -1,7 +1,5 @@
-#ifndef HMP_RNG_T_H
-#define HMP_RNG_T_H
-
-#include <sstream>
+#ifndef LLCE_RNG_T_H
+#define LLCE_RNG_T_H
 
 #include "consts.h"
 
@@ -9,7 +7,7 @@
 // congruential generator (LCG) architype. In specific, this LCG implements
 // MMIX by Donald Knuth, which is a mixed method generator.
 
-namespace hmp {
+namespace llce {
 
 class rng_t {
     public:
@@ -27,6 +25,7 @@ class rng_t {
     /// Class Functions ///
 
     uint64_t next();
+    float64_t nextf();
 
     /// Class Fields ///
 
@@ -36,6 +35,6 @@ class rng_t {
 
 }
 
-// std::ostream& operator<<( std::ostream& pOS, const hmp::rng_t& pRNG );
+// std::ostream& operator<<( std::ostream& pOS, const llce::rng_t& pRNG );
 
 #endif

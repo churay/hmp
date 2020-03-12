@@ -16,7 +16,7 @@ class box_t {
 
     /// Class Attributes ///
 
-    enum class anchor_e : uint8_t { sw=0, se=1, nw=2, ne=3, c=7 };
+    enum class anchor_e : uint8_t { sw = 0, se = 1, nw = 2, ne = 3, c = 7 };
 
     /// Constructors ///
 

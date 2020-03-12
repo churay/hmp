@@ -82,7 +82,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->mid = hmp::mode::boot_id;
     pState->pmid = hmp::mode::menu_id;
 
-    pState->rng = hmp::rng_t( hmp::RNG_SEED );
+    pState->rng = llce::rng_t( hmp::RNG_SEED );
     pState->synth = hmp::sfx::synth_t();
 
     // Initialize Input //
