@@ -70,6 +70,10 @@ size_t capacity() const {
     return N;
 }
 
+bool empty() const {
+    return mSize == 0;
+}
+
 private:
 
 /// Private Functions ///
