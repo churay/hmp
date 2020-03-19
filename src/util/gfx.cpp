@@ -241,7 +241,7 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
 /// 'llce::gfx::circle' Functions ///
 
 void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
-    circle::render( pCircle, 0.0f, 2.0f * M_PI, pColor );
+    circle::render( pCircle, 0.0f, 2.0f * glm::pi<float32_t>(), pColor );
 }
 
 

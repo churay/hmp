@@ -1,6 +1,7 @@
 #ifndef HMP_ENTITIES_T_H
 #define HMP_ENTITIES_T_H
 
+#include <glm/common.hpp>
 #include <glm/ext/scalar_constants.hpp>
 #include <glm/ext/vector_float2.hpp>
 
@@ -58,7 +59,7 @@ class ball_t : public team_entity_t {
 
     constexpr static float32_t MOVE_VEL = 5.0e-1f; // units: world / seconds
     constexpr static float32_t HINT_VEL = MOVE_VEL / 5.0e1f; // units: world / seconds
-    constexpr static float32_t MAX_RICOCHET_ANGLE = ( 3.0f / 5.0f ) * ( M_PI / 2.0f ); // units: radians
+    constexpr static float32_t MAX_RICOCHET_ANGLE = ( 3.0f / 5.0f ) * glm::half_pi<float32_t>(); // units: radians
 
     /// Constructors ///
 
