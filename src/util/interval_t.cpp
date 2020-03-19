@@ -20,7 +20,7 @@ interval_t::interval_t( const float32_t pValue1, const float32_t pValue2,
         mMax = std::max( pValue1, pValue2 );
     } else if( pAnchor == interval_t::anchor_e::avg ) {
         mMin = pValue1 - pValue2 / 2.0f;
-        mMax = pValue2 + pValue2 / 2.0f;
+        mMax = pValue1 + pValue2 / 2.0f;
     }
 }
 
