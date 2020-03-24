@@ -151,6 +151,87 @@ fbo_context_t::~fbo_context_t() {
     glScissor( mScissor[0].x, mScissor[0].y, mScissor[1].x, mScissor[1].y );
 }
 
+/// 'llce::gfx::color' Functions ///
+
+color4f32_t color::u82f32( const color4u8_t& pColorU8 ) {
+    return {
+        pColorU8.x / 255.0f,
+        pColorU8.y / 255.0f,
+        pColorU8.z / 255.0f,
+        pColorU8.w / 255.0f };
+}
+
+
+color4u8_t color::f322u8( const color4f32_t& pColorF32 ) {
+    return {
+        std::floor(pColorF32.x >= 1.0f ? 255 : pColorF32.x * 256.0f),
+        std::floor(pColorF32.y >= 1.0f ? 255 : pColorF32.y * 256.0f),
+        std::floor(pColorF32.z >= 1.0f ? 255 : pColorF32.z * 256.0f),
+        std::floor(pColorF32.w >= 1.0f ? 255 : pColorF32.w * 256.0f) };
+}
+
+
+// NOTE(JRC): This code was adapted taken from this tutorial:
+// https://www.ronja-tutorials.com/2019/04/16/hsv-colorspace.html
+color4f32_t color::rgb2hsv( const color4f32_t& pColorRGB ) {
+    float32_t maxChannel = glm::max( pColorRGB.x, glm::max(pColorRGB.y, pColorRGB.z) );
+    float32_t minChannel = glm::min( pColorRGB.x, glm::max(pColorRGB.y, pColorRGB.z) );
+
+    float32_t colorLen = maxChannel - minChannel;
+    float32_t colorHue = (
+        (maxChannel == pColorRGB.x) ? 0.0f + (pColorRGB.y - pColorRGB.z) / colorLen : (
+        (maxChannel == pColorRGB.y) ? 2.0f + (pColorRGB.z - pColorRGB.x) / colorLen : (
+        (maxChannel == pColorRGB.z) ? 4.0f + (pColorRGB.x - pColorRGB.y) / colorLen : 0.0f )));
+
+    color4f32_t colorHSV = {
+        glm::fract(colorHue / 6.0f),
+        colorLen / maxChannel,
+        colorLen,
+        pColorRGB.w };
+    return colorHSV;
+}
+
+
+// NOTE(JRC): This code was adapted taken from this tutorial:
+// https://www.ronja-tutorials.com/2019/04/16/hsv-colorspace.html
+color4f32_t color::hsv2rgb( const color4f32_t& pColorHSV ) {
+    color4f32_t colorRGB = {
+        std::fabs( pColorHSV.x * 6.0f - 3.0f ) - 1.0f,
+        2.0f - std::fabs( pColorHSV.x * 6.0f - 2.0f ),
+        2.0f - std::fabs( pColorHSV.x * 6.0f - 4.0f ),
+        pColorHSV.w };
+
+    colorRGB = glm::clamp( colorRGB, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
+    colorRGB = glm::mix( {1.0f, 1.0f, 1.0f, 1.0f}, colorRGB, pColorHSV.y );
+    colorRGB = pColorHSV.z * colorRGB;
+
+    return colorRGB;
+}
+
+
+// NOTE(JRC): This code was adapted from this SO response:
+// https://stackoverflow.com/a/20820649
+color4f32_t color::saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent ) {
+    float32_t colorLuma = 0.299f * pColorRGB.x + 0.587f * pColorRGB.y + 0.114f * pColorRGB.z;
+
+    color4f32_t satColorRGB = {
+        pColorRGB.x + pPercent * ( colorLuma - pColorRGB.x ),
+        pColorRGB.y + pPercent * ( colorLuma - pColorRGB.y ),
+        pColorRGB.z + pPercent * ( colorLuma - pColorRGB.z ),
+        pColorRGB.w };
+    satColorRGB = glm::clamp( satColorRGB, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
+    return satColorRGB;
+}
+
+
+color4f32_t color::saturateHSV( const color4f32_t& pColorHSV, const float32_t pPercent ) {
+    return {
+        pColorHSV.x,
+        glm::clamp( pColorHSV.y * pPercent, 0.0f, 1.0f ),
+        pColorHSV.z,
+        pColorHSV.w };
+}
+
 /// 'llce::gfx::text' Functions ///
 
 void text::render( const char8_t* pText, const color4u8_t* pColor ) {

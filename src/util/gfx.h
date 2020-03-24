@@ -39,6 +39,17 @@ struct fbo_context_t {
     vec2i32_t mViewport[2], mScissor[2];
 };
 
+namespace color {
+    color4f32_t u82f32( const color4u8_t& pColor );
+    color4u8_t f322u8( const color4f32_t& pColor );
+
+    color4f32_t rgb2hsv( const color4f32_t& pColorRGB );
+    color4f32_t hsv2rgb( const color4f32_t& pColorHSV );
+
+    color4f32_t saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent );
+    color4f32_t saturateHSV( const color4f32_t& pColorHSV, const float32_t pPercent );
+};
+
 namespace text {
     void render( const char8_t* pText, const color4u8_t* pColor );
 };
