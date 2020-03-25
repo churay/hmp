@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <cstring>
 
@@ -210,20 +211,19 @@ color4f32_t color::hsv2rgb( const color4f32_t& pColorHSV ) {
 
 
 // NOTE(JRC): This code was adapted from this SO response:
-// https://stackoverflow.com/a/34183839
+// http://www.graficaobscura.com/matrix/index.html
 color4f32_t color::saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent ) {
-    float32_t colorLuma = 0.299f * pColorRGB.x + 0.587f * pColorRGB.y + 0.114f * pColorRGB.z;
+    const static float32_t csGrayR = 0.3086f, csGrayG = 0.6094f, csGrayB = 0.0820f;
 
-    color4f32_t satColorRGB = { 0.0f, 0.0f, 0.0f, pColorRGB.w };
-    if( pPercent > 0.0f ) {
-        satColorRGB.x = pColorRGB.x * ( 1.0f + pPercent ) + colorLuma * pPercent;
-        satColorRGB.y = pColorRGB.y * ( 1.0f + pPercent ) + colorLuma * pPercent;
-        satColorRGB.z = pColorRGB.z * ( 1.0f + pPercent ) + colorLuma * pPercent;
-    } else {
-        satColorRGB.x = pColorRGB.x * ( 1.0f + pPercent ) - colorLuma * pPercent;
-        satColorRGB.y = pColorRGB.y * ( 1.0f + pPercent ) - colorLuma * pPercent;
-        satColorRGB.z = pColorRGB.z * ( 1.0f + pPercent ) - colorLuma * pPercent;
-    }
+    const float32_t cSaturateVal = glm::clamp( pPercent, -1.0f, 1.0f ) + 1.0f;
+    const float32_t cSaturateMatData[16] = {
+        (1.0f - cSaturateVal) * csGrayR + cSaturateVal, (1.0f - cSaturateVal) * csGrayR, (1.0f - cSaturateVal) * csGrayR, 0.0f,
+        (1.0f - cSaturateVal) * csGrayG, (1.0f - cSaturateVal) * csGrayG + cSaturateVal, (1.0f - cSaturateVal) * csGrayG, 0.0f,
+        (1.0f - cSaturateVal) * csGrayB, (1.0f - cSaturateVal) * csGrayB, (1.0f - cSaturateVal) * csGrayB + cSaturateVal, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f };
+    const glm::mat4x4 cSaturateMat = glm::make_mat4x4( &cSaturateMatData[0] );
+
+    color4f32_t satColorRGB = cSaturateMat * pColorRGB;
     satColorRGB = glm::clamp( satColorRGB, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
     return satColorRGB;
 }
