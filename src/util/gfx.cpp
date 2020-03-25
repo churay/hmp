@@ -175,7 +175,7 @@ color4u8_t color::f322u8( const color4f32_t& pColorF32 ) {
 // https://www.ronja-tutorials.com/2019/04/16/hsv-colorspace.html
 color4f32_t color::rgb2hsv( const color4f32_t& pColorRGB ) {
     float32_t maxChannel = glm::max( pColorRGB.x, glm::max(pColorRGB.y, pColorRGB.z) );
-    float32_t minChannel = glm::min( pColorRGB.x, glm::max(pColorRGB.y, pColorRGB.z) );
+    float32_t minChannel = glm::min( pColorRGB.x, glm::min(pColorRGB.y, pColorRGB.z) );
 
     float32_t colorLen = maxChannel - minChannel;
     float32_t colorHue = (
@@ -210,26 +210,29 @@ color4f32_t color::hsv2rgb( const color4f32_t& pColorHSV ) {
 
 
 // NOTE(JRC): This code was adapted from this SO response:
-// https://stackoverflow.com/a/20820649
+// https://stackoverflow.com/a/34183839
 color4f32_t color::saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent ) {
     float32_t colorLuma = 0.299f * pColorRGB.x + 0.587f * pColorRGB.y + 0.114f * pColorRGB.z;
 
-    color4f32_t satColorRGB = {
-        pColorRGB.x + pPercent * ( colorLuma - pColorRGB.x ),
-        pColorRGB.y + pPercent * ( colorLuma - pColorRGB.y ),
-        pColorRGB.z + pPercent * ( colorLuma - pColorRGB.z ),
-        pColorRGB.w };
+    color4f32_t satColorRGB = { 0.0f, 0.0f, 0.0f, pColorRGB.w };
+    if( pPercent > 0.0f ) {
+        satColorRGB.x = pColorRGB.x * ( 1.0f + pPercent ) + colorLuma * pPercent;
+        satColorRGB.y = pColorRGB.y * ( 1.0f + pPercent ) + colorLuma * pPercent;
+        satColorRGB.z = pColorRGB.z * ( 1.0f + pPercent ) + colorLuma * pPercent;
+    } else {
+        satColorRGB.x = pColorRGB.x * ( 1.0f + pPercent ) - colorLuma * pPercent;
+        satColorRGB.y = pColorRGB.y * ( 1.0f + pPercent ) - colorLuma * pPercent;
+        satColorRGB.z = pColorRGB.z * ( 1.0f + pPercent ) - colorLuma * pPercent;
+    }
     satColorRGB = glm::clamp( satColorRGB, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
     return satColorRGB;
 }
 
 
 color4f32_t color::saturateHSV( const color4f32_t& pColorHSV, const float32_t pPercent ) {
-    return {
-        pColorHSV.x,
-        glm::clamp( pColorHSV.y * pPercent, 0.0f, 1.0f ),
-        pColorHSV.z,
-        pColorHSV.w };
+    color4f32_t satColorHSV = pColorHSV;
+    satColorHSV.y = glm::clamp( satColorHSV.y + pPercent * satColorHSV.y, 0.0f, 1.0f );
+    return satColorHSV;
 }
 
 /// 'llce::gfx::text' Functions ///
