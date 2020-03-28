@@ -16,6 +16,7 @@ const extern bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH];
 struct render_context_t {
     render_context_t( const box_t& pBox, const color4u8_t* pColor );
     render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor );
+    render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBasisX, const vec2f32_t& pBasisY, const color4u8_t* pColor );
     ~render_context_t();
 
     void render() const;

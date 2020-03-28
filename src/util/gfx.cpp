@@ -3,9 +3,11 @@
 #include <SDL2/SDL_opengl_glext.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtx/vector_angle.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/transform.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <cstring>
 
@@ -75,6 +77,29 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
     matRatio *= glm::translate( glm::mat4(1.0f), vec3f32_t(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
     matRatio *= glm::scale( glm::mat4(1.0f), vec3f32_t(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
     glMultMatrixf( &matRatio[0][0] );
+}
+
+
+render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBasisX, const vec2f32_t& pBasisY, const color4u8_t* pColor ) {
+    const static glm::vec3 csBasisZ = glm::vec3(0.0f, 0.0f, 1.0f);
+
+    // TODO(JRC): Add support for skewed and arbitrarily rotated (U, V)
+    // basis vector contexts.
+    LLCE_CHECK_ERROR(
+        glm::length(glm::rotate(pBasisX, glm::half_pi<float32_t>()) - pBasisY) < glm::epsilon<float32_t>(),
+        "Unable to create rendering context for coordinate system with basis " <<
+        "(U, V): (" << glm::to_string(pBasisX) << ", " << glm::to_string(pBasisY) <<
+        "); only systems with non-skew, counterclockwise bases are currently supported." );
+
+    glPushMatrix();
+    glm::mat4 matModelWorld( 1.0f );
+    matModelWorld *= glm::translate( vec3f32_t(pPos.x, pPos.y, 0.0f) );
+    matModelWorld *= glm::rotate( glm::orientedAngle(vec2f32_t(1.0f, 0.0f), glm::normalize(pBasisX)), csBasisZ );
+    matModelWorld *= glm::scale( vec3f32_t(glm::length(pBasisX), glm::length(pBasisY), 1.0f) );
+    glMultMatrixf( &matModelWorld[0][0] );
+
+    glPushAttrib( GL_CURRENT_BIT );
+    glColor4ubv( (uint8_t*)pColor );
 }
 
 
