@@ -293,11 +293,9 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
                 const float64_t cDigitOffsetY = csDigitPaddingY + csDigitSpaceY * yIdx;
 
                 if( cTextDigitMap[yIdx][xIdx] ) {
-                    const box_t cDigitBox(
-                        cDigitOffsetX, cDigitOffsetY,
-                        csDigitFillX, csDigitFillY );
-                    gfx::render_context_t drc( cDigitBox, pColor );
-                    drc.render();
+                    gfx::box::render(
+                        box_t(cDigitOffsetX, cDigitOffsetY, csDigitFillX, csDigitFillY),
+                        pColor );
                 }
             }
         }
@@ -347,6 +345,24 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
     glPopMatrix();
 }
 
+/// 'llce::gfx::vector' Functions ///
+
+void box::render( const box_t& pBox, const color4u8_t* pColor ) {
+    glPushAttrib( GL_CURRENT_BIT );
+    glColor4ubv( (uint8_t*)pColor );
+
+    const vec2f32_t boxMin = pBox.min();
+    const vec2f32_t& boxDims = pBox.mDims;
+    glBegin( GL_QUADS ); {
+        glVertex2f( boxMin.x, boxMin.y );
+        glVertex2f( boxMin.x + boxDims.x, boxMin.y );
+        glVertex2f( boxMin.x + boxDims.x, boxMin.y + boxDims.y );
+        glVertex2f( boxMin.x, boxMin.y + boxDims.y );
+    } glEnd();
+
+    glPopAttrib();
+}
+
 /// 'llce::gfx::circle' Functions ///
 
 void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
@@ -373,13 +389,13 @@ void circle::render( const circle_t& pCircle, const float32_t pStartRadians, con
     { // Rendering //
         const interval_t cRadianInterval( pStartRadians, pEndRadians );
         const uint32_t cSegmentCount = std::ceil( cRadianInterval.length() * csSegmentsPer2PI );
-        glBegin( GL_TRIANGLE_FAN );
-        glVertex2f( 0.0f, 0.0f );
-        for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
-            float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
-            glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
-        }
-        glEnd();
+        glBegin( GL_TRIANGLE_FAN ); {
+            glVertex2f( 0.0f, 0.0f );
+            for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
+                float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
+                glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
+            }
+        } glEnd();
     }
 
     // GFX Environment Teardown //

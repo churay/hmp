@@ -59,6 +59,10 @@ namespace vector {
     void render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor );
 };
 
+namespace box {
+    void render( const box_t& pBox, const color4u8_t* pColor );
+};
+
 namespace circle {
     void render( const circle_t& pCircle, const color4u8_t* pColor );
     void render( const circle_t& pCircle, const float32_t pStartRadians, const float32_t pEndRadians, const color4u8_t* pColor );
