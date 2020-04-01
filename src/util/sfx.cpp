@@ -1,13 +1,13 @@
 #include <cmath>
 #include <cstring>
 
-#include "hmp_sfx.h"
+#include "sfx.h"
 
-namespace hmp {
+namespace llce {
 
 namespace sfx {
 
-/// 'hmp::sfx::waveform_t' Functions ///
+/// 'llce::sfx::waveform_t' Functions ///
 
 waveform_t::waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) :
         mWaveFun( pWaveFun ), mWavelength( pFrequency ), mAmplitude( pAmplitude ), mPhase( pPhase ) {
@@ -19,7 +19,7 @@ float64_t waveform_t::operator()( const float64_t pTime ) const {
     return mWaveFun( pTime, mWavelength, mAmplitude, mPhase );
 }
 
-/// 'hmp::sfx::synth_t' Functions ///
+/// 'llce::sfx::synth_t' Functions ///
 
 synth_t::synth_t( const bool32_t pRunning ) {
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
@@ -145,7 +145,7 @@ void synth_t::toggle() {
     mRunning = !mRunning;
 }
 
-/// 'hmp::sfx::wave' Functions ///
+/// 'llce::sfx::wave' Functions ///
 
 float64_t wave::sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
     return pAmplitude * std::sin( 2 * M_PI * pFrequency * pTime - pPhase );

@@ -14,7 +14,7 @@
 
 #include "hmp_modes.h"
 #include "gfx.h"
-#include "hmp_sfx.h"
+#include "sfx.h"
 #include "hmp_data.h"
 #include "hmp.h"
 
@@ -83,7 +83,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->pmid = hmp::mode::menu_id;
 
     pState->rng = llce::rng_t( hmp::RNG_SEED );
-    pState->synth = hmp::sfx::synth_t();
+    pState->synth = llce::sfx::synth_t();
 
     // Initialize Input //
 

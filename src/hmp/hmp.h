@@ -4,11 +4,11 @@
 #include <SDL2/SDL.h>
 
 #include "hmp_entities.h"
-#include "hmp_sfx.h"
 #include "hmp_consts.h"
 
 #include "rng_t.h"
 #include "gfx.h"
+#include "sfx.h"
 #include "input.h"
 #include "consts.h"
 
@@ -32,7 +32,7 @@ struct state_t {
     mode::mode_e pmid; // pending mode
 
     llce::rng_t rng; // random number generator
-    sfx::synth_t synth; // sound effect synthesizer
+    llce::sfx::synth_t synth; // sound effect synthesizer
 
     // Game State //
     float64_t rt; // round time

@@ -1,11 +1,11 @@
-#ifndef HMP_SFX_H
-#define HMP_SFX_H
+#ifndef LLCE_SFX_H
+#define LLCE_SFX_H
 
 #include <SDL2/SDL.h>
 
-#include "hmp_consts.h"
+#include "consts.h"
 
-namespace hmp {
+namespace llce {
 
 namespace sfx {
 

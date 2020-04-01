@@ -9,9 +9,10 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/ext/scalar_constants.hpp>
 
-#include "hmp_modes.h"
 #include "gfx.h"
-#include "hmp_sfx.h"
+#include "sfx.h"
+
+#include "hmp_modes.h"
 #include "hmp_data.h"
 #include "hmp_entities.h"
 
@@ -21,10 +22,10 @@ namespace mode {
 
 /// Helper Structures ///
 
-const static hmp::sfx::waveform_t SFX_MENU_CHANGE(
-    hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
-const static hmp::sfx::waveform_t SFX_MENU_SELECT(
-    hmp::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ * 2.0, hmp::sfx::VOLUME, 0.0 );
+const static llce::sfx::waveform_t SFX_MENU_CHANGE(
+    llce::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
+const static llce::sfx::waveform_t SFX_MENU_SELECT(
+    llce::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ * 2.0, hmp::sfx::VOLUME, 0.0 );
 
 /// Helper Functions ///
 
@@ -129,12 +130,12 @@ bool32_t game::init( hmp::state_t* pState ) {
 
 
 bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const static hmp::sfx::waveform_t csPaddleRicochetSFX(
-        hmp::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 5.0, hmp::sfx::VOLUME, 0.0 );
-    const static hmp::sfx::waveform_t csWallRicochetSFX(
-        hmp::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 4.0, hmp::sfx::VOLUME, 0.0 );
-    const static hmp::sfx::waveform_t csScoreSFX(
-        hmp::sfx::wave::triangle, hmp::sfx::MID_F_FREQ * 8.0, hmp::sfx::VOLUME, 0.0 );
+    const static llce::sfx::waveform_t csPaddleRicochetSFX(
+        llce::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 5.0, hmp::sfx::VOLUME, 0.0 );
+    const static llce::sfx::waveform_t csWallRicochetSFX(
+        llce::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 4.0, hmp::sfx::VOLUME, 0.0 );
+    const static llce::sfx::waveform_t csScoreSFX(
+        llce::sfx::wave::triangle, hmp::sfx::MID_F_FREQ * 8.0, hmp::sfx::VOLUME, 0.0 );
 
     // Process Inputs //
 
