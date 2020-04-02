@@ -53,6 +53,7 @@ namespace color {
 
 namespace text {
     void render( const char8_t* pText, const color4u8_t* pColor );
+    // void render( const char8_t* pText, const color4u8_t* pColor );
 };
 
 namespace vector {

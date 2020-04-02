@@ -13,27 +13,21 @@ box_t::box_t() :
     
 }
 
-box_t::box_t(
-        const vec2f32_t& pPos, const vec2f32_t& pDims, const box_t::anchor_e pAnchor ) :
+box_t::box_t( const vec2f32_t& pPos, const vec2f32_t& pDims, const llce::geom::anchor2D_e pAnchor ) :
         mPos( pPos ), mDims( pDims ) {
-    uint8_t intAnchor = static_cast<int8_t>( pAnchor );
-    uint8_t xScale = ( intAnchor >> 0 ) & 1;
-    uint8_t yScale = ( intAnchor >> 1 ) & 1;
-    uint8_t dimSkew = ( (intAnchor >> 2) & 1 ) ? 2 : 1;
-    mPos -= ( (1.0f / dimSkew) * vec2f32_t(xScale * mDims.x, yScale * mDims.y) );
+    mPos -= llce::geom::anchor( pDims, pAnchor );
 }
 
 
-box_t::box_t(
-        const float32_t pPos, const float32_t pDims, const box_t::anchor_e pAnchor ) :
+box_t::box_t( const float32_t pPos, const float32_t pDims, const llce::geom::anchor2D_e pAnchor ) :
         box_t( vec2f32_t(pPos, pPos), vec2f32_t(pDims, pDims), pAnchor ) {
     
 }
 
 
-box_t::box_t(
-        const float32_t pPosX, const float32_t pPosY,
-        const float32_t pDimsX, const float32_t pDimsY, const box_t::anchor_e pAnchor ) :
+box_t::box_t( const float32_t pPosX, const float32_t pPosY,
+            const float32_t pDimsX, const float32_t pDimsY,
+            const llce::geom::anchor2D_e pAnchor ) :
         box_t( vec2f32_t(pPosX, pPosY), vec2f32_t(pDimsX, pDimsY), pAnchor ) {
     
 }

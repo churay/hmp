@@ -11,6 +11,7 @@
 
 #include "gfx.h"
 #include "sfx.h"
+#include "geom.h"
 
 #include "hmp_modes.h"
 #include "hmp_data.h"
@@ -43,7 +44,7 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
         const vec2f32_t cMessagePos = { 0.5f, 0.5f };
         const vec2f32_t cMessageDims = { 1.0f, 0.25f };
         llce::gfx::render_context_t messageRC(
-            llce::box_t(cMessagePos, cMessageDims, llce::box_t::anchor_e::c), 
+            llce::box_t(cMessagePos, cMessageDims, llce::geom::anchor2D::mm), 
             &hmp::color::BACKGROUND );
         llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2 );
     } else {
@@ -335,7 +336,7 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
             vec2f32_t itemPos = cItemBase -
                 static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
             llce::gfx::render_context_t itemRC(
-                llce::box_t(itemPos, cItemDims, llce::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+                llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), &hmp::color::BACKGROUND2 );
 
             if( itemIdx == pState->menuIdx ) { itemRC.render(); }
             llce::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
@@ -430,7 +431,7 @@ bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, 
                 vec2f32_t itemPos = cItemBase -
                     static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
                 llce::gfx::render_context_t itemRC(
-                    llce::box_t(itemPos, cItemDims, llce::box_t::anchor_e::nw), &hmp::color::BACKGROUND2 );
+                    llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), &hmp::color::BACKGROUND2 );
 
                 if( itemIdx == pState->menuIdx ) { itemRC.render(); }
                 llce::gfx::text::render( hmp::RESET_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );

@@ -11,6 +11,7 @@
 #include <glm/ext/vector_float2.hpp>
 
 #include "gfx.h"
+#include "geom.h"
 #include "hmp_entities.h"
 
 namespace hmp {
@@ -44,7 +45,7 @@ void bounds_t::render() const {
     // we need a more proper 'brighten' function that puts a ceiling on color values.
     const color4u8_t entityColor = static_cast<uint8_t>( 2 ) * *mColor;
     llce::gfx::render_context_t lineRC(
-        llce::box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, llce::box_t::anchor_e::c), &entityColor );
+        llce::box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, llce::geom::anchor2D::mm), &entityColor );
     lineRC.render();
 }
 
@@ -159,7 +160,7 @@ void scoreboard_t::render() const {
         const bool8_t isTeamWest = team == hmp::team::west;
 
         const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
-        const auto teamAnchor = isTeamWest ? llce::box_t::anchor_e::se : llce::box_t::anchor_e::sw;
+        const auto teamAnchor = isTeamWest ? llce::geom::anchor2D::hl : llce::geom::anchor2D::ll;
         const vec2f32_t teamBasePos = vec2f32_t( 0.5f, scoreboard_t::PADDING_WIDTH ) +
             teamOrient * vec2f32_t( scoreboard_t::PADDING_WIDTH, 0.0f );
         const vec2f32_t teamBaseDims = vec2f32_t( 0.5f, 1.0f ) -

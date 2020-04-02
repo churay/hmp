@@ -7,6 +7,8 @@
 
 #include "interval_t.h"
 
+#include "geom.h"
+
 #include "consts.h"
 
 namespace llce {
@@ -14,23 +16,19 @@ namespace llce {
 class box_t {
     public:
 
-    /// Class Attributes ///
-
-    enum class anchor_e : uint8_t { sw = 0, se = 1, nw = 2, ne = 3, c = 7 };
-
     /// Constructors ///
 
     box_t();
     box_t(
         const vec2f32_t& pPos, const vec2f32_t& pDims,
-        const anchor_e pAnch = anchor_e::sw );
+        const llce::geom::anchor2D_e pAnchor = llce::geom::anchor2D::ll );
     box_t(
         const float32_t pPos, const float32_t pDims,
-        const anchor_e pType = anchor_e::sw );
+        const llce::geom::anchor2D_e pAnchor = llce::geom::anchor2D::ll );
     box_t(
         const float32_t pPosX, const float32_t pPosY,
         const float32_t pDimsX, const float32_t pDimsY,
-        const anchor_e pType = anchor_e::sw );
+        const llce::geom::anchor2D_e pAnchor = llce::geom::anchor2D::ll );
 
     /// Class Functions ///
 
