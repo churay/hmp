@@ -16,7 +16,7 @@ set(LLCE_DYLOAD ON CACHE BOOL "Enable dynamic loading of loop-live library.")
 set(LLCE_FDOUBLE OFF CACHE BOOL "Enable double precision floating-point values.")
 set(LLCE_CAPTURE OFF CACHE BOOL "Enable screen/state capture features (requires libpng).")
 
-set(LLCE_MAX_RESOLUTION 1048576 CACHE STRING "The maximum resolution for application graphics buffers.")
+set(LLCE_MAX_RESOLUTION 1024 CACHE STRING "The maximum resolution for the application graphics buffers (applies to both dimensions).")
 set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
 set(LLCE_SIMULATION demo CACHE STRING "The name of the harness simulation (e.g. 'demo' for 'hmp/src/demo').")
 

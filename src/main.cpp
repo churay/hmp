@@ -298,7 +298,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         cRecalcViewports();
 
         const path_t cIconPath( 2, cAssetPath.cstr(), "icon.png" );
-        static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION];
+        static color4u8_t sIconBuffer[LLCE_MAX_RESOLUTION * LLCE_MAX_RESOLUTION];
 
         uint32_t iconWidth = 0, iconHeight = 0;
         LLCE_VERIFY_WARNING(
@@ -466,7 +466,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-    const static uint32_t csCaptureBufferSize = LLCE_CAPTURE ? LLCE_MAX_RESOLUTION : 1;
+    const static uint32_t csCaptureBufferSize = LLCE_CAPTURE ? LLCE_MAX_RESOLUTION * LLCE_MAX_RESOLUTION : 1;
     static color4u8_t sCaptureBuffer[csCaptureBufferSize];
 
     /// Input Wrangling ///
@@ -807,7 +807,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             // TODO(JRC): Ultimately, it would be best if the data could just
             // be funneled natively into the PNG interface instead of having
             // to mirror it about the y-axis.
-            color4u8_t* tempBuffer = &sCaptureBuffer[captureDims.x * captureDims.y];
+            color4u8_t tempBuffer[LLCE_MAX_RESOLUTION];
             uint32_t bufferByteCount = captureDims.x * sizeof( color4u8_t );
             for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
                 uint32_t rowOff = rowIdx * captureDims.x;
