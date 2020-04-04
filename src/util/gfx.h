@@ -1,6 +1,8 @@
 #ifndef LLCE_GFX_H
 #define LLCE_GFX_H
 
+#include <glm/glm.hpp>
+
 #include "box_t.h"
 #include "circle_t.h"
 #include "consts.h"
@@ -40,6 +42,8 @@ struct fbo_context_t {
     vec2i32_t mViewport[2], mScissor[2];
 };
 
+glm::mat4 getGLMatrix();
+
 namespace color {
     color4f32_t u82f32( const color4u8_t& pColor );
     color4u8_t f322u8( const color4f32_t& pColor );
@@ -52,8 +56,10 @@ namespace color {
 };
 
 namespace text {
-    void render( const char8_t* pText, const color4u8_t* pColor );
-    // void render( const char8_t* pText, const color4u8_t* pColor );
+    void render( const char8_t* pText, const color4u8_t* pColor,
+        const box_t& pRenderBox = box_t(0.0f, 0.0f, 1.0f, 1.0f) );
+    void render( const char8_t* pText, const color4u8_t* pColor, const float32_t pSize,
+        const vec2f32_t& pRenderPos = vec2f32_t(0.0f, 0.0f), const llce::geom::anchor2D_e pAnchor = llce::geom::anchor2D::ll );
 };
 
 namespace vector {

@@ -176,11 +176,9 @@ void scoreboard_t::render() const {
             }
 
             const llce::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
-                llce::gfx::render_context_t textRC( textBox, 1.0f, &hmp::color::INTERFACE );
-
                 char teamScoreBuffer[2];
                 std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
-                llce::gfx::text::render( &teamScoreBuffer[0], teamColor );
+                llce::gfx::text::render( &teamScoreBuffer[0], teamColor, textBox );
             }
         }
     }

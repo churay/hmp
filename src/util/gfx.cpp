@@ -36,35 +36,13 @@ render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor 
 // to figure out how this algorithm works.
 render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor ) :
         render_context_t( pBox, pColor ) {
-    // TODO(JRC): It would probably be a good idea to ultimately abstract out
-    // this functionality into its own function (e.g. 'getOGLMatrix').
-    glm::mat4 xformMatrix( 0.0f ); {
-        glm::mat4 mvMatrix( 0.0f );
-        glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
-
-        glm::mat4 projMatrix( 0.0f );
-        glGetFloatv( GL_PROJECTION_MATRIX, &projMatrix[0][0] );
-
-        vec2u32_t vpCoords, vpRes; {
-            int32_t viewParams[4];
-            glGetIntegerv( GL_VIEWPORT, &viewParams[0] );
-            vpCoords = { static_cast<uint32_t>(viewParams[0]), static_cast<uint32_t>(viewParams[1]) };
-            vpRes = { static_cast<uint32_t>(viewParams[2]), static_cast<uint32_t>(viewParams[3]) };
-        }
-
-        glm::mat4 vpMatrix( 1.0f );
-        vpMatrix = glm::translate( vpMatrix, vec3f32_t((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
-        vpMatrix = glm::scale( vpMatrix, vec3f32_t(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
-
-        xformMatrix = vpMatrix * projMatrix * mvMatrix;
-    }
-
-    glm::vec4 currScreenDims = xformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
-    float32_t currScreenRatio = currScreenDims.x / currScreenDims.y;
+    const glm::mat4 cXformMatrix = llce::gfx::getGLMatrix();
+    const glm::vec4 cXformBases = cXformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
+    const float32_t cXformRatio = cXformBases.x / cXformBases.y;
 
     box_t ratioBox( 0.0f, 0.0f, 1.0f, 1.0f );
-    float32_t wscaled = pScreenRatio * ratioBox.mDims.y / currScreenRatio;
-    float32_t hscaled = currScreenRatio * ratioBox.mDims.x / pScreenRatio;
+    float32_t wscaled = pScreenRatio * ratioBox.mDims.y / cXformRatio;
+    float32_t hscaled = cXformRatio * ratioBox.mDims.x / pScreenRatio;
     if( wscaled < ratioBox.mDims.x ) {
         ratioBox.mPos.x += ( ratioBox.mDims.x - wscaled ) / 2.0f;
         ratioBox.mDims.x = wscaled;
@@ -177,6 +155,29 @@ fbo_context_t::~fbo_context_t() {
     glScissor( mScissor[0].x, mScissor[0].y, mScissor[1].x, mScissor[1].y );
 }
 
+/// 'llce::gfx' General Functions ///
+
+glm::mat4 getGLMatrix() {
+    glm::mat4 mvMatrix( 0.0f );
+    glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
+
+    glm::mat4 projMatrix( 0.0f );
+    glGetFloatv( GL_PROJECTION_MATRIX, &projMatrix[0][0] );
+
+    vec2u32_t vpCoords, vpRes; {
+        int32_t viewParams[4];
+        glGetIntegerv( GL_VIEWPORT, &viewParams[0] );
+        vpCoords = { static_cast<uint32_t>(viewParams[0]), static_cast<uint32_t>(viewParams[1]) };
+        vpRes = { static_cast<uint32_t>(viewParams[2]), static_cast<uint32_t>(viewParams[3]) };
+    }
+
+    glm::mat4 vpMatrix( 1.0f );
+    vpMatrix = glm::translate( vpMatrix, vec3f32_t((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
+    vpMatrix = glm::scale( vpMatrix, vec3f32_t(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
+
+    return vpMatrix * projMatrix * mvMatrix;
+}
+
 /// 'llce::gfx::color' Functions ///
 
 color4f32_t color::u82f32( const color4u8_t& pColorU8 ) {
@@ -262,7 +263,7 @@ color4f32_t color::saturateHSV( const color4f32_t& pColorHSV, const float32_t pP
 
 /// 'llce::gfx::text' Functions ///
 
-void text::render( const char8_t* pText, const color4u8_t* pColor ) {
+void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& pRenderBox ) {
     const static float64_t csDigitSpaceX = 1.0 / llce::gfx::DIGIT_WIDTH;
     const static float64_t csDigitSpaceY = 1.0 / llce::gfx::DIGIT_HEIGHT;
     const static float64_t csDigitPaddingX = csDigitSpaceX / 10.0;
@@ -276,8 +277,7 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
     const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
 
-    const box_t cRenderBox( 0.0f, 0.0f, 1.0f, 1.0f );
-    gfx::render_context_t rrc( cRenderBox, llce::gfx::DIGIT_ASPECT * cTextLength, pColor );
+    gfx::render_context_t rrc( pRenderBox, llce::gfx::DIGIT_ASPECT * cTextLength, pColor );
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
         const auto cTextDigitMap = &llce::gfx::ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
         const uint32_t cTextIdx = pTextItr - pText;
@@ -300,6 +300,12 @@ void text::render( const char8_t* pText, const color4u8_t* pColor ) {
             }
         }
     }
+}
+
+
+void text::render( const char8_t* pText, const color4u8_t* pColor, const float32_t pSize,
+        const vec2f32_t& pPos, const llce::geom::anchor2D_e pAnchor ) {
+    // TODO(JRC): Implement this function.
 }
 
 /// 'llce::gfx::vector' Functions ///

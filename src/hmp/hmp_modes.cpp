@@ -41,12 +41,8 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
             &hmp::color::BACKGROUND );
         boardRC.render();
 
-        const vec2f32_t cMessagePos = { 0.5f, 0.5f };
-        const vec2f32_t cMessageDims = { 1.0f, 0.25f };
-        llce::gfx::render_context_t messageRC(
-            llce::box_t(cMessagePos, cMessageDims, llce::geom::anchor2D::mm), 
-            &hmp::color::BACKGROUND );
-        llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2 );
+        llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2,
+            llce::box_t({0.5f, 0.5f}, {1.0f, 0.25f}, llce::geom::anchor2D::mm) );
     } else {
         pState->boundsEnt.render();
         for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
@@ -321,10 +317,7 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
         const float32_t cHeaderPadding = 0.05f;
         const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
         const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
-
-        llce::gfx::render_context_t headerRC(
-            llce::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
-        llce::gfx::text::render( "HMP", &hmp::color::BACKGROUND2 );
+        llce::gfx::text::render( "HMP", &hmp::color::BACKGROUND2, llce::box_t(cHeaderPos, cHeaderDims) );
     }
 
     { // Items //
