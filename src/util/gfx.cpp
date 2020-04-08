@@ -10,6 +10,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <cstring>
+#include <limits>
 
 #include "gfx.h"
 
@@ -305,7 +306,47 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& 
 
 void text::render( const char8_t* pText, const color4u8_t* pColor, const float32_t pSize,
         const vec2f32_t& pPos, const llce::geom::anchor2D_e pAnchor ) {
-    // TODO(JRC): Implement this function.
+    // NOTE(JRC): For an arbitrary harness code, it isn't possible for this code
+    // to know how its frame buffer will be skewed/transformed for the final render.
+    // However, the 'llce' harness has a process that attempts to maintain characteristics
+    // of each simulation's frame buffer (e.g. aspect ratio), so this function makes
+    // the following assumptions:
+    //   (1) the aspect ratio of the viewbuffer is maintained
+    //   (2) if the frame buffer is too big, it's maximally fit to the render
+    //       window with minimal scaling
+
+    // TODO(JRC): This should be adjusted based on the target aspect ratio for the
+    // current simulation once the harness is updated to recognize/adapt to this value
+    // (see 'hmp' issue #75).
+    vec2i32_t windowDims; {
+        SDL_Window* window = SDL_GL_GetCurrentWindow();
+        SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+    } const vec2i32_t cWindowDims = windowDims;
+
+    vec4i32_t viewportData; {
+        glGetIntegerv( GL_VIEWPORT, &viewportData.x );
+    } const vec2i32_t cViewportDims = { viewportData.z, viewportData.w };
+
+    float32_t viewportWindowRatio = 1.0f; {
+        vec2i32_t viewportWindowDiff = glm::clamp(
+            cViewportDims - cWindowDims, 0, std::numeric_limits<int32_t>::max() );
+        if( viewportWindowDiff.x > 0 || viewportWindowDiff.y > 0 ) {
+            viewportWindowRatio = ( viewportWindowDiff.x > viewportWindowDiff.y ) ?
+                ( cViewportDims.x + 0.0f ) / ( cWindowDims.x + 0.0f ) :
+                ( cViewportDims.y + 0.0f ) / ( cWindowDims.y + 0.0f );
+        }
+    }
+
+    const glm::mat4 cViewspaceWindowXform = llce::gfx::getGLMatrix();
+    const glm::mat4 cWindowViewspaceXform = glm::inverse( cViewspaceWindowXform );
+
+    glm::vec4 textCharDims( llce::gfx::DIGIT_ASPECT * pSize, pSize, 0.0f, 0.0f ); // window space
+    textCharDims *= viewportWindowRatio; // window space, adjusted for viewport skew
+    textCharDims = cWindowViewspaceXform * textCharDims; // current coord space
+
+    const vec2f32_t& textPos = pPos;
+    vec2f32_t textDims = vec2f32_t( std::strlen(pText) * textCharDims.x, textCharDims.y );
+    llce::gfx::text::render( pText, pColor, box_t(textPos, textDims, pAnchor) );
 }
 
 /// 'llce::gfx::vector' Functions ///
