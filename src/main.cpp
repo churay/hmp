@@ -797,6 +797,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
             path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
 
+            // TODO(JRC): An option should be added to capture in terms of rendered
+            // resolution instead of native simulation frame buffer resolution.
             // TODO(JRC): Reversing the colors results in the proper color values,
             // but it's unclear why this is necessary given that they're stored
             // internally in the order requested. Debugging may be required in the

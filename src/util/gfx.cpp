@@ -312,15 +312,16 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
     // of each simulation's frame buffer (e.g. aspect ratio), so this function makes
     // the following assumptions:
     //   (1) the aspect ratio of the viewbuffer is maintained
-    //   (2) if the frame buffer is too big, it's maximally fit to the render
-    //       window with minimal scaling
+    //   (2) if the frame buffer is too big or too small, it's maximally fit to
+    //       the render window with minimal scaling
 
     // TODO(JRC): This should be adjusted based on the target aspect ratio for the
     // current simulation once the harness is updated to recognize/adapt to this value
-    // (see 'hmp' issue #75).
+    // (see 'hmp' issue #75). Currently, the harness always assumes/uses a 1:1 ratio.
     vec2i32_t windowDims; {
         SDL_Window* window = SDL_GL_GetCurrentWindow();
         SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+        windowDims.x = windowDims.y = glm::min( windowDims.x, windowDims.y );
     } const vec2i32_t cWindowDims = windowDims;
 
     vec4i32_t viewportData; {
@@ -328,12 +329,15 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
     } const vec2i32_t cViewportDims = { viewportData.z, viewportData.w };
 
     float32_t viewportWindowRatio = 1.0f; {
-        vec2i32_t viewportWindowDiff = glm::clamp(
-            cViewportDims - cWindowDims, 0, std::numeric_limits<int32_t>::max() );
-        if( viewportWindowDiff.x > 0 || viewportWindowDiff.y > 0 ) {
-            viewportWindowRatio = ( viewportWindowDiff.x > viewportWindowDiff.y ) ?
-                ( cViewportDims.x + 0.0f ) / ( cWindowDims.x + 0.0f ) :
-                ( cViewportDims.y + 0.0f ) / ( cWindowDims.y + 0.0f );
+        const float32_t viewportAspect = cViewportDims.x / ( cViewportDims.y + 0.0f );
+        const float32_t windowAspect = cWindowDims.x / ( cWindowDims.y + 0.0f );
+
+        // If A_window < A_viewport, then only for w_window == w_viewport will
+        // the viewport fit inside the window. Opposite for A_window > A_viewport.
+        if( windowAspect < viewportAspect ) {
+            viewportWindowRatio = cViewportDims.x / ( cWindowDims.x + 0.0f );
+        } else { // if( windowAspect > viewportAspect ) {
+            viewportWindowRatio = cViewportDims.y / ( cWindowDims.y + 0.0f );
         }
     }
 
