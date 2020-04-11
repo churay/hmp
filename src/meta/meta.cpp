@@ -4,6 +4,8 @@
 
 #include <cstring>
 
+#include "input.h"
+#include "output.h"
 #include "gfx.h"
 
 #include "meta.h"
@@ -15,22 +17,13 @@ namespace meta {
 bool32_t boot( meta::output_t* pOutput ) {
     // Initialize Graphics //
 
-    // NOTE(JRC): The following code ensures that buffers have consistent aspect
-    // ratios relative to their output spaces in screen space. This fact is crucial
-    // in making code work in 'meta::gfx' related to fixing aspect ratios.
-    pOutput->gfxBufferRess[meta::GFX_BUFFER_MASTER] = { 512, 128 };
+    const vec2u32_t cGFXBuffRes( 512, 128 );
 
-    for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < meta::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-        llce::gfx::fbo_t gfxBufferFBO( pOutput->gfxBufferRess[gfxBufferIdx] );
+    llce::output::gfxboot<1, 0>( *pOutput, cGFXBuffRes );
 
-        LLCE_ASSERT_ERROR( gfxBufferFBO.valid(),
-            "Failed to initialize HMP frame buffer " << gfxBufferIdx << "; " <<
-            "failed with frame buffer error " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << "." );
+    // Initialize Sound //
 
-        pOutput->gfxBufferFBOs[gfxBufferIdx] = gfxBufferFBO.mFrameID;
-        pOutput->gfxBufferCBOs[gfxBufferIdx] = gfxBufferFBO.mColorID;
-        pOutput->gfxBufferDBOs[gfxBufferIdx] = gfxBufferFBO.mDepthID;
-    }
+    // ... //
 
     return true;
 }
@@ -60,8 +53,8 @@ bool32_t update( meta::state_t* pState, meta::input_t* pInput, const meta::outpu
 
 bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const meta::output_t* pOutput ) {
     llce::gfx::fbo_context_t metaFBOC(
-        pOutput->gfxBufferFBOs[meta::GFX_BUFFER_MASTER],
-        pOutput->gfxBufferRess[meta::GFX_BUFFER_MASTER] );
+        pOutput->gfxBufferFBOs[llce::output::BUFFER_SHARED_ID],
+        pOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID] );
 
     llce::gfx::render_context_t metaRC(
         llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),

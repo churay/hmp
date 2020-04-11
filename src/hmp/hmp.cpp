@@ -12,9 +12,12 @@
 #include <glm/ext/matrix_float4x4.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
-#include "hmp_modes.h"
+#include "input.h"
+#include "output.h"
 #include "gfx.h"
 #include "sfx.h"
+
+#include "hmp_modes.h"
 #include "hmp_data.h"
 #include "hmp.h"
 
@@ -39,35 +42,18 @@ constexpr static uint32_t MODE_COUNT = ARRAY_LEN( MODE_INIT_FUNS );
 extern "C" bool32_t boot( hmp::output_t* pOutput ) {
     // Initialize Graphics //
 
-    vec2u32_t* gfxBuffRess = &pOutput->gfxBufferRess[0];
-    llce::box_t* gfxBuffBoxs = &pOutput->gfxBufferBoxs[0];
+    const vec2u32_t cGFXBuffRes( 512, 512 );
+    const std::array<llce::box_t, 3> cGFXBuffBoxs{{
+        llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
+        llce::box_t(0.0f, 0.0f, 1.0f, 0.85f),
+        llce::box_t(0.0f, 0.85f, 1.0f, 0.15f)
+    }};
 
-    gfxBuffBoxs[hmp::GFX_BUFFER_MASTER] = llce::box_t( 0.0f, 0.0f, 1.0f, 1.0f );
-    gfxBuffBoxs[hmp::GFX_BUFFER_SIM] = llce::box_t( 0.0f, 0.0f, 1.0f, 0.85f );
-    gfxBuffBoxs[hmp::GFX_BUFFER_UI] = llce::box_t( 0.0f, 0.85f, 1.0f, 0.15f );
+    llce::output::gfxboot<3, 1>( *pOutput, cGFXBuffRes, cGFXBuffBoxs );
 
-    // NOTE(JRC): The following code ensures that buffers have consistent aspect
-    // ratios relative to their output spaces in screen space. This fact is crucial
-    // in making code work in 'llce::gfx' related to fixing aspect ratios.
-    gfxBuffRess[hmp::GFX_BUFFER_MASTER] = { 512, 512 };
-    for( uint32_t gfxBufferIdx = hmp::GFX_BUFFER_MASTER + 1; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-        gfxBuffRess[gfxBufferIdx] = {
-            (gfxBuffBoxs[gfxBufferIdx].mDims.x / gfxBuffBoxs[hmp::GFX_BUFFER_MASTER].mDims.x) * gfxBuffRess[hmp::GFX_BUFFER_MASTER].x,
-            (gfxBuffBoxs[gfxBufferIdx].mDims.y / gfxBuffBoxs[hmp::GFX_BUFFER_MASTER].mDims.y) * gfxBuffRess[hmp::GFX_BUFFER_MASTER].y
-        };
-    }
+    // Initialize Sound //
 
-    for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-        llce::gfx::fbo_t gfxBufferFBO( pOutput->gfxBufferRess[gfxBufferIdx] );
-
-        LLCE_ASSERT_ERROR( gfxBufferFBO.valid(),
-            "Failed to initialize HMP frame buffer " << gfxBufferIdx << "; " <<
-            "failed with frame buffer error " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << "." );
-
-        pOutput->gfxBufferFBOs[gfxBufferIdx] = gfxBufferFBO.mFrameID;
-        pOutput->gfxBufferCBOs[gfxBufferIdx] = gfxBufferFBO.mColorID;
-        pOutput->gfxBufferDBOs[gfxBufferIdx] = gfxBufferFBO.mDepthID;
-    }
+    // ... //
 
     return true;
 }
@@ -112,16 +98,18 @@ extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hm
     pState->tt += pDT;
 
     bool32_t updateStatus = MODE_UPDATE_FUNS[pState->mid]( pState, pInput, pDT );
-    pState->synth.update( pDT, pOutput->sfxBufferFrames[hmp::SFX_BUFFER_MASTER] );
+    pState->synth.update( pDT, pOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] );
     return updateStatus;
 }
 
 
 extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    llce::gfx::render_context_t hmpRC( llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f), &hmp::color::BACKGROUND );
+    llce::gfx::render_context_t hmpRC(
+        llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),
+        &hmp::color::BACKGROUND );
     hmpRC.render();
 
     bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pOutput );
-    pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[hmp::SFX_BUFFER_MASTER] );
+    pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] );
     return renderStatus;
 }

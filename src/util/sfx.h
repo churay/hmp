@@ -9,7 +9,11 @@ namespace llce {
 
 namespace sfx {
 
+/// Namespace Attributes ///
+
 typedef float64_t (*wave_f)( const float64_t, const float64_t, const float64_t, const float64_t );
+
+/// Namespace Types ///
 
 struct waveform_t {
     waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );
@@ -42,6 +46,8 @@ struct synth_t {
     uint32_t mUpdateDF;
     int32_t mLatency;
 };
+
+/// Namespace Functions ///
 
 namespace wave {
     float64_t sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );

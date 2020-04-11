@@ -32,8 +32,8 @@ const static llce::sfx::waveform_t SFX_MENU_SELECT(
 
 void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     llce::gfx::fbo_context_t simFBOC(
-        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
-        pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
+        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM_ID],
+        pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM_ID] );
 
     if( pState->roundPaused ) {
         llce::gfx::render_context_t boardRC(
@@ -61,16 +61,16 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
 void render_scoreboard( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     llce::gfx::fbo_context_t simFBOC(
-        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI],
-        pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI] );
+        pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_UI_ID],
+        pOutput->gfxBufferRess[hmp::GFX_BUFFER_UI_ID] );
 
     pState->scoreEnt.render();
 }
 
 
 void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
-    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
+    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER_ID];
+    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER_ID];
     llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
     llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
@@ -306,8 +306,8 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 }
 
 bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER];
-    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER];
+    const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER_ID];
+    const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER_ID];
     llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
     llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
@@ -389,8 +389,8 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     { // Render Reset Menu //
         llce::gfx::fbo_context_t menuFBOC(
-            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM],
-            pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM] );
+            pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM_ID],
+            pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM_ID] );
         llce::gfx::render_context_t menuRC(
             llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
             &hmp::color::BACKGROUND );

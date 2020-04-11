@@ -11,9 +11,13 @@ namespace llce {
 
 namespace gfx {
 
+/// Namespace Attributes ///
+
 constexpr static uint32_t DIGIT_WIDTH = 5, DIGIT_HEIGHT = 7;
 constexpr static float64_t DIGIT_ASPECT = ( DIGIT_WIDTH + 0.0 ) / ( DIGIT_HEIGHT + 0.0 );
 const extern bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH];
+
+/// Namespace Types ///
 
 struct render_context_t {
     render_context_t( const box_t& pBox, const color4u8_t* pColor );
@@ -41,6 +45,8 @@ struct fbo_context_t {
 
     vec2i32_t mViewport[2], mScissor[2];
 };
+
+/// Namespace Functions ///
 
 glm::mat4 getGLMatrix();
 

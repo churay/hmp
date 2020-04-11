@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cstring>
 
+#include "input.h"
+#include "output.h"
 #include "gfx.h"
 
 #include "demo_data.h"
@@ -19,22 +21,13 @@ namespace demo {
 extern "C" bool32_t boot( demo::output_t* pOutput ) {
     // Initialize Graphics //
 
-    // NOTE(JRC): The following code ensures that buffers have consistent aspect
-    // ratios relative to their output spaces in screen space. This fact is crucial
-    // in making code work in 'demo::gfx' related to fixing aspect ratios.
-    pOutput->gfxBufferRess[demo::GFX_BUFFER_MASTER] = { 512, 512 };
+    const vec2u32_t cGFXBuffRes( 512, 512 );
 
-    for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < demo::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
-        llce::gfx::fbo_t gfxBufferFBO( pOutput->gfxBufferRess[gfxBufferIdx] );
+    llce::output::gfxboot<1, 1>( *pOutput, cGFXBuffRes );
 
-        LLCE_ASSERT_ERROR( gfxBufferFBO.valid(),
-            "Failed to initialize frame buffer " << gfxBufferIdx << "; " <<
-            "failed with frame buffer error " << glCheckFramebufferStatus(GL_FRAMEBUFFER) << "." );
+    // Initialize Sound //
 
-        pOutput->gfxBufferFBOs[gfxBufferIdx] = gfxBufferFBO.mFrameID;
-        pOutput->gfxBufferCBOs[gfxBufferIdx] = gfxBufferFBO.mColorID;
-        pOutput->gfxBufferDBOs[gfxBufferIdx] = gfxBufferFBO.mDepthID;
-    }
+    // ... //
 
     return true;
 }
@@ -69,8 +62,8 @@ extern "C" bool32_t update( demo::state_t* pState, demo::input_t* pInput, const 
 
 extern "C" bool32_t render( const demo::state_t* pState, const demo::input_t* pInput, const demo::output_t* pOutput ) {
     llce::gfx::fbo_context_t metaFBOC(
-        pOutput->gfxBufferFBOs[demo::GFX_BUFFER_MASTER],
-        pOutput->gfxBufferRess[demo::GFX_BUFFER_MASTER] );
+        pOutput->gfxBufferFBOs[llce::output::BUFFER_SHARED_ID],
+        pOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID] );
 
     color4f32_t rgbColor = llce::gfx::color::hsv2rgb( pState->hsvColor );
     color4u8_t rgbColorByte = llce::gfx::color::f322u8( rgbColor );

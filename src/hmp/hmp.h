@@ -7,9 +7,10 @@
 #include "hmp_consts.h"
 
 #include "rng_t.h"
+#include "input.h"
+#include "output.h"
 #include "gfx.h"
 #include "sfx.h"
-#include "input.h"
 #include "consts.h"
 
 namespace hmp {
@@ -50,33 +51,17 @@ struct state_t {
     uint8_t menuIdx;
 };
 
-/// Input Types/Variables ///
+/// Input/Output Types/Variables ///
 
-struct input_t {
-    llce::input::keyboard_t keyboard;
-};
+constexpr static uint32_t GFX_BUFFER_MASTER_ID = llce::output::BUFFER_SHARED_ID;
+constexpr static uint32_t GFX_BUFFER_SIM_ID = GFX_BUFFER_MASTER_ID + 1;
+constexpr static uint32_t GFX_BUFFER_UI_ID = GFX_BUFFER_SIM_ID + 1;
+constexpr static uint32_t GFX_BUFFER_COUNT = GFX_BUFFER_UI_ID + 1;
 
-/// Output Types/Variables ///
+constexpr static uint32_t SFX_BUFFER_COUNT = llce::output::BUFFER_SHARED_ID + 1;
 
-constexpr static uint32_t GFX_BUFFER_MASTER = 0, GFX_BUFFER_SIM = 1, GFX_BUFFER_UI = 2;
-constexpr static uint32_t GFX_BUFFER_COUNT = 3;
-
-constexpr static uint32_t SFX_BUFFER_MASTER = 0;
-constexpr static uint32_t SFX_BUFFER_COUNT = 1;
-
-struct output_t {
-    // Graphics Output //
-    uint32_t gfxBufferFBOs[GFX_BUFFER_COUNT];   // frame buffers
-    uint32_t gfxBufferCBOs[GFX_BUFFER_COUNT];   // color buffers
-    uint32_t gfxBufferDBOs[GFX_BUFFER_COUNT];   // depth buffers
-    vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
-    llce::box_t gfxBufferBoxs[GFX_BUFFER_COUNT];// buffer locations
-
-    // Audio Output //
-    SDL_AudioSpec sfxConfig;
-    bit8_t* sfxBuffers[SFX_BUFFER_COUNT];
-    uint32_t sfxBufferFrames[SFX_BUFFER_COUNT];
-};
+typedef llce::input::input_t<true, false> input_t;
+typedef llce::output::output_t<GFX_BUFFER_COUNT, SFX_BUFFER_COUNT> output_t;
 
 }
 

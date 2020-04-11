@@ -12,6 +12,8 @@
 
 #include "conf.h"
 
+/// Types ///
+
 // TODO(JRC): Figure out some way to guarantee that the floating-point types
 // will be the correct widths in a platform-independent way.
 typedef bool bool8_t;
@@ -47,12 +49,13 @@ typedef glm::vec<2, int8_t, glm::defaultp> vec2i8_t;
 typedef vec4u8_t color4u8_t;
 typedef vec4f32_t color4f32_t;
 
+/// Macros ///
+
 // TODO(JRC): Abstract away the platform-specific code from this module (e.g.
 // 'exit', setting the error number, etc.).
 // TODO(JRC): Define types that have same byte length as the pointer types
 // for the current platform.
 
-// TODO(JRC): Come up with better identifiers for the byte size operators below.
 #define KILOBYTE_BL(v) ((v)*1024)
 #define MEGABYTE_BL(v) (KILOBYTE_BL(v)*1024)
 #define GIGABYTE_BL(v) (MEGABYTE_BL(v)*1024)
@@ -61,7 +64,7 @@ typedef vec4f32_t color4f32_t;
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 #define VECTOR_AT(v, i) (&((v).x) + (i))
 
-// TODO(JRC): Consider changing these functions to use 'prinf' functionality
+// TODO(JRC): Consider changing these functions to use 'printf' functionality
 // instead of 'std::cerr' functionality.
 
 #if LLCE_DEBUG

@@ -4,7 +4,9 @@
 #include <SDL2/SDL.h>
 
 #include "deque.hpp"
+
 #include "input.h"
+#include "output.h"
 #include "consts.h"
 
 namespace meta {
@@ -19,24 +21,10 @@ struct state_t {
     llce::deque<float64_t, meta::UI_FPS_FRAME_COUNT> dts;
 };
 
-/// Input Types/Variables ///
+/// Input/Output Types/Variables ///
 
-struct input_t {
-    llce::input::keyboard_t keyboard;
-};
-
-/// Output Types/Variables ///
-
-constexpr static uint32_t GFX_BUFFER_MASTER = 0;
-constexpr static uint32_t GFX_BUFFER_COUNT = 1;
-
-struct output_t {
-    // Graphics Output //
-    uint32_t gfxBufferFBOs[GFX_BUFFER_COUNT];   // frame buffers
-    uint32_t gfxBufferCBOs[GFX_BUFFER_COUNT];   // color buffers
-    uint32_t gfxBufferDBOs[GFX_BUFFER_COUNT];   // depth buffers
-    vec2u32_t gfxBufferRess[GFX_BUFFER_COUNT];  // buffer resolutions
-};
+typedef llce::input::input_t<true, false> input_t;
+typedef llce::output::output_t<1, 0> output_t;
 
 /// Functions ///
 

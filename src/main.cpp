@@ -18,6 +18,7 @@
 #include "path_t.h"
 #include "platform.h"
 #include "input.h"
+#include "output.h"
 #include "cli.h"
 #include "box_t.h"
 #include "consts.h"
@@ -517,11 +518,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-    // TODO(JRC): This isn't a great solution and it should be improved
-    // if at all possible to be less 'raw'.
+    // TODO(JRC): Modify this so that this code is only enabled if the target
+    // simulation has audio enabled (need to inspect type properties somehow).
     simOutput->sfxConfig = realAudioConfig;
-    simOutput->sfxBuffers[llsim::SFX_BUFFER_MASTER] = (bit8_t*)&audioBuffer[0];
-    simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
+    simOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] = (bit8_t*)&audioBuffer[0];
+    simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
 
     while( isRunning ) {
         simTimer.split();
@@ -676,7 +677,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
             const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
-            simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = csAudioBufferFrames - cQueuedAudioFrames;
+            simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = csAudioBufferFrames - cQueuedAudioFrames;
         }
 
         if( doStep ) {
@@ -718,7 +719,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // NOTE(JRC): This is required to get the expected/correct texture color,
                 // but it's unclear as to why. OpenGL may perform color mixing by default?
                 glColor4ubv( (uint8_t*)&csWhiteColor );
-                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llsim::GFX_BUFFER_MASTER] );
+                glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llce::output::BUFFER_SHARED_ID] );
                 glBegin( GL_QUADS ); {
                     glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
                     glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
@@ -729,10 +730,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
-        if( simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] > 0 && !cIsSimulating ) {
+        if( simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] > 0 && !cIsSimulating ) {
             SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
-                simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] * csAudioBytesPerFrame );
-            simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
+                simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] * csAudioBytesPerFrame );
+            simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
         }
 
 #if LLCE_DEBUG
@@ -789,7 +790,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
             glEnable( GL_TEXTURE_2D );
-            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llsim::GFX_BUFFER_MASTER] );
+            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llce::output::BUFFER_SHARED_ID] );
 
             char8_t slotCaptureFileName[csOutputFileNameLength];
             std::snprintf( &slotCaptureFileName[0],
@@ -803,7 +804,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             // but it's unclear why this is necessary given that they're stored
             // internally in the order requested. Debugging may be required in the
             // future when adapting this code to work on multiple platforms.
-            vec2u32_t captureDims = simOutput->gfxBufferRess[llsim::GFX_BUFFER_MASTER];
+            vec2u32_t captureDims = simOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID];
             glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
 
             // TODO(JRC): Ultimately, it would be best if the data could just
@@ -847,7 +848,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     // NOTE(JRC): This is required to get the expected/correct texture color,
                     // but it's unclear as to why. OpenGL may perform color mixing by default?
                     glColor4ubv( (uint8_t*)&csWhiteColor );
-                    glBindTexture( GL_TEXTURE_2D, metaOutput->gfxBufferCBOs[meta::GFX_BUFFER_MASTER] );
+                    glBindTexture( GL_TEXTURE_2D, metaOutput->gfxBufferCBOs[llce::output::BUFFER_SHARED_ID] );
                     glBegin( GL_QUADS ); {
                         glTexCoord2f( 0.0f, 0.0f ); glVertex2f( 0.0f, 0.0f );
                         glTexCoord2f( 0.0f, 1.0f ); glVertex2f( 0.0f, 1.0f );
