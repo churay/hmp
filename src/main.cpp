@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <cmath>
 #include <cstring>
@@ -683,7 +684,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( doStep ) {
             // NOTE(JRC): Consider placing these step clauses above with more
             // functionally similar code (e.g. input reading).
+            // TODO(JRC): Do this only if the simulation application has a keyboard.
             llce::input::readKeyboard( simInput->keyboard );
+            // TODO(JRC): Do this only if the simulation application has a mouse.
+            // llce::input::readMouse( simInput->mouse );
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );
@@ -707,12 +711,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
-            const float32_t viewRatio = ( viewportRess[cSimViewportID].y + 0.0f ) / ( viewportRess[cSimViewportID].x + 0.0f );
+            const float32_t cWindowRatio = llce::gfx::aspect( viewportRess[cSimViewportID] );
+
             glm::mat4 matWorldView( 1.0f );
             matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-viewRatio)/2.0f, 0.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(viewRatio, 1.0f, 1.0f) );
+            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-1.0f/cWindowRatio)/2.0f, 0.0f, 0.0f) );
+            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(1.0f/cWindowRatio, 1.0f, 1.0f) );
             glMultMatrixf( &matWorldView[0][0] );
 
             glEnable( GL_TEXTURE_2D ); {

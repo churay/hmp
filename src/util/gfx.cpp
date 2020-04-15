@@ -37,7 +37,7 @@ render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor 
 // to figure out how this algorithm works.
 render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor ) :
         render_context_t( pBox, pColor ) {
-    const glm::mat4 cXformMatrix = llce::gfx::getGLMatrix();
+    const glm::mat4 cXformMatrix = llce::gfx::glMatrix();
     const glm::vec4 cXformBases = cXformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
     const float32_t cXformRatio = cXformBases.x / cXformBases.y;
 
@@ -158,7 +158,22 @@ fbo_context_t::~fbo_context_t() {
 
 /// 'llce::gfx' General Functions ///
 
-glm::mat4 getGLMatrix() {
+float32_t aspect( const vec2i32_t& pDims ) {
+    return ( pDims.x + 0.0f ) / ( pDims.y + 0.0f );
+}
+
+
+float32_t aspect( const vec2u32_t& pDims ) {
+    return ( pDims.x + 0.0f ) / ( pDims.y + 0.0f );
+}
+
+
+float32_t aspect( const vec2f32_t& pDims ) {
+    return ( pDims.x + 0.0f ) / ( pDims.y + 0.0f );
+}
+
+
+glm::mat4 glMatrix() {
     glm::mat4 mvMatrix( 0.0f );
     glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
 
@@ -329,8 +344,8 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
     } const vec2i32_t cViewportDims = { viewportData.z, viewportData.w };
 
     float32_t viewportWindowRatio = 1.0f; {
-        const float32_t viewportAspect = cViewportDims.x / ( cViewportDims.y + 0.0f );
-        const float32_t windowAspect = cWindowDims.x / ( cWindowDims.y + 0.0f );
+        const float32_t viewportAspect = llce::gfx::aspect( cViewportDims );
+        const float32_t windowAspect = llce::gfx::aspect( cWindowDims );
 
         // If A_window < A_viewport, then only for w_window == w_viewport will
         // the viewport fit inside the window. Opposite for A_window > A_viewport.
@@ -341,7 +356,7 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
         }
     }
 
-    const glm::mat4 cViewspaceWindowXform = llce::gfx::getGLMatrix();
+    const glm::mat4 cViewspaceWindowXform = llce::gfx::glMatrix();
     const glm::mat4 cWindowViewspaceXform = glm::inverse( cViewspaceWindowXform );
 
     glm::vec4 textCharDims( llce::gfx::DIGIT_ASPECT * pSize, pSize, 0.0f, 0.0f ); // window space
