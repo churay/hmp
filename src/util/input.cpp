@@ -5,6 +5,12 @@
 
 namespace llce {
 
+
+bool32_t input::readInput( input_t& pInput ) {
+    return llce::input::readKeyboard( pInput.keyboard ) &&
+        llce::input::readMouse( pInput.mouse );
+}
+
 bool32_t input::readKeyboard( keyboard_t& pKeyboard ) {
     const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
 

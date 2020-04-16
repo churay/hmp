@@ -49,7 +49,7 @@ extern "C" bool32_t boot( hmp::output_t* pOutput ) {
         llce::box_t(0.0f, 0.85f, 1.0f, 0.15f)
     }};
 
-    llce::output::gfxboot<3, 1>( *pOutput, cGFXBuffRes, cGFXBuffBoxs );
+    llce::output::boot<3, 1>( *pOutput, cGFXBuffRes, cGFXBuffBoxs );
 
     // Initialize Sound //
 

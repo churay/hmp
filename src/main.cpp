@@ -22,6 +22,7 @@
 #include "output.h"
 #include "cli.h"
 #include "box_t.h"
+#include "util.hpp"
 #include "consts.h"
 
 #include LLCE_SIMULATION_HEADER
@@ -80,11 +81,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     const uint64_t cBackupBufferIdx = 1, cBackupBufferLength = cBackupBufferCount * cSimBufferLength;
     const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
 
-    llce::memory_t mem( 2, &cBufferLengths[0], cBufferAddress );
-    llsim::input_t* inputs = (llsim::input_t*)mem.allocate( cSimBufferIdx, 2 * sizeof(llsim::input_t) );
+    llce::memory_t mem( ARRAY_LEN(cBufferLengths), &cBufferLengths[0], cBufferAddress );
 
     llsim::state_t* simState = (llsim::state_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::state_t) );
-    llsim::input_t* simInput = &inputs[0];
+    llsim::input_t* simInput = (llsim::input_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::input_t) );
     llsim::output_t* simOutput = (llsim::output_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
@@ -92,13 +92,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::state_t* backupStates = (llsim::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::state_t) );
 #endif
 
+    llsim::input_t baseInput;
+
 #if LLCE_DEBUG
     // NOTE(JRC): The 'meta' module doesn't participate in loop-live editing, so its
     // initialized with local data and the application's input.
     meta::state_t metaStateData;
     meta::output_t metaOutputData;
     meta::state_t* metaState = &metaStateData;
-    meta::input_t* metaInput = (meta::input_t*)&inputs[1];
+    meta::input_t* metaInput = (meta::input_t*)&baseInput;
     meta::output_t* metaOutput = &metaOutputData;
 #endif
 
@@ -359,6 +361,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     /// Initialize Audio ///
 
+    const static uint32_t csSimAudioEnabled = llsim::output_t::NUM_SFX_BUFFERS > 0;
+
     const static uint32_t csAudioFrequency = 48000;                                     // audio samples / second
     const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;                          // audio sample data format
     const static uint32_t csAudioChannelCount = 2;                                      // audio channels (2: stereo)
@@ -388,15 +392,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         cWantAudioConfig.channels == realAudioConfig.channels && cWantAudioConfig.format == realAudioConfig.format,
         "SDL failed to initialize audio device with correct format." );
 
-    /*
     const auto cResetAudio = [ &audioDeviceID, &audioBuffer, &simOutput ] () {
         SDL_ClearQueuedAudio( audioDeviceID );
-        simOutput->sfxBufferFrames[llsim::SFX_BUFFER_MASTER] = 0;
+        simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
         std::memset( &audioBuffer[0], 0, sizeof(audioBuffer) );
     };
-    */
 
-    SDL_PauseAudioDevice( audioDeviceID, false );
+    SDL_PauseAudioDevice( audioDeviceID, !csSimAudioEnabled );
 
     /// Generate Graphics Assets ///
 
@@ -476,7 +478,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // NOTE(JRC): This is the true input stream for the application.
     // The simulation stream is kept separate so its inputs don't interfere
     // with application-level functionality (e.g. debugging contexts, etc.).
-    llsim::input_t* appInput = &inputs[1];
+    llsim::input_t* appInput = &baseInput;
 
     const SDL_Scancode cFXKeyGroup[] = {
         SDL_SCANCODE_F1, SDL_SCANCODE_F2, SDL_SCANCODE_F3, SDL_SCANCODE_F4,
@@ -519,11 +521,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     }
 #endif
 
-    // TODO(JRC): Modify this so that this code is only enabled if the target
-    // simulation has audio enabled (need to inspect type properties somehow).
-    simOutput->sfxConfig = realAudioConfig;
-    simOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] = (bit8_t*)&audioBuffer[0];
-    simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
+    if( csSimAudioEnabled ) {
+        simOutput->sfxConfig = realAudioConfig;
+        simOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] = (bit8_t*)&audioBuffer[0];
+        simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
+    }
 
     while( isRunning ) {
         simTimer.split();
@@ -567,7 +569,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        llce::input::readKeyboard( appInput->keyboard );
+        llce::input::readInput( *appInput );
 
         if( isKeyDown(appInput->keyboard, SDL_SCANCODE_Q) ) {
             // q key = quit application
@@ -676,18 +678,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         { // Initialize Audio State //
             std::memset( audioBuffer, 0, sizeof(audioBuffer) );
 
-            const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
-            const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
-            simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = csAudioBufferFrames - cQueuedAudioFrames;
+            if( csSimAudioEnabled ) {
+                const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
+                const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
+                simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = csAudioBufferFrames - cQueuedAudioFrames;
+            }
         }
 
         if( doStep ) {
-            // NOTE(JRC): Consider placing these step clauses above with more
-            // functionally similar code (e.g. input reading).
-            // TODO(JRC): Do this only if the simulation application has a keyboard.
-            llce::input::readKeyboard( simInput->keyboard );
-            // TODO(JRC): Do this only if the simulation application has a mouse.
-            // llce::input::readMouse( simInput->mouse );
+            llce::input::readInput( *simInput );
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );
@@ -735,7 +734,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             } glDisable( GL_TEXTURE_2D );
         } glPopMatrix();
 
-        if( simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] > 0 && !cIsSimulating ) {
+        if( csSimAudioEnabled && simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] > 0 && !cIsSimulating ) {
             SDL_QueueAudio( audioDeviceID, &audioBuffer[0],
                 simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] * csAudioBytesPerFrame );
             simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;

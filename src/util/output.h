@@ -22,10 +22,14 @@ namespace output {
 // are passed between the 'llce' harness and the current simulation.
 constexpr static uint32_t BUFFER_SHARED_ID = 0;
 
-// TODO(JRC): This should be cleaned up if at all possible to reduce the amount
-// of code duplication between templates.
+/// Namespace Types ///
 
-template <uint32_t GFXBuffers, uint32_t SFXBuffers> struct output_t {
+template <uint32_t GFXBuffers, uint32_t SFXBuffers>
+struct output_t {
+    // Metadata //
+    constexpr static uint32_t NUM_GFX_BUFFERS = GFXBuffers;
+    constexpr static uint32_t NUM_SFX_BUFFERS = SFXBuffers;
+
     // Graphics Output //
     uint32_t gfxBufferFBOs[GFXBuffers];   // frame buffers
     uint32_t gfxBufferCBOs[GFXBuffers];   // color buffers
@@ -34,28 +38,15 @@ template <uint32_t GFXBuffers, uint32_t SFXBuffers> struct output_t {
     box_t gfxBufferBoxs[GFXBuffers];      // buffer locations
 
     // Audio Output //
-    SDL_AudioSpec sfxConfig;
-    bit8_t* sfxBuffers[SFXBuffers];
-    uint32_t sfxBufferFrames[SFXBuffers];
-};
-template <> struct output_t<0, 0> {};
-template <uint32_t GFXBuffers> struct output_t<GFXBuffers, 0> {
-    uint32_t gfxBufferFBOs[GFXBuffers];
-    uint32_t gfxBufferCBOs[GFXBuffers];
-    uint32_t gfxBufferDBOs[GFXBuffers];
-    vec2u32_t gfxBufferRess[GFXBuffers];
-    box_t gfxBufferBoxs[GFXBuffers];
-};
-template <uint32_t SFXBuffers> struct output_t<0, SFXBuffers> { 
-    SDL_AudioSpec sfxConfig;
-    bit8_t* sfxBuffers[SFXBuffers];
-    uint32_t sfxBufferFrames[SFXBuffers];
+    SDL_AudioSpec sfxConfig;              // audio config
+    bit8_t* sfxBuffers[SFXBuffers];       // waveform buffers
+    uint32_t sfxBufferFrames[SFXBuffers]; // frame ids per buffer
 };
 
 /// Namespace Functions ///
 
 template <uint32_t GFXBuffers, uint32_t SFXBuffers>
-void gfxboot( output_t<GFXBuffers, SFXBuffers>& pOutput, const vec2u32_t& pGFXBufferRes,
+void boot( output_t<GFXBuffers, SFXBuffers>& pOutput, const vec2u32_t& pGFXBufferRes,
         const std::array<box_t, GFXBuffers>& pGFXBufferBoxs = std::array<box_t, GFXBuffers>() ) {
     const static llce::box_t csFullBox( 0.0f, 0.0f, 1.0f, 1.0f );
 
@@ -97,4 +88,3 @@ void gfxboot( output_t<GFXBuffers, SFXBuffers>& pOutput, const vec2u32_t& pGFXBu
 }
 
 #endif
-

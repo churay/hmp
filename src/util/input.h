@@ -24,13 +24,17 @@ typedef uint8_t mousestate_t[SDL_NUM_MOUSECODES];
 typedef inputdiff_e mousediffs_t[SDL_NUM_MOUSECODES];
 typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons = {}; mousediffs_t diffs = {}; } mouse_t;
 
-template <bool8_t Keyboard, bool8_t Mouse> struct input_t {};
-template <> struct input_t<true, false> { keyboard_t keyboard; };
-template <> struct input_t<false, true> { mouse_t mouse; };
-template <> struct input_t<true, true> { keyboard_t keyboard; mouse_t mouse; };
+/// Namespace Types ///
+
+struct input_t {
+    keyboard_t keyboard;
+    mouse_t mouse;
+    // gamepad_t gamepad;
+};
 
 /// Namespace Functions ///
 
+bool32_t readInput( input_t& pInput );
 bool32_t readKeyboard( keyboard_t& pKeyboard );
 bool32_t readMouse( mouse_t& pMouse );
 

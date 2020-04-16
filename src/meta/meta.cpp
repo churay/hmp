@@ -19,7 +19,7 @@ bool32_t boot( meta::output_t* pOutput ) {
 
     const vec2u32_t cGFXBuffRes( 512, 128 );
 
-    llce::output::gfxboot<1, 0>( *pOutput, cGFXBuffRes );
+    llce::output::boot<1, 0>( *pOutput, cGFXBuffRes );
 
     // Initialize Sound //
 
