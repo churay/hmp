@@ -138,25 +138,25 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
 
-    if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_W) ) {
+    if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_W) ) {
         dy[0] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_S) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_S) ) {
         dy[0] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_A) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_A) ) {
         dx[0] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_D) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_D) ) {
         dx[0] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_I) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_I) ) {
         dy[1] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_K) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_K) ) {
         dy[1] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_J) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_J) ) {
         dx[1] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard, SDL_SCANCODE_L) ) {
+    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_L) ) {
         dx[1] += 1;
     }
 
-    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_G) ) {
+    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_G) ) {
         pState->roundPaused = !pState->roundPaused;
     }
 
@@ -272,19 +272,19 @@ bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
 
-    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_D) ) {
+    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_D) ) {
         dselect = true;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_L) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_L) ) {
         dselect = true;
     }
 
-    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_W) ) {
+    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_W) ) {
         dy[0] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_S) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_S) ) {
         dy[0] -= 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_I) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_I) ) {
         dy[1] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_K) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_K) ) {
         dy[1] -= 1;
     }
 
@@ -352,19 +352,19 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     int32_t dy[2] = { 0, 0 };
     bool32_t dselect = false;
 
-    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_D) ) {
+    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_D) ) {
         dselect = true;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_L) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_L) ) {
         dselect = true;
     }
 
-    if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_W) ) {
+    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_W) ) {
         dy[0] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_S) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_S) ) {
         dy[0] -= 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_I) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_I) ) {
         dy[1] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard, SDL_SCANCODE_K) ) {
+    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_K) ) {
         dy[1] -= 1;
     }
 

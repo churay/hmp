@@ -43,8 +43,8 @@ typedef bool32_t (*boot_f)( llsim::output_t* );
 typedef bool32_t (*update_f)( llsim::state_t*, llsim::input_t*, const llsim::output_t*, const float64_t );
 typedef bool32_t (*render_f)( const llsim::state_t*, const llsim::input_t*, const llsim::output_t* );
 
-typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t&, const SDL_Scancode );
-typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t&, const SDL_Scancode*, const uint32_t );
+typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t*, const SDL_Scancode );
+typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t*, const SDL_Scancode*, const uint32_t );
 
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
@@ -92,7 +92,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::state_t* backupStates = (llsim::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::state_t) );
 #endif
 
+    // TODO(JRC): Remove this unnecessary constraint by being more careful about copying
+    // the input data between buffers (e.g. the replay buffer).
     llsim::input_t baseInput;
+    LLCE_ASSERT_ERROR( baseInput.keyboard() != nullptr,
+        "Unable to use loop-live harness for '" << LLCE_SIMULATION_NAME << "'; " <<
+        "this code's input specification is missing a keyboard, which is " <<
+        "required for use within the harness." );
 
 #if LLCE_DEBUG
     // NOTE(JRC): The 'meta' module doesn't participate in loop-live editing, so its
@@ -569,12 +575,12 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        llce::input::readInput( *appInput );
+        llce::input::readInput( appInput );
 
-        if( isKeyDown(appInput->keyboard, SDL_SCANCODE_Q) ) {
+        if( isKeyDown(appInput->keyboard(), SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
-        } if( isKeyPressed(appInput->keyboard, SDL_SCANCODE_GRAVE) ) {
+        } if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_GRAVE) ) {
             // ` key = capture application
             isCapturing = true;
         }
@@ -583,16 +589,16 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
 
-        if( isKeyPressed(appInput->keyboard, SDL_SCANCODE_SPACE) ) {
+        if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             LLCE_INFO_DEBUG( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
             doStep = !isStepping;
-        } if(isKeyPressed(appInput->keyboard, SDL_SCANCODE_RETURN)) {
+        } if(isKeyPressed(appInput->keyboard(), SDL_SCANCODE_RETURN)) {
             doStep = true;
         }
 
-        if( (currSlotIdx = isKGPressed(appInput->keyboard, &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
+        if( (currSlotIdx = isKGPressed(appInput->keyboard(), &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
             // function key (fx) = debug state operation
             recSlotIdx = !cIsSimulating ? currSlotIdx : cSimStateIdx;
 
@@ -607,7 +613,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
             path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
 
-            if( (isKeyDown(appInput->keyboard, SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
+            if( (isKeyDown(appInput->keyboard(), SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
                 // lshift + fx = toggle slot x replay
                 LLCE_INFO_DEBUG( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
@@ -625,7 +631,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     recInputStream.close();
                 }
                 isReplaying = !isReplaying;
-            } else if( isKeyDown(appInput->keyboard, SDL_SCANCODE_RSHIFT) && !isRecording ) {
+            } else if( isKeyDown(appInput->keyboard(), SDL_SCANCODE_RSHIFT) && !isRecording ) {
                 // rshift + fx = hotload slot x state (reset replay)
                 LLCE_INFO_DEBUG( "Hotload Slot {" << recSlotIdx << "}" );
                 if( isReplaying ) {
@@ -686,7 +692,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         if( doStep ) {
-            llce::input::readInput( *simInput );
+            llce::input::readInput( simInput );
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );

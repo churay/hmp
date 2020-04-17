@@ -26,28 +26,47 @@ typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons 
 
 /// Namespace Types ///
 
+// NOTE(JRC): Using templates allows for individual simulations to configure the
+// exact set of input devices they read, which helps to cut down on each simulation's
+// memory footprint.
+template <bool8_t Keyboard, bool8_t Mouse>
 struct input_t {
-    keyboard_t keyboard;
-    mouse_t mouse;
-    // gamepad_t gamepad;
+    constexpr static uint32_t HAS_KEYBOARD = Keyboard;
+    constexpr static uint32_t HAS_MOUSE = Mouse;
+
+    // NOTE(JRC): There are a lot of places in the 'llce' code where 'memset' is
+    // used to move input data from different buffers (e.g. the replay buffer,
+    // the harness buffer, the simulation buffer, etc.), so these accessors to the
+    // underlying data must be functions and not raw pointers.
+    inline keyboard_t* keyboard() { return HAS_KEYBOARD ? &_keyboard[0] : nullptr; }
+    inline mouse_t* mouse() { return HAS_MOUSE ? &_mouse[0] : nullptr; }
+
+    keyboard_t _keyboard[Keyboard];
+    mouse_t _mouse[Mouse];
 };
 
 /// Namespace Functions ///
 
-bool32_t readInput( input_t& pInput );
-bool32_t readKeyboard( keyboard_t& pKeyboard );
-bool32_t readMouse( mouse_t& pMouse );
+bool32_t readKeyboard( keyboard_t* pKeyboard );
+bool32_t readMouse( mouse_t* pMouse );
+
+template <bool8_t Keyboard, bool8_t Mouse>
+bool32_t readInput( input_t<Keyboard, Mouse>* pInput ) {
+    return
+        ( Keyboard ? llce::input::readKeyboard(pInput->keyboard()) : true ) &&
+        ( Mouse ? llce::input::readMouse(pInput->mouse()) : true );
+}
 
 // TODO(JRC): Extend/combine these functions so that they work with all kinds
 // of buttons (e.g. including mouse buttons, gamepad buttons, etc.).
-bool32_t isKeyDown( const keyboard_t& pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGDown( const keyboard_t& pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
+bool32_t isKeyDown( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
+uint32_t isKGDown( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
 
-bool32_t isKeyPressed( const keyboard_t& pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGPressed( const keyboard_t& pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
+bool32_t isKeyPressed( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
+uint32_t isKGPressed( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
 
-bool32_t isKeyReleased( const keyboard_t& pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGReleased( const keyboard_t& pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
+bool32_t isKeyReleased( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
+uint32_t isKGReleased( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
 
 }
 
