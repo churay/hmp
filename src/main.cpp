@@ -6,6 +6,7 @@
 
 #include <glm/glm.hpp>
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
 #include <glm/gtx/string_cast.hpp>
 
 #include <cmath>
@@ -716,13 +717,25 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
         glPushMatrix(); {
-            const float32_t cWindowRatio = llce::gfx::aspect( viewportRess[cSimViewportID] );
+            // NOTE(JRC): This code calculates the normalized fit dimensions of
+            // the simulation window (fixed aspect ratio) within the harness window
+            // (variable aspect ratio based on user window manipulation).
+            vec2f32_t simFitDims; {
+                const vec2f32_t& cWindowDims = viewportRess[cSimViewportID];
+                const vec2f32_t& cSimDims = simOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID];
+                const float32_t cSimToWindowFactor =
+                    ( llce::gfx::aspect(cWindowDims) < llce::gfx::aspect(cSimDims) ) ?
+                    ( cWindowDims.x / (cSimDims.x + 0.0f) ) : ( cWindowDims.y / (cSimDims.y + 0.0f) );
+
+                simFitDims = cSimToWindowFactor * cSimDims; // window space
+                simFitDims = { simFitDims.x / cWindowDims.x, simFitDims.y / cWindowDims.y }; // norm space
+            } const vec2f32_t cSimFitDims = simFitDims;
 
             glm::mat4 matWorldView( 1.0f );
-            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
-            matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3((1.0f-1.0f/cWindowRatio)/2.0f, 0.0f, 0.0f) );
-            matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(1.0f/cWindowRatio, 1.0f, 1.0f) );
+            matWorldView *= glm::translate( vec3f32_t(-1.0f, -1.0f, 0.0f) );
+            matWorldView *= glm::scale( vec3f32_t(2.0f, 2.0f, 1.0f) );
+            matWorldView *= glm::translate( vec3f32_t((1.0f-cSimFitDims.x)/2.0f, (1.0f-cSimFitDims.y)/2.0f, 0.0f) );
+            matWorldView *= glm::scale( vec3f32_t(cSimFitDims.x, cSimFitDims.y, 1.0f) );
             glMultMatrixf( &matWorldView[0][0] );
 
             glEnable( GL_TEXTURE_2D ); {
@@ -850,8 +863,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glPushMatrix(); {
                 glm::mat4 matWorldView( 1.0f );
-                matWorldView *= glm::translate( glm::mat4(1.0f), glm::vec3(-1.0f, -1.0f, 0.0f) );
-                matWorldView *= glm::scale( glm::mat4(1.0f), glm::vec3(2.0f, 2.0f, 1.0f) );
+                matWorldView *= glm::translate( vec3f32_t(-1.0f, -1.0f, 0.0f) );
+                matWorldView *= glm::scale( vec3f32_t(2.0f, 2.0f, 1.0f) );
                 glMultMatrixf( &matWorldView[0][0] );
 
                 glEnable( GL_TEXTURE_2D ); {
