@@ -8,7 +8,6 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/gtx/matrix_transform_2d.hpp>
 #include <glm/ext/scalar_constants.hpp>
-#include <glm/ext/vector_float2.hpp>
 
 #include "gfx.h"
 #include "geom.h"
@@ -95,9 +94,9 @@ void ball_t::ricochet( const entity_t* pSurface ) {
     vec2f32_t ricochetMinNormal, ricochetMaxNormal; {
         vec3f32_t vecRotate3d( contactNormal.x, contactNormal.y, 1.0f );
         vec3f32_t vecMinRotate3d =
-            glm::rotate( glm::mat3(1.0f), -ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
+            glm::rotate( mat3f32_t(1.0f), -ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
         vec3f32_t vecMaxRotate3d =
-            glm::rotate( glm::mat3(1.0f), +ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
+            glm::rotate( mat3f32_t(1.0f), +ball_t::MAX_RICOCHET_ANGLE ) * vecRotate3d;
 
         ricochetMinNormal = vec2f32_t( vecMinRotate3d.x, vecMinRotate3d.y );
         ricochetMaxNormal = vec2f32_t( vecMaxRotate3d.x, vecMaxRotate3d.y );

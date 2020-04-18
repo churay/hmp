@@ -9,6 +9,8 @@
 #include <glm/detail/type_vec2.hpp>
 #include <glm/detail/type_vec3.hpp>
 #include <glm/detail/type_vec4.hpp>
+#include <glm/detail/type_mat3x3.hpp>
+#include <glm/detail/type_mat4x4.hpp>
 
 #include "conf.h"
 
@@ -37,6 +39,8 @@ typedef glm::vec<4, float32_t, glm::defaultp> vec4f32_t;
 typedef glm::vec<2, real_t, glm::defaultp> vec2rBW_t;
 typedef glm::vec<3, real_t, glm::defaultp> vec3rBW_t;
 typedef glm::vec<4, real_t, glm::defaultp> vec4rBW_t;
+typedef glm::mat<3, 3, float32_t, glm::defaultp> mat3f32_t;
+typedef glm::mat<4, 4, float32_t, glm::defaultp> mat4f32_t;
 
 // NOTE(JRC): These truncated arrays are generally used for 2D directional
 // or boolean calculations. They can be replaced with 4-component equivalents

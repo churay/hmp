@@ -731,7 +731,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 simFitDims = { simFitDims.x / cWindowDims.x, simFitDims.y / cWindowDims.y }; // norm space
             } const vec2f32_t cSimFitDims = simFitDims;
 
-            glm::mat4 matWorldView( 1.0f );
+            mat4f32_t matWorldView( 1.0f );
             matWorldView *= glm::translate( vec3f32_t(-1.0f, -1.0f, 0.0f) );
             matWorldView *= glm::scale( vec3f32_t(2.0f, 2.0f, 1.0f) );
             matWorldView *= glm::translate( vec3f32_t((1.0f-cSimFitDims.x)/2.0f, (1.0f-cSimFitDims.y)/2.0f, 0.0f) );
@@ -862,7 +862,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
             glPushMatrix(); {
-                glm::mat4 matWorldView( 1.0f );
+                mat4f32_t matWorldView( 1.0f );
                 matWorldView *= glm::translate( vec3f32_t(-1.0f, -1.0f, 0.0f) );
                 matWorldView *= glm::scale( vec3f32_t(2.0f, 2.0f, 1.0f) );
                 glMultMatrixf( &matWorldView[0][0] );

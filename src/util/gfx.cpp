@@ -22,9 +22,9 @@ namespace gfx {
 
 render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor ) {
     glPushMatrix();
-    glm::mat4 matModelWorld( 1.0f );
-    matModelWorld *= glm::translate( glm::mat4(1.0f), vec3f32_t(pBox.mPos.x, pBox.mPos.y, 0.0f) );
-    matModelWorld *= glm::scale( glm::mat4(1.0f), vec3f32_t(pBox.mDims.x, pBox.mDims.y, 1.0f) );
+    mat4f32_t matModelWorld( 1.0f );
+    matModelWorld *= glm::translate( vec3f32_t(pBox.mPos.x, pBox.mPos.y, 0.0f) );
+    matModelWorld *= glm::scale( vec3f32_t(pBox.mDims.x, pBox.mDims.y, 1.0f) );
     glMultMatrixf( &matModelWorld[0][0] );
 
     glPushAttrib( GL_CURRENT_BIT );
@@ -37,8 +37,8 @@ render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor 
 // to figure out how this algorithm works.
 render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor ) :
         render_context_t( pBox, pColor ) {
-    const glm::mat4 cXformMatrix = llce::gfx::glMatrix();
-    const glm::vec4 cXformBases = cXformMatrix * glm::vec4( 1.0f, 1.0f, 0.0f, 0.0f );
+    const mat4f32_t cXformMatrix = llce::gfx::glMatrix();
+    const vec4f32_t cXformBases = cXformMatrix * vec4f32_t( 1.0f, 1.0f, 0.0f, 0.0f );
     const float32_t cXformRatio = cXformBases.x / cXformBases.y;
 
     box_t ratioBox( 0.0f, 0.0f, 1.0f, 1.0f );
@@ -52,15 +52,15 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
         ratioBox.mDims.y = hscaled;
     }
 
-    glm::mat4 matRatio( 1.0f );
-    matRatio *= glm::translate( glm::mat4(1.0f), vec3f32_t(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
-    matRatio *= glm::scale( glm::mat4(1.0f), vec3f32_t(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
+    mat4f32_t matRatio( 1.0f );
+    matRatio *= glm::translate( vec3f32_t(ratioBox.mPos.x, ratioBox.mPos.y, 0.0f) );
+    matRatio *= glm::scale( vec3f32_t(ratioBox.mDims.x, ratioBox.mDims.y, 1.0f) );
     glMultMatrixf( &matRatio[0][0] );
 }
 
 
 render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBasisX, const vec2f32_t& pBasisY, const color4u8_t* pColor ) {
-    const static glm::vec3 csBasisZ = glm::vec3(0.0f, 0.0f, 1.0f);
+    const static vec3f32_t csBasisZ( 0.0f, 0.0f, 1.0f );
 
     // TODO(JRC): Add support for skewed and arbitrarily rotated (U, V)
     // basis vector contexts.
@@ -71,7 +71,7 @@ render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBas
         "); only systems with non-skew, counterclockwise bases are currently supported." );
 
     glPushMatrix();
-    glm::mat4 matModelWorld( 1.0f );
+    mat4f32_t matModelWorld( 1.0f );
     matModelWorld *= glm::translate( vec3f32_t(pPos.x, pPos.y, 0.0f) );
     matModelWorld *= glm::rotate( glm::orientedAngle(vec2f32_t(1.0f, 0.0f), glm::normalize(pBasisX)), csBasisZ );
     matModelWorld *= glm::scale( vec3f32_t(glm::length(pBasisX), glm::length(pBasisY), 1.0f) );
@@ -173,11 +173,11 @@ float32_t aspect( const vec2f32_t& pDims ) {
 }
 
 
-glm::mat4 glMatrix() {
-    glm::mat4 mvMatrix( 0.0f );
+mat4f32_t glMatrix() {
+    mat4f32_t mvMatrix( 0.0f );
     glGetFloatv( GL_MODELVIEW_MATRIX, &mvMatrix[0][0] );
 
-    glm::mat4 projMatrix( 0.0f );
+    mat4f32_t projMatrix( 0.0f );
     glGetFloatv( GL_PROJECTION_MATRIX, &projMatrix[0][0] );
 
     vec2u32_t vpCoords, vpRes; {
@@ -187,7 +187,7 @@ glm::mat4 glMatrix() {
         vpRes = { static_cast<uint32_t>(viewParams[2]), static_cast<uint32_t>(viewParams[3]) };
     }
 
-    glm::mat4 vpMatrix( 1.0f );
+    mat4f32_t vpMatrix( 1.0f );
     vpMatrix = glm::translate( vpMatrix, vec3f32_t((vpCoords.x + vpRes.x) / 2.0f, (vpCoords.y + vpRes.y) / 2.0f, 0.5f) );
     vpMatrix = glm::scale( vpMatrix, vec3f32_t(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
 
@@ -263,7 +263,7 @@ color4f32_t color::saturateRGB( const color4f32_t& pColorRGB, const float32_t pP
         (1.0f - cSaturateVal) * csGrayG, (1.0f - cSaturateVal) * csGrayG + cSaturateVal, (1.0f - cSaturateVal) * csGrayG, 0.0f,
         (1.0f - cSaturateVal) * csGrayB, (1.0f - cSaturateVal) * csGrayB, (1.0f - cSaturateVal) * csGrayB + cSaturateVal, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f };
-    const glm::mat4x4 cSaturateMat = glm::make_mat4x4( &cSaturateMatData[0] );
+    const mat4f32_t cSaturateMat = glm::make_mat4x4( &cSaturateMatData[0] );
 
     color4f32_t satColorRGB = cSaturateMat * pColorRGB;
     satColorRGB = glm::clamp( satColorRGB, {0.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f, 1.0f} );
@@ -356,10 +356,10 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
         }
     }
 
-    const glm::mat4 cViewspaceWindowXform = llce::gfx::glMatrix();
-    const glm::mat4 cWindowViewspaceXform = glm::inverse( cViewspaceWindowXform );
+    const mat4f32_t cViewspaceWindowXform = llce::gfx::glMatrix();
+    const mat4f32_t cWindowViewspaceXform = glm::inverse( cViewspaceWindowXform );
 
-    glm::vec4 textCharDims( llce::gfx::DIGIT_ASPECT * pSize, pSize, 0.0f, 0.0f ); // window space
+    vec4f32_t textCharDims( llce::gfx::DIGIT_ASPECT * pSize, pSize, 0.0f, 0.0f ); // window space
     textCharDims *= viewportWindowRatio; // window space, adjusted for viewport skew
     textCharDims = cWindowViewspaceXform * textCharDims; // current coord space
 
@@ -382,9 +382,9 @@ void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const floa
     // GFX Environment Setup //
 
     glPushMatrix();
-    glm::mat4 matVecSpace( 1.0f );
-    matVecSpace *= glm::translate( glm::mat4(1.0f), vec3f32_t(pOrigin.x, pOrigin.y, 0.0f) );
-    matVecSpace *= glm::rotate( glm::mat4(1.0f), cDirAngle, vec3f32_t(0.0f, 0.0f, 1.0f) );
+    mat4f32_t matVecSpace( 1.0f );
+    matVecSpace *= glm::translate( vec3f32_t(pOrigin.x, pOrigin.y, 0.0f) );
+    matVecSpace *= glm::rotate( cDirAngle, vec3f32_t(0.0f, 0.0f, 1.0f) );
     glMultMatrixf( &matVecSpace[0][0] );
 
     glPushAttrib( GL_CURRENT_BIT );
@@ -442,9 +442,9 @@ void circle::render( const circle_t& pCircle, const float32_t pStartRadians, con
     // GFX Environment Setup //
 
     glPushMatrix();
-    glm::mat4 matCircleSpace( 1.0f );
-    matCircleSpace *= glm::translate( glm::mat4(1.0f), vec3f32_t(pCircle.mCenter.x, pCircle.mCenter.y, 0.0f) );
-    matCircleSpace *= glm::scale( glm::mat4(1.0f), glm::vec3(pCircle.mRadius / 2.0f, pCircle.mRadius / 2.0f, 1.0f) );
+    mat4f32_t matCircleSpace( 1.0f );
+    matCircleSpace *= glm::translate( vec3f32_t(pCircle.mCenter.x, pCircle.mCenter.y, 0.0f) );
+    matCircleSpace *= glm::scale( vec3f32_t(pCircle.mRadius / 2.0f, pCircle.mRadius / 2.0f, 1.0f) );
     glMultMatrixf( &matCircleSpace[0][0] );
 
     glPushAttrib( GL_CURRENT_BIT );

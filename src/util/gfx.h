@@ -52,7 +52,7 @@ float32_t aspect( const vec2i32_t& pDims );
 float32_t aspect( const vec2u32_t& pDims );
 float32_t aspect( const vec2f32_t& pDims );
 
-glm::mat4 glMatrix();
+mat4f32_t glMatrix();
 
 namespace color {
     color4f32_t u82f32( const color4u8_t& pColor );
