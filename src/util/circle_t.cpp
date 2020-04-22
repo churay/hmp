@@ -16,6 +16,7 @@ circle_t::circle_t() :
     
 }
 
+
 circle_t::circle_t( const vec2f32_t& pCenter, const float32_t pRadius ) :
         mCenter( pCenter ), mRadius( pRadius ) {
     

@@ -30,11 +30,11 @@ typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hm
 /// Per-Mode Tables ///
 
 constexpr static init_f MODE_INIT_FUNS[] = {
-    hmp::mode::game::init, hmp::mode::menu::init, hmp::mode::reset::init };
+    hmp::mode::game::init, hmp::mode::title::init, hmp::mode::reset::init };
 constexpr static update_f MODE_UPDATE_FUNS[] = {
-    hmp::mode::game::update, hmp::mode::menu::update, hmp::mode::reset::update };
+    hmp::mode::game::update, hmp::mode::title::update, hmp::mode::reset::update };
 constexpr static render_f MODE_RENDER_FUNS[] = {
-    hmp::mode::game::render, hmp::mode::menu::render, hmp::mode::reset::render };
+    hmp::mode::game::render, hmp::mode::title::render, hmp::mode::reset::render };
 constexpr static uint32_t MODE_COUNT = ARRAY_LEN( MODE_INIT_FUNS );
 
 /// Interface Functions ///
@@ -66,7 +66,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->tt = 0.0;
 
     pState->mid = hmp::mode::boot_id;
-    pState->pmid = hmp::mode::menu_id;
+    pState->pmid = hmp::mode::title_id;
 
     pState->rng = llce::rng_t( hmp::RNG_SEED );
     pState->synth = llce::sfx::synth_t();

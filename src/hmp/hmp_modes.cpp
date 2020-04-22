@@ -9,6 +9,7 @@
 #include <glm/gtx/vector_angle.hpp>
 #include <glm/ext/scalar_constants.hpp>
 
+#include "gui.h"
 #include "gfx.h"
 #include "sfx.h"
 #include "geom.h"
@@ -22,6 +23,11 @@ namespace hmp {
 namespace mode {
 
 /// Helper Structures ///
+
+constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
+constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
+constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
+constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
 
 const static llce::sfx::waveform_t SFX_MENU_CHANGE(
     llce::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
@@ -261,80 +267,41 @@ bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
 /// 'hmp::mode::menu' Functions  ///
 
-bool32_t menu::init( hmp::state_t* pState ) {
-    pState->menuIdx = 0;
+bool32_t title::init( hmp::state_t* pState ) {
+    const char8_t* cTitleItems[] = { &TITLE_ITEM_TEXT[0][0], &TITLE_ITEM_TEXT[1][0] };
+    pState->titleMenu = llce::gui::menu_t( "HMP",
+        cTitleItems, TITLE_ITEM_COUNT,
+        &hmp::color::BACKGROUND, &hmp::color::BACKGROUND2,
+        &hmp::color::TEAM[hmp::team::neutral], &hmp::color::BACKGROUND2 );
 
     return true;
 }
 
 
-bool32_t menu::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    int32_t dy[2] = { 0, 0 };
-    bool32_t dselect = false;
+bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
+    const auto cMenuAction = pState->titleMenu.update( pInput->keyboard(), pDT );
+    const uint32_t cMenuIndex = pState->titleMenu.mSelectIndex;
 
-    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_D) ) {
-        dselect = true;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_L) ) {
-        dselect = true;
-    }
-
-    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_W) ) {
-        dy[0] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_S) ) {
-        dy[0] -= 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_I) ) {
-        dy[1] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_K) ) {
-        dy[1] -= 1;
-    }
-
-    if( dselect ) {
+    if( cMenuAction == llce::gui::menu_t::action_e::select ) {
         pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( pState->menuIdx == 0 ) {
+        if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( pState->menuIdx == 1 ) {
+        } else if( cMenuIndex == 1 ) {
             pState->pmid = hmp::mode::exit_id;
         }
-    } else {
-        if( dy[0] + dy[1] != 0 ) {
-            pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
-        }
-        pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::MENU_ITEM_COUNT;
+    } else if( cMenuAction != llce::gui::menu_t::action_e::none ) {
+        pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
     return true;
 }
 
-bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
+bool32_t title::render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
     const uint32_t masterFBO = pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_MASTER_ID];
     const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER_ID];
     llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
-    llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
-    hmpRC.render();
-
-    { // Header //
-        const float32_t cHeaderPadding = 0.05f;
-        const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
-        const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
-        llce::gfx::text::render( "HMP", &hmp::color::BACKGROUND2, llce::box_t(cHeaderPos, cHeaderDims) );
-    }
-
-    { // Items //
-        const float32_t cItemPadding = 0.05f;
-        const vec2f32_t cItemDims = { 1.0f, 0.10f };
-        const vec2f32_t cItemBase = { 0.0f, 0.50f };
-
-        for( uint32_t itemIdx = 0; itemIdx < hmp::MENU_ITEM_COUNT; itemIdx++ ) {
-            vec2f32_t itemPos = cItemBase -
-                static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-            llce::gfx::render_context_t itemRC(
-                llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), &hmp::color::BACKGROUND2 );
-
-            if( itemIdx == pState->menuIdx ) { itemRC.render(); }
-            llce::gfx::text::render( hmp::MENU_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
-        }
-    }
+    pState->titleMenu.render();
 
     return true;
 }
@@ -342,44 +309,43 @@ bool32_t menu::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
 /// 'hmp::mode::reset' Functions  ///
 
 bool32_t reset::init( hmp::state_t* pState ) {
-    pState->menuIdx = 0;
+    const char8_t* cResetItems[] = { &RESET_ITEM_TEXT[0][0], &RESET_ITEM_TEXT[1][0] };
+    pState->resetMenu = llce::gui::menu_t( "",
+        cResetItems, RESET_ITEM_COUNT,
+        &hmp::color::BACKGROUND, &hmp::color::BACKGROUND2,
+        &hmp::color::TEAM[hmp::team::neutral], &hmp::color::BACKGROUND2 );
 
     return true;
 }
 
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    int32_t dy[2] = { 0, 0 };
-    bool32_t dselect = false;
+    const auto cMenuAction = pState->resetMenu.update( pInput->keyboard(), pDT );
+    const uint32_t cMenuIndex = pState->resetMenu.mSelectIndex;
 
-    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_D) ) {
-        dselect = true;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_L) ) {
-        dselect = true;
-    }
-
-    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_W) ) {
-        dy[0] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_S) ) {
-        dy[0] -= 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_I) ) {
-        dy[1] += 1;
-    } if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_K) ) {
-        dy[1] -= 1;
-    }
-
-    if( dselect ) {
+    if( cMenuAction == llce::gui::menu_t::action_e::select ) {
         pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( pState->menuIdx == 0 ) {
+        if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( pState->menuIdx == 1 ) {
-            pState->pmid = hmp::mode::menu_id;
+        } else if( cMenuIndex == 1 ) {
+            pState->pmid = hmp::mode::title_id;
         }
-    } else {
-        if( dy[0] + dy[1] != 0 ) {
-            pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
-        }
-        pState->menuIdx = ( pState->menuIdx + dy[0] + dy[1] ) % hmp::RESET_ITEM_COUNT;
+    } else if( cMenuAction != llce::gui::menu_t::action_e::none ) {
+        pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
+    }
+
+    { // Set Render Header Based on Winner //
+        const char8_t cTeamNames[2][8] = { "WEST", "EAST" };
+        const hmp::team::team_e cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
+            hmp::team::west : hmp::team::east;
+
+        char8_t headerText[16];
+        std::snprintf( &headerText[0], sizeof(headerText),
+            "%s WINS!", &cTeamNames[cTeamWinner][0] );
+        const color4u8_t* headerColor = &hmp::color::TEAM[cTeamWinner];
+
+        std::strcpy( &pState->resetMenu.mTitle[0], &headerText[0] );
+        pState->resetMenu.mTitleColor = headerColor;
     }
 
     return true;
@@ -391,45 +357,8 @@ bool32_t reset::render( const hmp::state_t* pState, const hmp::input_t* pInput, 
         llce::gfx::fbo_context_t menuFBOC(
             pOutput->gfxBufferFBOs[hmp::GFX_BUFFER_SIM_ID],
             pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM_ID] );
-        llce::gfx::render_context_t menuRC(
-            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
-            &hmp::color::BACKGROUND );
-        menuRC.render();
 
-        { // Header //
-            const char8_t cTeamNames[2][8] = { "EAST", "WEST" };
-            const hmp::team::team_e cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
-                hmp::team::west : hmp::team::east;
-
-            char8_t headerText[16];
-            std::snprintf( &headerText[0], sizeof(headerText),
-                "%s WINS!", &cTeamNames[cTeamWinner][0] );
-            const color4u8_t* headerColor = &hmp::color::TEAM[cTeamWinner];
-
-            const float32_t cHeaderPadding = 0.05f;
-            const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
-            const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
-
-            llce::gfx::render_context_t headerRC(
-                llce::box_t(cHeaderPos, cHeaderDims), &hmp::color::BACKGROUND );
-            llce::gfx::text::render( headerText, headerColor );
-        }
-
-        { // Items //
-            const float32_t cItemPadding = 0.05f;
-            const vec2f32_t cItemDims = { 1.0f, 0.10f };
-            const vec2f32_t cItemBase = { 0.0f, 0.50f };
-
-            for( uint32_t itemIdx = 0; itemIdx < hmp::RESET_ITEM_COUNT; itemIdx++ ) {
-                vec2f32_t itemPos = cItemBase -
-                    static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-                llce::gfx::render_context_t itemRC(
-                    llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), &hmp::color::BACKGROUND2 );
-
-                if( itemIdx == pState->menuIdx ) { itemRC.render(); }
-                llce::gfx::text::render( hmp::RESET_ITEM_TEXT[itemIdx], &hmp::color::TEAM[hmp::team::neutral] );
-            }
-        }
+        pState->resetMenu.render();
     }
 
     render_scoreboard( pState, pInput, pOutput );

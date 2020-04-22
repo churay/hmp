@@ -7,6 +7,7 @@
 #include "hmp_consts.h"
 
 #include "rng_t.h"
+#include "gui.h"
 #include "input.h"
 #include "output.h"
 #include "gfx.h"
@@ -18,11 +19,6 @@ namespace hmp {
 /// State Types/Variables ///
 
 constexpr static float32_t ROUND_START_TIME = 1.0f;
-
-constexpr static char8_t MENU_ITEM_TEXT[][32] = { "START", "EXIT " };
-constexpr static uint32_t MENU_ITEM_COUNT = ARRAY_LEN( MENU_ITEM_TEXT );
-constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
-constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
 
 struct state_t {
     // Global State //
@@ -48,7 +44,8 @@ struct state_t {
     paddle_t paddleEnts[2];
 
     // Menu State //
-    uint8_t menuIdx;
+    llce::gui::menu_t titleMenu;
+    llce::gui::menu_t resetMenu;
 };
 
 /// Input/Output Types/Variables ///
