@@ -279,17 +279,17 @@ bool32_t title::init( hmp::state_t* pState ) {
 
 
 bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const auto cMenuAction = pState->titleMenu.update( pInput->keyboard(), pDT );
+    const auto cMenuEvent = pState->titleMenu.update( pInput->keyboard(), pDT );
     const uint32_t cMenuIndex = pState->titleMenu.mSelectIndex;
 
-    if( cMenuAction == llce::gui::menu_t::action_e::select ) {
+    if( cMenuEvent == llce::gui::event_e::select ) {
         pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
         if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
         } else if( cMenuIndex == 1 ) {
             pState->pmid = hmp::mode::exit_id;
         }
-    } else if( cMenuAction != llce::gui::menu_t::action_e::none ) {
+    } else if( cMenuEvent != llce::gui::event_e::none ) {
         pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
@@ -320,23 +320,23 @@ bool32_t reset::init( hmp::state_t* pState ) {
 
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const auto cMenuAction = pState->resetMenu.update( pInput->keyboard(), pDT );
+    const auto cMenuEvent = pState->resetMenu.update( pInput->keyboard(), pDT );
     const uint32_t cMenuIndex = pState->resetMenu.mSelectIndex;
 
-    if( cMenuAction == llce::gui::menu_t::action_e::select ) {
+    if( cMenuEvent == llce::gui::event_e::select ) {
         pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
         if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
         } else if( cMenuIndex == 1 ) {
             pState->pmid = hmp::mode::title_id;
         }
-    } else if( cMenuAction != llce::gui::menu_t::action_e::none ) {
+    } else if( cMenuEvent != llce::gui::event_e::none ) {
         pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
     { // Set Render Header Based on Winner //
         const char8_t cTeamNames[2][8] = { "WEST", "EAST" };
-        const hmp::team::team_e cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
+        const auto cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
             hmp::team::west : hmp::team::east;
 
         char8_t headerText[16];

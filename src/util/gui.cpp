@@ -40,34 +40,33 @@ menu_t::menu_t( const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCou
 }
 
 
-menu_t::action_e menu_t::update( const llce::input::keyboard_t* pInput, const float64_t pDT ) {
-    int32_t di[2] = { 0, 0 };
-    bool32_t dselect = false;
+event_e menu_t::update( const llce::input::keyboard_t* pInput, const float64_t pDT ) {
+    int8_t itemDelta = 0;
+    bool8_t itemSelected = false;
 
     if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_D) ) {
-        dselect = true;
+        itemSelected = true;
     } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_L) ) {
-        dselect = true;
+        itemSelected = true;
     }
 
     if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_W) ) {
-        di[0] += 1;
+        itemDelta += 1;
     } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_S) ) {
-        di[0] -= 1;
+        itemDelta -= 1;
     } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_I) ) {
-        di[1] += 1;
+        itemDelta += 1;
     } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_K) ) {
-        di[1] -= 1;
+        itemDelta -= 1;
     }
 
-    menu_t::action_e status = menu_t::action_e::none;
-    if( dselect ) {
-        status = menu_t::action_e::select;
-    } else if( di[0] + di[1] != 0 ) {
-        // TODO(JRC): Improve this code so that it isn't so ugly.
-        int8_t newSelectIndex = mSelectIndex + di[0] + di[1];
-        mSelectIndex = ( newSelectIndex < 0 ? mItemCount - 1 : newSelectIndex ) % mItemCount;
-        status = ( di[0] + di[1] < 0 ) ? menu_t::action_e::down : menu_t::action_e::up;
+    event_e status = event_e::none;
+    if( itemSelected ) {
+        status = event_e::select;
+    } else if( itemDelta != 0 ) {
+        int8_t newSelectIndex = ( mSelectIndex + itemDelta ) % mItemCount;
+        mSelectIndex = ( newSelectIndex >= 0 ) ? newSelectIndex : mItemCount + newSelectIndex;
+        status = ( itemDelta < 0 ) ? event_e::prev : event_e::next;
     }
 
     return status;
@@ -75,8 +74,7 @@ menu_t::action_e menu_t::update( const llce::input::keyboard_t* pInput, const fl
 
 
 void menu_t::render() const {
-    llce::gfx::render_context_t menuRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), mColor );
-    menuRC.render();
+    llce::gfx::box::render( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), mColor );
 
     { // Header //
         const float32_t cHeaderPadding = 0.05f;
@@ -92,7 +90,7 @@ void menu_t::render() const {
 
         for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
             vec2f32_t itemPos = cItemBase -
-                static_cast<float32_t>(itemIdx) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
+                static_cast<float32_t>( itemIdx ) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
             llce::gfx::render_context_t itemRC(
                 llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), mSelectColor );
 
