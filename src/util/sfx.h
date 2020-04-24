@@ -13,6 +13,12 @@ namespace sfx {
 
 typedef float64_t (*wave_f)( const float64_t, const float64_t, const float64_t, const float64_t );
 
+namespace freq {
+    constexpr static float64_t MID_C = 261.626;
+    constexpr static float64_t MID_A = 220.000;
+    constexpr static float64_t MID_F = 174.614;
+};
+
 /// Namespace Types ///
 
 struct waveform_t {

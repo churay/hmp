@@ -6,15 +6,21 @@
 
 #include <cmath>
 #include <cstring>
+#include <limits>
 
+#include "sfx.h"
 #include "input.h"
 #include "output.h"
-#include "gfx.h"
 
 #include "demo_data.h"
 #include "demo.h"
 
 namespace demo {
+
+/// Interface Variables ///
+
+const static llce::sfx::waveform_t SFX_AMBIENT(
+    llce::sfx::wave::sine, llce::sfx::freq::MID_C, 1000.0, 0.0 );
 
 /// Interface Functions ///
 
@@ -38,6 +44,9 @@ extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
 
     pState->hsvColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
+    pState->synth = llce::sfx::synth_t();
+    pState->synth.play( &SFX_AMBIENT, std::numeric_limits<float64_t>::infinity() );
+
     // Initialize Input //
 
     std::memset( pInput, 0, sizeof(demo::input_t) );
@@ -56,7 +65,9 @@ extern "C" bool32_t update( demo::state_t* pState, demo::input_t* pInput, const 
     pState->hsvColor.z = demo::COLOR_VALUE;
     pState->hsvColor.w = 1.0f;
 
-    return true;
+    bool32_t updateStatus = true;
+    updateStatus &= pState->synth.update( pDT, pOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] );
+    return updateStatus;
 }
 
 
@@ -72,7 +83,9 @@ extern "C" bool32_t render( const demo::state_t* pState, const demo::input_t* pI
         &rgbColorByte );
     metaRC.render();
 
-    return true;
+    bool32_t renderStatus = true;
+    renderStatus &= pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] );
+    return renderStatus;
 }
 
 }

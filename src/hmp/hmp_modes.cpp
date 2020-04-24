@@ -30,9 +30,9 @@ constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
 constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
 
 const static llce::sfx::waveform_t SFX_MENU_CHANGE(
-    llce::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ, hmp::sfx::VOLUME, 0.0 );
+    llce::sfx::wave::sawtooth, llce::sfx::freq::MID_C, hmp::sfx::VOLUME, 0.0 );
 const static llce::sfx::waveform_t SFX_MENU_SELECT(
-    llce::sfx::wave::sawtooth, hmp::sfx::MID_C_FREQ * 2.0, hmp::sfx::VOLUME, 0.0 );
+    llce::sfx::wave::sawtooth, llce::sfx::freq::MID_C * 2.0, hmp::sfx::VOLUME, 0.0 );
 
 /// Helper Functions ///
 
@@ -134,11 +134,11 @@ bool32_t game::init( hmp::state_t* pState ) {
 
 bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     const static llce::sfx::waveform_t csPaddleRicochetSFX(
-        llce::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 5.0, hmp::sfx::VOLUME, 0.0 );
+        llce::sfx::wave::sine, llce::sfx::freq::MID_A * 5.0, hmp::sfx::VOLUME, 0.0 );
     const static llce::sfx::waveform_t csWallRicochetSFX(
-        llce::sfx::wave::sine, hmp::sfx::MID_A_FREQ * 4.0, hmp::sfx::VOLUME, 0.0 );
+        llce::sfx::wave::sine, llce::sfx::freq::MID_A * 4.0, hmp::sfx::VOLUME, 0.0 );
     const static llce::sfx::waveform_t csScoreSFX(
-        llce::sfx::wave::triangle, hmp::sfx::MID_F_FREQ * 8.0, hmp::sfx::VOLUME, 0.0 );
+        llce::sfx::wave::triangle, llce::sfx::freq::MID_F * 8.0, hmp::sfx::VOLUME, 0.0 );
 
     // Process Inputs //
 

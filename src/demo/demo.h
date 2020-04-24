@@ -3,8 +3,10 @@
 
 #include <SDL2/SDL.h>
 
+#include "sfx.h"
 #include "input.h"
 #include "output.h"
+
 #include "consts.h"
 
 namespace demo {
@@ -12,8 +14,8 @@ namespace demo {
 /// State Types/Variables ///
 
 struct state_t {
-    // FPS State //
     color4f32_t hsvColor;
+    llce::sfx::synth_t synth;
 };
 
 /// Input/Output Types/Variables ///
