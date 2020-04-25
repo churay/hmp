@@ -7,6 +7,8 @@ namespace llce {
 
 namespace sfx {
 
+/// Namespace Attributes ///
+
 /// 'llce::sfx::waveform_t' Functions ///
 
 waveform_t::waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) :
@@ -143,6 +145,42 @@ void synth_t::play( const waveform_t* pWaveform, const float64_t pWaveDuration )
 void synth_t::toggle() {
     // TODO(JRC): This behavior has been broken by the lookahead buffer implementation.
     mRunning = !mRunning;
+}
+
+/// 'llce::sfx' Functions ///
+
+float64_t freq( const char8_t pNote, const int8_t pSign, const uint8_t pOctave ) {
+    // NOTE(JRC): Standard piano keys only span 9 octaves (i.e. [0, 8]), but we
+    // allow a few more to span the human auditory range (i.e. <= 20k Hz).
+    const static uint8_t csMaxOctave = 10;
+    const static uint8_t csOctaveMajorCount = 7, csOctaveMinorCount = 5;
+    const static uint8_t csOctaveNoteCount = csOctaveMajorCount + csOctaveMinorCount;
+
+    LLCE_CHECK_WARNING( pOctave <= csMaxOctave,
+        "The provided octave level '" << pOctave << "' is outside " <<
+        "the supported range [0, " << csMaxOctave << "]." );
+    LLCE_CHECK_WARNING( 'a' <= pNote && pNote <= 'g',
+        "The provided note identifier '" << pNote << "' is outside " <<
+        "the standard note range ['a', 'g']" );
+
+    // NOTE(JRC): 'noteOctaveIndex' is the index of the lettered note within the
+    // octave, which needs to be adjusted based on the weird standard octave range
+    // `['c', 'g'] U ['a', 'b']` and the minor gap at 'e' (which has no sharp).
+    uint8_t noteOctaveIndex = 0; {
+        noteOctaveIndex = ( pNote < 'c' ) ?
+            ( 'g' - 'c' ) + ( pNote - 'a' ) + 1 : pNote - 'c';
+        noteOctaveIndex = 2 * noteOctaveIndex - (
+            (noteOctaveIndex > ('e' - 'c')) ? 1 : 0 );
+    }
+    const uint8_t cNoteIndex = glm::clamp(
+        1 + csOctaveNoteCount * pOctave + noteOctaveIndex + pSign,
+        1, (csMaxOctave + 1) * csOctaveNoteCount );
+
+    // This formula was derived from the frequency formula for standard piano keys:
+    // https://en.wikipedia.org/wiki/Piano_key_frequencies
+    const static float64_t csBaseFrequency = 440.0;
+    const static float64_t csStepFrequency = std::pow( 2.0, 1.0 / 12.0 );
+    return csBaseFrequency * std::pow( csStepFrequency, cNoteIndex - 58.0 );
 }
 
 /// 'llce::sfx::wave' Functions ///

@@ -13,12 +13,6 @@ namespace sfx {
 
 typedef float64_t (*wave_f)( const float64_t, const float64_t, const float64_t, const float64_t );
 
-namespace freq {
-    constexpr static float64_t MID_C = 261.626;
-    constexpr static float64_t MID_A = 220.000;
-    constexpr static float64_t MID_F = 174.614;
-};
-
 /// Namespace Types ///
 
 struct waveform_t {
@@ -54,6 +48,8 @@ struct synth_t {
 };
 
 /// Namespace Functions ///
+
+float64_t freq( const char8_t pNote, const int8_t pSign = 0, const uint8_t pOctave = 4 );
 
 namespace wave {
     float64_t sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase );

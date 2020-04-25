@@ -20,7 +20,7 @@ namespace demo {
 /// Interface Variables ///
 
 const static llce::sfx::waveform_t SFX_AMBIENT(
-    llce::sfx::wave::sine, llce::sfx::freq::MID_C, 1000.0, 0.0 );
+    llce::sfx::wave::sine, llce::sfx::freq('c'), 1000.0, 0.0 );
 
 /// Interface Functions ///
 
