@@ -69,7 +69,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->pmid = hmp::mode::title_id;
 
     pState->rng = llce::rng_t( hmp::RNG_SEED );
-    pState->synth = llce::sfx::synth_t();
+    pState->synth = llce::sfx::synth_t( &hmp::sfx::VOLUME );
 
     // Initialize Input //
 

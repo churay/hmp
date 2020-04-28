@@ -9,27 +9,17 @@ namespace sfx {
 
 /// Namespace Attributes ///
 
-/// 'llce::sfx::waveform_t' Functions ///
-
-waveform_t::waveform_t( const wave_f pWaveFun, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) :
-        mWaveFun( pWaveFun ), mWavelength( pFrequency ), mAmplitude( pAmplitude ), mPhase( pPhase ) {
-    
-}
-
-
-float64_t waveform_t::operator()( const float64_t pTime ) const {
-    return mWaveFun( pTime, mWavelength, mAmplitude, mPhase );
-}
-
 /// 'llce::sfx::synth_t' Functions ///
 
-synth_t::synth_t( const bool32_t pRunning ) {
+synth_t::synth_t( const float32_t* pVolume, const bool32_t pRunning ) :
+        mVolume( pVolume ), mRunning( pRunning ) {
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
-        mWaveforms[waveIdx] = nullptr;
-        mWaveformPositions[waveIdx] = 0.0;
-        mWaveformDurations[waveIdx] = 0.0;
+        mWaves[waveIdx] = nullptr;
+        mWavePositions[waveIdx] = 0.0;
+        mWaveDurations[waveIdx] = 0.0;
     }
 
+    mVolume = pVolume;
     mRunning = pRunning;
     mUpdateDT = 0.0;
     mUpdateDF = 0;
@@ -39,13 +29,13 @@ synth_t::synth_t( const bool32_t pRunning ) {
 
 bool32_t synth_t::update( const float64_t pDT, const uint32_t pDF ) {
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
-        if( mWaveforms[waveIdx] != nullptr ) {
-            if( mWaveformPositions[waveIdx] > mWaveformDurations[waveIdx] ) {
-                mWaveforms[waveIdx] = nullptr;
-                mWaveformPositions[waveIdx] = 0.0;
-                mWaveformDurations[waveIdx] = 0.0;
+        if( mWaves[waveIdx] != nullptr ) {
+            if( mWavePositions[waveIdx] > mWaveDurations[waveIdx] ) {
+                mWaves[waveIdx] = nullptr;
+                mWavePositions[waveIdx] = 0.0;
+                mWaveDurations[waveIdx] = 0.0;
             } else {
-                mWaveformPositions[waveIdx] += mUpdateDT * mUpdateDF;
+                mWavePositions[waveIdx] += mUpdateDT * mUpdateDF;
             }
         }
     }
@@ -75,13 +65,14 @@ bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer 
 
         float64_t sampleValue = 0.0;
         for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
-            if( mWaveforms[waveIdx] != nullptr ) {
-                float64_t waveTime = mWaveformPositions[waveIdx] + sampleDT;
-                if( waveTime <= mWaveformDurations[waveIdx] ) {
-                    sampleValue += (*mWaveforms[waveIdx])( waveTime );
+            if( mWaves[waveIdx] != nullptr ) {
+                float64_t waveTime = mWavePositions[waveIdx] + sampleDT;
+                if( waveTime <= mWaveDurations[waveIdx] ) {
+                    sampleValue += (*mWaves[waveIdx])( waveTime );
                 }
             }
         }
+        sampleValue *= ( mVolume != nullptr ) ? *mVolume : 1.0;
 
         for( uint32_t channelIdx = 0; channelIdx < pAudioSpec.channels; channelIdx++, bufferIdx++ ) {
             bit8_t* sampleAddress = &pAudioBuffer[cAudioFormatBytes * bufferIdx];
@@ -113,31 +104,32 @@ bool32_t synth_t::render( const SDL_AudioSpec& pAudioSpec, bit8_t* pAudioBuffer 
     return true;
 }
 
+
 bool32_t synth_t::playing() const {
     bool32_t isPlaying = false;
     for( uint32_t waveIdx = 0, wavePlaying = 0; waveIdx < MAX_WAVE_COUNT; waveIdx++ ) {
-        isPlaying |= mWaveforms[waveIdx] != nullptr;
+        isPlaying |= mWaves[waveIdx] != nullptr;
     }
     return isPlaying && mRunning;
 }
 
 
-void synth_t::play( const waveform_t* pWaveform, const float64_t pWaveDuration ) {
+void synth_t::play( const wave_f pWave, const float64_t pWaveDuration ) {
     uint32_t waveformIdx = MAX_WAVE_COUNT;
 
     for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && waveformIdx >= MAX_WAVE_COUNT; waveIdx++ ) {
-        waveformIdx = ( mWaveforms[waveIdx] == pWaveform ) ? waveIdx : waveformIdx;
+        waveformIdx = ( mWaves[waveIdx] == pWave ) ? waveIdx : waveformIdx;
     } for( uint32_t waveIdx = 0; waveIdx < MAX_WAVE_COUNT && waveformIdx >= MAX_WAVE_COUNT; waveIdx++ ) {
-        if( mWaveforms[waveIdx] == nullptr ) {
-            mWaveforms[waveIdx] = pWaveform;
+        if( mWaves[waveIdx] == nullptr ) {
+            mWaves[waveIdx] = pWave;
             waveformIdx = waveIdx;
         }
     }
 
     // NOTE(JRC): This code resets playing sounds if they self-interrupt.
     if( waveformIdx < MAX_WAVE_COUNT ) {
-        mWaveformPositions[waveformIdx] = 0.0;
-        mWaveformDurations[waveformIdx] = pWaveDuration;
+        mWavePositions[waveformIdx] = 0.0;
+        mWaveDurations[waveformIdx] = pWaveDuration;
     }
 }
 
@@ -185,23 +177,23 @@ float64_t freq( const char8_t pNote, const int8_t pSign, const uint8_t pOctave )
 
 /// 'llce::sfx::wave' Functions ///
 
-float64_t wave::sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+float64_t waveform::sine( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
     return pAmplitude * std::sin( 2 * M_PI * pFrequency * pTime - pPhase );
 }
 
 
-float64_t wave::square( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+float64_t waveform::square( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
     const float64_t pPeriod = 1.0 / pFrequency;
     return pAmplitude * ( std::fmod(pTime - pPhase, pPeriod) <= (pPeriod / 2.0) ? 1.0 : -1.0 );
 }
 
 
-float64_t wave::triangle( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+float64_t waveform::triangle( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
     return pAmplitude / M_PI_2 * std::asin( std::sin(2 * M_PI * pFrequency * pTime - pPhase) );
 }
 
 
-float64_t wave::sawtooth( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
+float64_t waveform::sawtooth( const float64_t pTime, const float64_t pFrequency, const float64_t pAmplitude, const float64_t pPhase ) {
     return pAmplitude / M_PI_2 * std::atan( std::tan(M_PI * pFrequency * pTime - pPhase) );
 }
 

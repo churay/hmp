@@ -5,6 +5,8 @@
 
 namespace demo {
 
+const extern float32_t VOLUME;
+
 const extern float32_t COLOR_VELOCITY;
 const extern float32_t COLOR_SATURATION;
 const extern float32_t COLOR_VALUE;

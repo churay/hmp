@@ -29,10 +29,8 @@ constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
 constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
 constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
 
-const static llce::sfx::waveform_t SFX_MENU_CHANGE(
-    llce::sfx::wave::sawtooth, llce::sfx::freq('c', 0, 4), hmp::sfx::VOLUME, 0.0 );
-const static llce::sfx::waveform_t SFX_MENU_SELECT(
-    llce::sfx::wave::sawtooth, llce::sfx::freq('c', 0, 5), hmp::sfx::VOLUME, 0.0 );
+const static auto SFX_MENU_CHANGE = llce::sfx::waveform::sawtooth<'c', 0, 4>;
+const static auto SFX_MENU_SELECT = llce::sfx::waveform::sawtooth<'c', 0, 5>;
 
 /// Helper Functions ///
 
@@ -133,12 +131,9 @@ bool32_t game::init( hmp::state_t* pState ) {
 
 
 bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const static llce::sfx::waveform_t csPaddleRicochetSFX(
-        llce::sfx::wave::sine, llce::sfx::freq('c', 1, 6), hmp::sfx::VOLUME, 0.0 );
-    const static llce::sfx::waveform_t csWallRicochetSFX(
-        llce::sfx::wave::sine, llce::sfx::freq('a', 0, 5), hmp::sfx::VOLUME, 0.0 );
-    const static llce::sfx::waveform_t csScoreSFX(
-        llce::sfx::wave::triangle, llce::sfx::freq('f', 0, 6), hmp::sfx::VOLUME, 0.0 );
+    const static auto csPaddleRicochetSFX = llce::sfx::waveform::sine<'c', 1, 6>;
+    const static auto csWallRicochetSFX = llce::sfx::waveform::sine<'a', 0, 5>;
+    const static auto csScoreSFX = llce::sfx::waveform::triangle<'f', 0, 6>;
 
     // Process Inputs //
 
@@ -219,7 +214,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             uint8_t ricochetIdx = (uint8_t)( ballY.mMax > boundsY.mMax );
             ballEnt.ricochet( &pState->ricochetEnts[ricochetIdx] );
 
-            pState->synth.play( &csWallRicochetSFX, hmp::sfx::BLIP_TIME );
+            pState->synth.play( csWallRicochetSFX, hmp::sfx::BLIP_TIME );
         } if( !boundsX.contains(ballX) ) {
             bool8_t isWestScore = ballX.contains( boundsX.mMax );
             pState->scoreEnt.tally( isWestScore ? -1 : 0, isWestScore ? 0 : -1 );
@@ -236,7 +231,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
                 pState->pmid = hmp::mode::reset_id;
             }
 
-            pState->synth.play( &csScoreSFX, hmp::sfx::BLIP_TIME );
+            pState->synth.play( csScoreSFX, hmp::sfx::BLIP_TIME );
         }
     }
 
@@ -247,7 +242,7 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
             ballEnt.change( static_cast<hmp::team::team_e>(paddleEnt.mTeam) );
             ballEnt.mVel *= 1.1f;
 
-            pState->synth.play( &csPaddleRicochetSFX, hmp::sfx::BLIP_TIME );
+            pState->synth.play( csPaddleRicochetSFX, hmp::sfx::BLIP_TIME );
         } if( !boundsEnt.mBBox.contains(paddleEnt.mBBox) ) {
             paddleEnt.mBBox.embed( boundsEnt.mBBox );
         }
@@ -283,14 +278,14 @@ bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     const uint32_t cMenuIndex = pState->titleMenu.mSelectIndex;
 
     if( cMenuEvent == llce::gui::event_e::select ) {
-        pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
+        pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
         if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
         } else if( cMenuIndex == 1 ) {
             pState->pmid = hmp::mode::exit_id;
         }
     } else if( cMenuEvent != llce::gui::event_e::none ) {
-        pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
+        pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
     return true;
@@ -324,14 +319,14 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
     const uint32_t cMenuIndex = pState->resetMenu.mSelectIndex;
 
     if( cMenuEvent == llce::gui::event_e::select ) {
-        pState->synth.play( &SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
+        pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
         if( cMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
         } else if( cMenuIndex == 1 ) {
             pState->pmid = hmp::mode::title_id;
         }
     } else if( cMenuEvent != llce::gui::event_e::none ) {
-        pState->synth.play( &SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
+        pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
     { // Set Render Header Based on Winner //

@@ -20,8 +20,8 @@ const extern color4u8_t TEAM[3];
 
 namespace sfx {
 
-constexpr static float64_t VOLUME = 1000.0;
-constexpr static float64_t BLIP_TIME = 1.0e-1;
+const extern float32_t VOLUME;
+const extern float32_t BLIP_TIME;
 
 };
 

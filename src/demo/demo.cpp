@@ -19,8 +19,7 @@ namespace demo {
 
 /// Interface Variables ///
 
-const static llce::sfx::waveform_t SFX_AMBIENT(
-    llce::sfx::wave::sine, llce::sfx::freq('c'), 1000.0, 0.0 );
+const static auto SFX_AMBIENT = llce::sfx::waveform::sine<'c'>;
 
 /// Interface Functions ///
 
@@ -44,8 +43,8 @@ extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
 
     pState->hsvColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-    pState->synth = llce::sfx::synth_t();
-    pState->synth.play( &SFX_AMBIENT, std::numeric_limits<float64_t>::infinity() );
+    pState->synth = llce::sfx::synth_t( &demo::VOLUME );
+    pState->synth.play( SFX_AMBIENT, std::numeric_limits<float64_t>::infinity() );
 
     // Initialize Input //
 

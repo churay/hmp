@@ -18,4 +18,11 @@ const color4u8_t TEAM[3] = {
 
 };
 
+namespace sfx {
+
+const float32_t VOLUME = 2.0e3f;
+const float32_t BLIP_TIME = 1.0e-1f;
+
+};
+
 };
