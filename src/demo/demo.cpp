@@ -17,9 +17,19 @@
 
 namespace demo {
 
-/// Interface Variables ///
+/// Helper Functions ///
 
-const static auto SFX_AMBIENT = llce::sfx::waveform::sine<'c'>;
+float64_t ambient( const float64_t pTime ) {
+    const static float64_t csLoTone = llce::sfx::freq( 'c', 0, 4 );
+    const static float64_t csHiTone = llce::sfx::freq( 'c', 0, 5 );
+
+    const float64_t cCurrTone = glm::mix( csLoTone, csHiTone,
+        std::fmod(demo::COLOR_VELOCITY * pTime, 1.0f) );
+    // NOTE(JRC): The following is a smoother mix function:
+    // std::pow(llce::sfx::waveform::sine(pTime * demo::COLOR_VELOCITY, 0.5, 1.0, 0.0), 2.0)
+
+    return llce::sfx::waveform::sine( pTime, cCurrTone, 1.0, 0.0 );
+}
 
 /// Interface Functions ///
 
@@ -44,7 +54,7 @@ extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
     pState->hsvColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 
     pState->synth = llce::sfx::synth_t( &demo::VOLUME );
-    pState->synth.play( SFX_AMBIENT, std::numeric_limits<float64_t>::infinity() );
+    pState->synth.play( ambient, std::numeric_limits<float64_t>::infinity() );
 
     // Initialize Input //
 
