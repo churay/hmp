@@ -23,12 +23,10 @@ float64_t ambient( const float64_t pTime ) {
     const static float64_t csLoTone = llce::sfx::freq( 'c', 0, 4 );
     const static float64_t csHiTone = llce::sfx::freq( 'c', 0, 5 );
 
-    const float64_t cCurrTone = glm::mix( csLoTone, csHiTone,
-        std::fmod(demo::COLOR_VELOCITY * pTime, 1.0f) );
-    // NOTE(JRC): The following is a smoother mix function:
-    // std::pow(llce::sfx::waveform::sine(pTime * demo::COLOR_VELOCITY, 0.5, 1.0, 0.0), 2.0)
+    const float64_t cMixFactor = std::fmod( demo::COLOR_VELOCITY * pTime, 1.0 );
+    const float64_t cCurrTone = glm::mix( csLoTone, csHiTone, cMixFactor );
 
-    return llce::sfx::waveform::sine( pTime, cCurrTone, 1.0, 0.0 );
+    return llce::sfx::waveform::sine( cMixFactor, cCurrTone, 1.0, 0.0 );
 }
 
 /// Interface Functions ///
