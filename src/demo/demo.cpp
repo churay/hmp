@@ -49,7 +49,7 @@ extern "C" bool32_t boot( demo::output_t* pOutput ) {
 extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
     // Initialize Global Variables //
 
-    pState->hsvColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    pState->tt = 0.0f;
 
     pState->synth = llce::sfx::synth_t( &demo::VOLUME );
     pState->synth.play( ambient, std::numeric_limits<float64_t>::infinity() );
@@ -65,12 +65,7 @@ extern "C" bool32_t init( demo::state_t* pState, demo::input_t* pInput ) {
 
 
 extern "C" bool32_t update( demo::state_t* pState, demo::input_t* pInput, const demo::output_t* pOutput, const float64_t pDT ) {
-    // NOTE(JRC): The hue is normalized from the standard [0.0, 360.0) range
-    // in simplify conversion calculations.
-    pState->hsvColor.x = std::fmod( pState->hsvColor.x + demo::COLOR_VELOCITY * pDT, 1.0f );
-    pState->hsvColor.y = demo::COLOR_SATURATION;
-    pState->hsvColor.z = demo::COLOR_VALUE;
-    pState->hsvColor.w = 1.0f;
+    pState->tt += pDT;
 
     bool32_t updateStatus = true;
     updateStatus &= pState->synth.update( pDT, pOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] );
@@ -83,7 +78,12 @@ extern "C" bool32_t render( const demo::state_t* pState, const demo::input_t* pI
         pOutput->gfxBufferFBOs[llce::output::BUFFER_SHARED_ID],
         pOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID] );
 
-    color4f32_t rgbColor = llce::gfx::color::hsv2rgb( pState->hsvColor );
+    // NOTE(JRC): The hue is normalized from the standard [0.0, 360.0) range
+    // to simplify conversion calculations.
+    color4f32_t hsvColor(
+        std::fmod(demo::COLOR_VELOCITY * pState->tt, 1.0f),
+        demo::COLOR_SATURATION, demo::COLOR_VALUE, 1.0f );
+    color4f32_t rgbColor = llce::gfx::color::hsv2rgb( hsvColor );
     color4u8_t rgbColorByte = llce::gfx::color::f322u8( rgbColor );
     llce::gfx::render_context_t metaRC(
         llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),

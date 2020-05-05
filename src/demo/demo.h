@@ -14,7 +14,7 @@ namespace demo {
 /// State Types/Variables ///
 
 struct state_t {
-    color4f32_t hsvColor;
+    float32_t tt;
     llce::sfx::synth_t synth;
 };
 
