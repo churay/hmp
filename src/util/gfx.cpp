@@ -252,6 +252,18 @@ color4f32_t color::hsv2rgb( const color4f32_t& pColorHSV ) {
 }
 
 
+color4u8_t color::transparentize( const color4u8_t& pColor, const float32_t pPercent ) {
+    uint8_t newAlpha = static_cast<uint8_t>( glm::min(pColor.w * pPercent, 255.0f) );
+    return { pColor.x, pColor.y, pColor.z, newAlpha };
+}
+
+
+color4f32_t color::transparentize( const color4f32_t& pColor, const float32_t pPercent ) {
+    float32_t newAlpha = glm::min( pColor.w * pPercent, 1.0f );
+    return { pColor.x, pColor.y, pColor.z, newAlpha };
+}
+
+
 // NOTE(JRC): This code was adapted from this SO response:
 // http://www.graficaobscura.com/matrix/index.html
 color4f32_t color::saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent ) {

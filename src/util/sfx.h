@@ -67,10 +67,10 @@ namespace waveform {
     // TODO(JRC): It would be nice if this process could be automated (e.g. for
     // each function in the 'waveform' namespace), but it seems hard in C++
     // without using a very clumsy and/or overengineering solution.
-    LLCE_SFX_WAVEFORM_WAVE(sine);
-    LLCE_SFX_WAVEFORM_WAVE(square);
-    LLCE_SFX_WAVEFORM_WAVE(triangle);
-    LLCE_SFX_WAVEFORM_WAVE(sawtooth);
+    LLCE_SFX_WAVEFORM_WAVE( sine );
+    LLCE_SFX_WAVEFORM_WAVE( square );
+    LLCE_SFX_WAVEFORM_WAVE( triangle );
+    LLCE_SFX_WAVEFORM_WAVE( sawtooth );
 };
 
 };

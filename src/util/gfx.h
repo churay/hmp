@@ -61,6 +61,9 @@ namespace color {
     color4f32_t rgb2hsv( const color4f32_t& pColorRGB );
     color4f32_t hsv2rgb( const color4f32_t& pColorHSV );
 
+    color4u8_t transparentize( const color4u8_t& pColor, const float32_t pPercent );
+    color4f32_t transparentize( const color4f32_t& pColor, const float32_t pPercent );
+
     color4f32_t saturateRGB( const color4f32_t& pColorRGB, const float32_t pPercent );
     color4f32_t saturateHSV( const color4f32_t& pColorHSV, const float32_t pPercent );
 };
