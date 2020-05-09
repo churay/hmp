@@ -18,6 +18,9 @@ typedef anchor2D::anchor2D_e anchor2D_e;
 float32_t anchor( const float32_t pInterval, const anchor1D_e pAnchor );
 vec2f32_t anchor( const vec2f32_t pInterval, const anchor2D_e pAnchor );
 
+float32_t determinant( const vec2f32_t& pP0, const vec2f32_t& pP1, const vec2f32_t& pP2 );
+bool32_t contains( const vec2f32_t* pPolygon, const uint32_t pPolygonLength, const vec2f32_t& pPoint );
+
 }
 
 }
