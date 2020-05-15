@@ -38,13 +38,13 @@ bool32_t contains( const vec2f32_t* pPolygon, const uint32_t pPolygonLength, con
         const vec2f32_t& sideEnd = pPolygon[(cornerIdx + 1) % pPolygonLength];
 
         // if the side edge intersects the point x-axis ray upward...
-        if( sideStart.y < pPoint.y && sideEnd.y > pPoint.y ) {
+        if( sideStart.y < pPoint.y && pPoint.y < sideEnd.y ) {
             // and the point is strictly left of the edge (s->e->p is ccw)
             if( llce::geom::determinant(sideStart, sideEnd, pPoint) > 0.0f ) {
                 windCount++;
             }
         // if the side edge intersects the point x-axis ray downward...
-        } else if( sideStart.y > pPoint.y && sideEnd.y < pPoint.y ) {
+        } else if( sideStart.y > pPoint.y && pPoint.y > sideEnd.y ) {
             // and the point is strictly right of the edge (s->e->p is cw)
             if( llce::geom::determinant(sideStart, sideEnd, pPoint) < 0.0f ) {
                 windCount--;

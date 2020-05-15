@@ -89,8 +89,16 @@ box_t box_t::intersect( const box_t& pOther ) const {
     const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
 
     interval_t bx = tx.intersect( ox ), by = ty.intersect( oy );
-    return box_t( vec2f32_t(bx.mMin, by.mMin),
-        vec2f32_t(bx.mMax - bx.mMin, by.mMax - by.mMin) );
+    return box_t( bx.mMin, by.mMin, bx.length(), by.length() );
+}
+
+
+box_t box_t::unionize( const box_t& pOther ) const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    const interval_t ox = pOther.xbounds(), oy = pOther.ybounds();
+
+    interval_t bx = tx.unionize( ox ), by = ty.unionize( oy );
+    return box_t( bx.mMin, by.mMin, bx.length(), by.length() );
 }
 
 

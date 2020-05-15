@@ -99,6 +99,13 @@ interval_t interval_t::intersect( const interval_t& pOther ) const {
 }
 
 
+interval_t interval_t::unionize( const interval_t& pOther ) const {
+    // TODO(JRC): Consider returning an invalid 'interval_t' if the two argument
+    // intervals don't overlap or abut.
+    return interval_t( std::min(mMin, pOther.mMin), std::max(mMax, pOther.mMax) );
+}
+
+
 float32_t interval_t::length() const {
     return valid() ? mMax - mMin : 0.0f;
 }

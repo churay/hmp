@@ -46,7 +46,7 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
         boardRC.render();
 
         llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2,
-            llce::box_t({0.5f, 0.5f}, {1.0f, 0.25f}, llce::geom::anchor2D::mm) );
+            llce::box_t(0.5f, 0.5f, 1.0f, 0.25f, llce::geom::anchor2D::mm) );
     } else {
         pState->boundsEnt.render();
         for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )

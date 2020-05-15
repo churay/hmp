@@ -34,6 +34,7 @@ class interval_t {
     bool32_t contains( const interval_t& pOther ) const;
     bool32_t overlaps( const interval_t& pOther ) const;
     interval_t intersect( const interval_t& pOther ) const;
+    interval_t unionize(  const interval_t& pOther ) const;
 
     float32_t length() const;
     bool32_t empty() const;
