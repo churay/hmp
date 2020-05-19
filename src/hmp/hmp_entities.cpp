@@ -36,16 +36,17 @@ bounds_t::bounds_t( const llce::box_t& pBBox ) :
 
 
 void bounds_t::render() const {
-    llce::gfx::render_context_t baseRC( mBBox, mColor );
-    baseRC.render();
+    llce::gfx::render_context_t baseRC( mBBox );
+    llce::gfx::color_context_t baseCC( mColor );
+    llce::gfx::render::box();
 
     // TODO(JRC): This 'brighten' operation only works because the source color
     // for the 'bounds_t' object is such that values don't overflow. In the future,
     // we need a more proper 'brighten' function that puts a ceiling on color values.
-    const color4u8_t entityColor = static_cast<uint8_t>( 2 ) * *mColor;
-    llce::gfx::render_context_t lineRC(
-        llce::box_t(0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, llce::geom::anchor2D::mm), &entityColor );
-    lineRC.render();
+    const color4u8_t lineColor = static_cast<uint8_t>( 2 ) * *mColor;
+    const llce::box_t lineBox( 0.5f, 0.5f, bounds_t::LINE_WIDTH, 1.0f, llce::geom::anchor2D::mm );
+    llce::gfx::color_context_t lineCC( &lineColor );
+    llce::gfx::render::box( lineBox );
 }
 
 /// 'hmp::ball_t' Functions ///
@@ -148,8 +149,9 @@ void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
 
 
 void scoreboard_t::render() const {
-    llce::gfx::render_context_t entityRC( mBBox, mColor );
-    entityRC.render();
+    llce::gfx::render_context_t entityRC( mBBox );
+    llce::gfx::color_context_t entityCC( mColor );
+    llce::gfx::render::box();
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const int8_t teamScore = mScores[team];
@@ -166,18 +168,21 @@ void scoreboard_t::render() const {
             ( 2.0f * scoreboard_t::PADDING_WIDTH * vec2f32_t(1.0f, 1.0f) );
 
         const llce::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
-            llce::gfx::render_context_t teamRC( teamBox, &hmp::color::INTERFACE );
-            teamRC.render();
+            llce::gfx::render_context_t teamRC( teamBox );
+            llce::gfx::color_context_t teamCC( &hmp::color::INTERFACE );
+            llce::gfx::render::box();
 
             const llce::box_t scoreBox( isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor ); {
-                llce::gfx::render_context_t scoreRC( scoreBox, &teamColorScaled );
-                scoreRC.render();
+                llce::gfx::color_context_t scoreCC( &teamColorScaled );
+                llce::gfx::render::box( scoreBox );
             }
 
             const llce::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
                 char teamScoreBuffer[2];
                 std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
-                llce::gfx::text::render( &teamScoreBuffer[0], teamColor, textBox );
+
+                llce::gfx::color_context_t scoreCC( teamColor );
+                llce::gfx::render::text( &teamScoreBuffer[0], textBox );
             }
         }
     }

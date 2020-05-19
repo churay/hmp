@@ -74,13 +74,16 @@ event_e menu_t::update( const llce::input::keyboard_t* pInput, const float64_t p
 
 
 void menu_t::render() const {
-    llce::gfx::box::render( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), mColor );
+    llce::gfx::color_context_t menuCC( mColor );
+    llce::gfx::render::box();
 
     { // Header //
         const float32_t cHeaderPadding = 0.05f;
         const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
         const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
-        llce::gfx::text::render( mTitle, mTitleColor, llce::box_t(cHeaderPos, cHeaderDims) );
+
+        llce::gfx::color_context_t headerCC( mTitleColor );
+        llce::gfx::render::text( mTitle, llce::box_t(cHeaderPos, cHeaderDims) );
     }
 
     { // Items //
@@ -91,11 +94,14 @@ void menu_t::render() const {
         for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
             vec2f32_t itemPos = cItemBase -
                 static_cast<float32_t>( itemIdx ) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
-            llce::gfx::render_context_t itemRC(
-                llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh), mSelectColor );
 
-            if( itemIdx == mSelectIndex ) { itemRC.render(); }
-            llce::gfx::text::render( mItems[itemIdx], mItemColor );
+            llce::gfx::render_context_t itemRC(
+                llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh) );
+            llce::gfx::color_context_t itemCC( mSelectColor );
+            if( itemIdx == mSelectIndex ) { llce::gfx::render::box(); }
+
+            llce::gfx::color_context_t textCC( mItemColor );
+            llce::gfx::render::text( mItems[itemIdx] );
         }
     }
 }

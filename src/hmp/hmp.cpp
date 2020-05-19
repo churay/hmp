@@ -104,10 +104,9 @@ extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hm
 
 
 extern "C" bool32_t render( const hmp::state_t* pState, const hmp::input_t* pInput, const hmp::output_t* pOutput ) {
-    llce::gfx::render_context_t hmpRC(
-        llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),
-        &hmp::color::BACKGROUND );
-    hmpRC.render();
+    llce::gfx::render_context_t hmpRC( llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f) );
+    llce::gfx::color_context_t hmpCC( &hmp::color::BACKGROUND );
+    llce::gfx::render::box();
 
     bool32_t renderStatus = MODE_RENDER_FUNS[pState->mid]( pState, pInput, pOutput );
     pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] );

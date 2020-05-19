@@ -1,6 +1,6 @@
 #include <sstream>
 
-#include <glm/common.hpp>
+#include <glm/glm.hpp>
 
 #include "box_t.h"
 

@@ -40,24 +40,26 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
         pOutput->gfxBufferRess[hmp::GFX_BUFFER_SIM_ID] );
 
     if( pState->roundPaused ) {
-        llce::gfx::render_context_t boardRC(
-            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
-            &hmp::color::BACKGROUND );
-        boardRC.render();
+        llce::gfx::color_context_t boardCC( &hmp::color::BACKGROUND );
+        llce::gfx::render::box();
 
-        llce::gfx::text::render( "PAUSE", &hmp::color::BACKGROUND2,
+        llce::gfx::color_context_t textCC( &hmp::color::BACKGROUND2 );
+        llce::gfx::render::text( "PAUSE",
             llce::box_t(0.5f, 0.5f, 1.0f, 0.25f, llce::geom::anchor2D::mm) );
     } else {
         pState->boundsEnt.render();
-        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ ) {
             pState->ricochetEnts[sideIdx].render();
+        }
         pState->ballEnt.render();
-        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ )
+        for( uint8_t sideIdx = 0; sideIdx < 2; sideIdx++ ) {
             pState->paddleEnts[sideIdx].render();
+        }
 
         if( !pState->roundStarted ) {
             const hmp::ball_t& ball = pState->ballEnt;
-            llce::gfx::vector::render( ball.mBBox.center(), ball.mVel, 0.15f, ball.mColor );
+            llce::gfx::color_context_t ballCC( ball.mColor );
+            llce::gfx::render::vector( ball.mBBox.center(), ball.mVel, 0.15f );
         }
     }
 }
@@ -77,8 +79,8 @@ void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, c
     const vec2u32_t masterRes = pOutput->gfxBufferRess[hmp::GFX_BUFFER_MASTER_ID];
     llce::gfx::fbo_context_t masterFBOC( masterFBO, masterRes );
 
-    llce::gfx::render_context_t hmpRC( llce::box_t(0.0f, 0.0f, 1.0f, 1.0f), &hmp::color::BACKGROUND );
-    hmpRC.render();
+    llce::gfx::color_context_t hmpCC( &hmp::color::BACKGROUND );
+    llce::gfx::render::box();
 
     for( uint32_t gfxBufferIdx = 0; gfxBufferIdx < hmp::GFX_BUFFER_COUNT; gfxBufferIdx++ ) {
         const uint32_t gfxBufferFBO = pOutput->gfxBufferFBOs[gfxBufferIdx];

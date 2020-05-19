@@ -80,15 +80,13 @@ extern "C" bool32_t render( const demo::state_t* pState, const demo::input_t* pI
 
     // NOTE(JRC): The hue is normalized from the standard [0.0, 360.0) range
     // to simplify conversion calculations.
-    color4f32_t hsvColor(
-        std::fmod(demo::COLOR_VELOCITY * pState->tt, 1.0f),
+    color4f32_t hsvColor( std::fmod(demo::COLOR_VELOCITY * pState->tt, 1.0f),
         demo::COLOR_SATURATION, demo::COLOR_VALUE, 1.0f );
     color4f32_t rgbColor = llce::gfx::color::hsv2rgb( hsvColor );
-    color4u8_t rgbColorByte = llce::gfx::color::f322u8( rgbColor );
-    llce::gfx::render_context_t metaRC(
-        llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),
-        &rgbColorByte );
-    metaRC.render();
+
+    llce::gfx::render_context_t metaRC( llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f) );
+    llce::gfx::color_context_t metaCC( &rgbColor );
+    llce::gfx::render::box();
 
     bool32_t renderStatus = true;
     renderStatus &= pState->synth.render( pOutput->sfxConfig, pOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] );

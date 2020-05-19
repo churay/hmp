@@ -18,25 +18,46 @@ namespace llce {
 
 namespace gfx {
 
-/// 'llce::gfx::render_context_t' Functions ///
+/// 'llce::gfx::color_context_t' Functions ///
 
-render_context_t::render_context_t( const box_t& pBox, const color4u8_t* pColor ) {
-    glPushMatrix();
-    mat4f32_t matModelWorld( 1.0f );
-    matModelWorld *= glm::translate( vec3f32_t(pBox.mPos.x, pBox.mPos.y, 0.0f) );
-    matModelWorld *= glm::scale( vec3f32_t(pBox.mDims.x, pBox.mDims.y, 1.0f) );
-    glMultMatrixf( &matModelWorld[0][0] );
-
+color_context_t::color_context_t( const color4u8_t* pColor ) {
     glPushAttrib( GL_CURRENT_BIT );
     glColor4ubv( (uint8_t*)pColor );
 }
 
 
-// TODO(JRC): This is black magic from my 'fxn' project 'renderable_t'
-// type that so happens to work... I need to reason this out again
-// to figure out how this algorithm works.
-render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio, const color4u8_t* pColor ) :
-        render_context_t( pBox, pColor ) {
+color_context_t::color_context_t( const color4f32_t* pColor ) {
+    glPushAttrib( GL_CURRENT_BIT );
+    glColor4fv( (float32_t*)pColor );
+}
+
+
+color_context_t::~color_context_t() {
+    glPopAttrib();
+}
+
+
+void color_context_t::update( const color4u8_t* pColor ) {
+    glColor4ubv( (uint8_t*)pColor );
+}
+
+
+void color_context_t::update( const color4f32_t* pColor ) {
+    glColor4fv( (float32_t*)pColor );
+}
+
+/// 'llce::gfx::render_context_t' Functions ///
+
+render_context_t::render_context_t( const box_t& pBox ) {
+    glPushMatrix();
+    mat4f32_t matModelWorld( 1.0f );
+    matModelWorld *= glm::translate( vec3f32_t(pBox.mPos.x, pBox.mPos.y, 0.0f) );
+    matModelWorld *= glm::scale( vec3f32_t(pBox.mDims.x, pBox.mDims.y, 1.0f) );
+    glMultMatrixf( &matModelWorld[0][0] );
+}
+
+
+render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio ) : render_context_t( pBox ) {
     const mat4f32_t cXformMatrix = llce::gfx::glMatrix();
     const vec4f32_t cXformBases = cXformMatrix * vec4f32_t( 1.0f, 1.0f, 0.0f, 0.0f );
     const float32_t cXformRatio = cXformBases.x / cXformBases.y;
@@ -59,7 +80,7 @@ render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRa
 }
 
 
-render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBasisX, const vec2f32_t& pBasisY, const color4u8_t* pColor ) {
+render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBasisX, const vec2f32_t& pBasisY ) {
     const static vec3f32_t csBasisZ( 0.0f, 0.0f, 1.0f );
 
     // TODO(JRC): Add support for skewed and arbitrarily rotated (U, V)
@@ -76,25 +97,11 @@ render_context_t::render_context_t( const vec2f32_t& pPos, const vec2f32_t& pBas
     matModelWorld *= glm::rotate( glm::orientedAngle(vec2f32_t(1.0f, 0.0f), glm::normalize(pBasisX)), csBasisZ );
     matModelWorld *= glm::scale( vec3f32_t(glm::length(pBasisX), glm::length(pBasisY), 1.0f) );
     glMultMatrixf( &matModelWorld[0][0] );
-
-    glPushAttrib( GL_CURRENT_BIT );
-    glColor4ubv( (uint8_t*)pColor );
 }
 
 
 render_context_t::~render_context_t() {
-    glPopAttrib();
     glPopMatrix();
-}
-
-
-void render_context_t::render() const {
-    glBegin( GL_QUADS ); {
-        glVertex2f( 0.0f, 0.0f );
-        glVertex2f( 1.0f, 0.0f );
-        glVertex2f( 1.0f, 1.0f );
-        glVertex2f( 0.0f, 1.0f );
-    } glEnd();
 }
 
 /// 'llce::gfx::fbo_t' Functions ///
@@ -289,9 +296,125 @@ color4f32_t color::saturateHSV( const color4f32_t& pColorHSV, const float32_t pP
     return satColorHSV;
 }
 
-/// 'llce::gfx::text' Functions ///
+/// 'llce::gfx::render' Functions ///
 
-void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& pRenderBox ) {
+void render::vector( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength ) {
+    const static float64_t csHeadRatio = 2.5 / 10.0;
+    const static float64_t csTailRatio = 1.0 - csHeadRatio;
+    const static float64_t csWidthRatio = 1.0 / 10.0;
+    const static vec2f32_t csAxisI( 1.0f, 0.0f ), csAxisJ( 0.0f, 1.0f );
+
+    const vec2f32_t cDirNorm = glm::normalize( pDir );
+    const float32_t cDirAngle = glm::orientedAngle( csAxisI, cDirNorm );
+
+    glPushMatrix();
+    mat4f32_t matVecSpace( 1.0f );
+    matVecSpace *= glm::translate( vec3f32_t(pOrigin.x, pOrigin.y, 0.0f) );
+    matVecSpace *= glm::rotate( cDirAngle, vec3f32_t(0.0f, 0.0f, 1.0f) );
+    glMultMatrixf( &matVecSpace[0][0] );
+
+    { // Rendering //
+        glBegin( GL_QUADS ); {
+            glVertex2f( 0.0f, (-csWidthRatio / 2.0f) * pLength );
+            glVertex2f( csTailRatio * pLength, (-csWidthRatio / 2.0f) * pLength );
+            glVertex2f( csTailRatio * pLength, (csWidthRatio / 2.0f) * pLength );
+            glVertex2f( 0.0f, (csWidthRatio / 2.0f) * pLength );
+        } glEnd();
+
+        glBegin( GL_TRIANGLES ); {
+            glVertex2f( csTailRatio * pLength, (-csHeadRatio / 2.0f) * pLength );
+            glVertex2f( (csTailRatio + csHeadRatio) * pLength, 0.0f );
+            glVertex2f( csTailRatio * pLength, (csHeadRatio / 2.0f) * pLength );
+        } glEnd();
+    }
+    
+    glPopMatrix();
+}
+
+
+void render::box( const box_t& pBox ) {
+    const vec2f32_t& boxMin = pBox.mPos;
+    const vec2f32_t& boxDims = pBox.mDims;
+
+    glBegin( GL_QUADS ); {
+        glVertex2f( boxMin.x, boxMin.y );
+        glVertex2f( boxMin.x + boxDims.x, boxMin.y );
+        glVertex2f( boxMin.x + boxDims.x, boxMin.y + boxDims.y );
+        glVertex2f( boxMin.x, boxMin.y + boxDims.y );
+    } glEnd();
+}
+
+
+void render::box( const vec2f32_t& pSize, const vec2f32_t& pPos, const llce::geom::anchor2D_e pAnchor ) {
+    // TODO(JRC): Implement this function so that (1) it's actually correct
+    // (correctly renders horizontal bars onlt) and (2) it doesn't duplicate
+    // code from the analogous 'render::text' function.
+
+    // vec2i32_t windowDims; {
+    //     SDL_Window* window = SDL_GL_GetCurrentWindow();
+    //     SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
+    //     windowDims.x = windowDims.y = glm::min( windowDims.x, windowDims.y );
+    // } const vec2i32_t cWindowDims = windowDims;
+
+    // vec4i32_t viewportData; {
+    //     glGetIntegerv( GL_VIEWPORT, &viewportData.x );
+    // } const vec2i32_t cViewportDims = { viewportData.z, viewportData.w };
+
+    // float32_t viewportWindowRatio = 1.0f; {
+    //     const float32_t viewportAspect = llce::gfx::aspect( cViewportDims );
+    //     const float32_t windowAspect = llce::gfx::aspect( cWindowDims );
+
+    //     // If A_window < A_viewport, then only for w_window == w_viewport will
+    //     // the viewport fit inside the window. Opposite for A_window > A_viewport.
+    //     if( windowAspect < viewportAspect ) {
+    //         viewportWindowRatio = cViewportDims.x / ( cWindowDims.x + 0.0f );
+    //     } else { // if( windowAspect > viewportAspect ) {
+    //         viewportWindowRatio = cViewportDims.y / ( cWindowDims.y + 0.0f );
+    //     }
+    // }
+
+    // const mat4f32_t cViewspaceWindowXform = llce::gfx::glMatrix();
+    // const mat4f32_t cWindowViewspaceXform = glm::inverse( cViewspaceWindowXform );
+
+    // vec4f32_t boxDims( pSize.x, pSize.y, 0.0f, 0.0f ); // window space
+    // boxDims *= viewportWindowRatio; // window space, adjusted for viewport skew
+    // boxDims = cWindowViewspaceXform * boxDims; // current coord space
+
+    // boxDims.x = ( boxDims.x == 0.0f ) ? 1.0f : boxDims.x;
+    // boxDims.y = ( boxDims.y == 0.0f ) ? 1.0f : boxDims.y;
+
+    // llce::gfx::render::box( box_t(pPos, boxDims, pAnchor), pColor );
+}
+
+
+void render::circle( const circle_t& pCircle, const float32_t pStartRadians, const float32_t pEndRadians ) {
+    const static uint32_t csSegmentsPer2PI = 20;
+
+    glPushMatrix();
+    mat4f32_t matCircleSpace( 1.0f );
+    matCircleSpace *= glm::translate( vec3f32_t(pCircle.mCenter.x, pCircle.mCenter.y, 0.0f) );
+    matCircleSpace *= glm::scale( vec3f32_t(pCircle.mRadius / 2.0f, pCircle.mRadius / 2.0f, 1.0f) );
+    glMultMatrixf( &matCircleSpace[0][0] );
+
+    // FIXME(JRC): The following code crashes for very small intervals as they cause
+    // the interpolation scheme to divide by zero.
+    { // Rendering //
+        const interval_t cRadianInterval( pStartRadians, pEndRadians );
+        const uint32_t cSegmentCount = std::ceil( cRadianInterval.length() * csSegmentsPer2PI );
+        glBegin( GL_TRIANGLE_FAN ); {
+            glVertex2f( 0.0f, 0.0f );
+            for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
+                float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
+                glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
+            }
+        } glEnd();
+    }
+
+    glPopMatrix();
+}
+
+
+void render::text( const char8_t* pText, const box_t& pRenderBox ) {
     const static float64_t csDigitSpaceX = 1.0 / llce::gfx::DIGIT_WIDTH;
     const static float64_t csDigitSpaceY = 1.0 / llce::gfx::DIGIT_HEIGHT;
     const static float64_t csDigitPaddingX = csDigitSpaceX / 10.0;
@@ -305,7 +428,7 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& 
     const float64_t cTextFillX = cTextSpacingX / ( (cTextSpacingX + 1.0) * cTextLength - 1.0 );
     const float64_t cTextFillY = 1.0;
 
-    gfx::render_context_t rrc( pRenderBox, llce::gfx::DIGIT_ASPECT * cTextLength, pColor );
+    gfx::render_context_t rrc( pRenderBox, llce::gfx::DIGIT_ASPECT * cTextLength );
     for( const char8_t* pTextItr = pText; *pTextItr != '\0'; pTextItr++ ) {
         const auto cTextDigitMap = &llce::gfx::ASCII_DIGIT_MAP[static_cast<uint32_t>(*pTextItr)][0];
         const uint32_t cTextIdx = pTextItr - pText;
@@ -314,16 +437,15 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& 
         const float64_t cTextOffsetY = 0.0;
 
         const box_t cTextBox( cTextOffsetX, cTextOffsetY, cTextFillX, cTextFillY );
-        gfx::render_context_t trc( cTextBox, pColor );
+        gfx::render_context_t trc( cTextBox );
         for( uint32_t yIdx = 0; yIdx < llce::gfx::DIGIT_HEIGHT; yIdx++ ) {
             for( uint32_t xIdx = 0; xIdx < llce::gfx::DIGIT_WIDTH; xIdx++ ) {
                 const float64_t cDigitOffsetX = csDigitPaddingX + csDigitSpaceX * xIdx;
                 const float64_t cDigitOffsetY = csDigitPaddingY + csDigitSpaceY * yIdx;
 
                 if( cTextDigitMap[yIdx][xIdx] ) {
-                    gfx::box::render(
-                        box_t(cDigitOffsetX, cDigitOffsetY, csDigitFillX, csDigitFillY),
-                        pColor );
+                    gfx::render::box( box_t(
+                        cDigitOffsetX, cDigitOffsetY, csDigitFillX, csDigitFillY) );
                 }
             }
         }
@@ -331,8 +453,7 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const box_t& 
 }
 
 
-void text::render( const char8_t* pText, const color4u8_t* pColor, const float32_t pSize,
-        const vec2f32_t& pPos, const llce::geom::anchor2D_e pAnchor ) {
+void render::text( const char8_t* pText, const float32_t pSize, const vec2f32_t& pPos, const llce::geom::anchor2D_e pAnchor ) {
     // NOTE(JRC): For an arbitrary harness code, it isn't possible for this code
     // to know how its frame buffer will be skewed/transformed for the final render.
     // However, the 'llce' harness has a process that attempts to maintain characteristics
@@ -377,109 +498,7 @@ void text::render( const char8_t* pText, const color4u8_t* pColor, const float32
 
     const vec2f32_t& textPos = pPos;
     vec2f32_t textDims = vec2f32_t( std::strlen(pText) * textCharDims.x, textCharDims.y );
-    llce::gfx::text::render( pText, pColor, box_t(textPos, textDims, pAnchor) );
-}
-
-/// 'llce::gfx::vector' Functions ///
-
-void vector::render( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength, const color4u8_t* pColor ) {
-    const static float64_t csHeadRatio = 2.5 / 10.0;
-    const static float64_t csTailRatio = 1.0 - csHeadRatio;
-    const static float64_t csWidthRatio = 1.0 / 10.0;
-    const static vec2f32_t csAxisI( 1.0f, 0.0f ), csAxisJ( 0.0f, 1.0f );
-
-    const vec2f32_t cDirNorm = glm::normalize( pDir );
-    const float32_t cDirAngle = glm::orientedAngle( csAxisI, cDirNorm );
-
-    // GFX Environment Setup //
-
-    glPushMatrix();
-    mat4f32_t matVecSpace( 1.0f );
-    matVecSpace *= glm::translate( vec3f32_t(pOrigin.x, pOrigin.y, 0.0f) );
-    matVecSpace *= glm::rotate( cDirAngle, vec3f32_t(0.0f, 0.0f, 1.0f) );
-    glMultMatrixf( &matVecSpace[0][0] );
-
-    glPushAttrib( GL_CURRENT_BIT );
-    glColor4ubv( (uint8_t*)pColor );
-
-    { // Rendering //
-        glBegin( GL_QUADS ); {
-            glVertex2f( 0.0f, (-csWidthRatio / 2.0f) * pLength );
-            glVertex2f( csTailRatio * pLength, (-csWidthRatio / 2.0f) * pLength );
-            glVertex2f( csTailRatio * pLength, (csWidthRatio / 2.0f) * pLength );
-            glVertex2f( 0.0f, (csWidthRatio / 2.0f) * pLength );
-        } glEnd();
-
-        glBegin( GL_TRIANGLES ); {
-            glVertex2f( csTailRatio * pLength, (-csHeadRatio / 2.0f) * pLength );
-            glVertex2f( (csTailRatio + csHeadRatio) * pLength, 0.0f );
-            glVertex2f( csTailRatio * pLength, (csHeadRatio / 2.0f) * pLength );
-        } glEnd();
-    }
-
-    // GFX Environment Teardown //
-
-    glPopAttrib();
-    glPopMatrix();
-}
-
-/// 'llce::gfx::vector' Functions ///
-
-void box::render( const box_t& pBox, const color4u8_t* pColor ) {
-    glPushAttrib( GL_CURRENT_BIT );
-    glColor4ubv( (uint8_t*)pColor );
-
-    const vec2f32_t boxMin = pBox.min();
-    const vec2f32_t& boxDims = pBox.mDims;
-    glBegin( GL_QUADS ); {
-        glVertex2f( boxMin.x, boxMin.y );
-        glVertex2f( boxMin.x + boxDims.x, boxMin.y );
-        glVertex2f( boxMin.x + boxDims.x, boxMin.y + boxDims.y );
-        glVertex2f( boxMin.x, boxMin.y + boxDims.y );
-    } glEnd();
-
-    glPopAttrib();
-}
-
-/// 'llce::gfx::circle' Functions ///
-
-void circle::render( const circle_t& pCircle, const color4u8_t* pColor ) {
-    circle::render( pCircle, 0.0f, 2.0f * glm::pi<float32_t>(), pColor );
-}
-
-
-void circle::render( const circle_t& pCircle, const float32_t pStartRadians, const float32_t pEndRadians, const color4u8_t* pColor ) {
-    const static uint32_t csSegmentsPer2PI = 20;
-
-    // GFX Environment Setup //
-
-    glPushMatrix();
-    mat4f32_t matCircleSpace( 1.0f );
-    matCircleSpace *= glm::translate( vec3f32_t(pCircle.mCenter.x, pCircle.mCenter.y, 0.0f) );
-    matCircleSpace *= glm::scale( vec3f32_t(pCircle.mRadius / 2.0f, pCircle.mRadius / 2.0f, 1.0f) );
-    glMultMatrixf( &matCircleSpace[0][0] );
-
-    glPushAttrib( GL_CURRENT_BIT );
-    glColor4ubv( (uint8_t*)pColor );
-
-    // FIXME(JRC): The following code crashes for very small intervals as they cause
-    // the interpolation scheme to divide by zero.
-    { // Rendering //
-        const interval_t cRadianInterval( pStartRadians, pEndRadians );
-        const uint32_t cSegmentCount = std::ceil( cRadianInterval.length() * csSegmentsPer2PI );
-        glBegin( GL_TRIANGLE_FAN ); {
-            glVertex2f( 0.0f, 0.0f );
-            for( uint32_t segmentIdx = 0; segmentIdx < cSegmentCount; segmentIdx++ ) {
-                float32_t segmentRadians = cRadianInterval.interp( segmentIdx / (cSegmentCount - 1.0f) );
-                glVertex2f( std::cos(segmentRadians), std::sin(segmentRadians) );
-            }
-        } glEnd();
-    }
-
-    // GFX Environment Teardown //
-
-    glPopAttrib();
-    glPopMatrix();
+    llce::gfx::render::text( pText, box_t(textPos, textDims, pAnchor) );
 }
 
 /// 'llce::gfx' Constants ///
@@ -522,7 +541,7 @@ const bool8_t ASCII_DIGIT_MAP[128][DIGIT_HEIGHT][DIGIT_WIDTH] = {
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '"'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '#'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '$'
-    { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '%'
+    { {1, 0, 0, 1, 1}, {1, 0, 0, 1, 1}, {0, 1, 0, 0, 0}, {0, 0, 1, 0, 0}, {0, 0, 0, 1, 0}, {1, 1, 0, 0, 1}, {1, 1, 0, 0, 1} }, // '%'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '&'
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '''
     { {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0} }, // '('

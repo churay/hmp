@@ -28,8 +28,8 @@ void entity_t::update( const float64_t pDT ) {
 
 
 void entity_t::render() const {
-    llce::gfx::render_context_t entityRC( mBBox, mColor );
-    entityRC.render();
+    llce::gfx::color_context_t entityCC( mColor );
+    llce::gfx::render::box( mBBox );
 }
 
 }

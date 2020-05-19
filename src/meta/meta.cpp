@@ -56,10 +56,9 @@ bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const
         pOutput->gfxBufferFBOs[llce::output::BUFFER_SHARED_ID],
         pOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID] );
 
-    llce::gfx::render_context_t metaRC(
-        llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f),
-        &meta::UI_FPS_BACKGROUND_COLOR );
-    metaRC.render();
+    llce::gfx::render_context_t metaRC( llce::box_t(-1.0f, -1.0f, 2.0f, 2.0f) );
+    llce::gfx::color_context_t metaCC( &meta::UI_FPS_BACKGROUND_COLOR );
+    llce::gfx::render::box();
 
     const static float32_t csMetaUILineWidth = 5.0f;
     const static vec2f32_t csMetaUITargetPadding = { 0.0f, 0.25f };
@@ -69,8 +68,8 @@ bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const
         const static uint16_t csMetaUITrendPattern = 0xFFFF;
 
         llce::gfx::render_context_t trendLineRC(
-            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f - csMetaUITargetPadding.y),
-            &csMetaUITrendColor );
+            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f - csMetaUITargetPadding.y) );
+        llce::gfx::color_context_t trendLineCC( &csMetaUITrendColor );
 
         glLineWidth( csMetaUILineWidth );
         glLineStipple( 1, csMetaUITrendPattern );
@@ -87,9 +86,7 @@ bool32_t render( const meta::state_t* pState, const meta::input_t* pInput, const
         const static color4u8_t csMetaUITargetColor = { 0x00, 0x00, 0xFF, 0xFF };
         const static uint16_t csMetaUITargetPattern = 0x00FF;
 
-        llce::gfx::render_context_t targetLineRC(
-            llce::box_t(0.0f, 0.0f, 1.0f, 1.0f),
-            &csMetaUITargetColor );
+        llce::gfx::color_context_t targetLineCC( &csMetaUITargetColor );
 
         glLineWidth( csMetaUILineWidth );
         glLineStipple( 1, csMetaUITargetPattern );

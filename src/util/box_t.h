@@ -3,12 +3,8 @@
 
 #include <sstream>
 
-#include <glm/ext/vector_float2.hpp>
-
 #include "interval_t.h"
-
 #include "geom.h"
-
 #include "consts.h"
 
 namespace llce {
