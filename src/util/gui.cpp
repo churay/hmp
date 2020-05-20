@@ -51,13 +51,13 @@ event_e menu_t::update( const llce::input::keyboard_t* pInput, const float64_t p
     }
 
     if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_W) ) {
-        itemDelta += 1;
+        itemDelta -= 1;
     } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_S) ) {
-        itemDelta -= 1;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_I) ) {
         itemDelta += 1;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_K) ) {
+    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_I) ) {
         itemDelta -= 1;
+    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_K) ) {
+        itemDelta += 1;
     }
 
     event_e status = event_e::none;
