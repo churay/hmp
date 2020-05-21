@@ -88,6 +88,8 @@ namespace render {
         const float32_t pStartRadians = 0.0f,
         const float32_t pEndRadians = glm::two_pi<float32_t>() );
 
+    void border( const float32_t (&pSizes)[4] );
+
     void text( const char8_t* pText,
         const box_t& pRenderBox = box_t(0.0f, 0.0f, 1.0f, 1.0f) );
     void text( const char8_t* pText, const float32_t pSize, const vec2f32_t& pPos,

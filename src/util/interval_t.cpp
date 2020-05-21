@@ -61,7 +61,7 @@ float32_t interval_t::exbed( const interval_t& pOther ) {
 
 
 float32_t interval_t::wrap( const float32_t pValue ) const {
-    float32_t wrapValue = std::fmod( pValue, mMax - mMin );
+    float32_t wrapValue = std::fmod( pValue - mMin, mMax - mMin );
     return ( wrapValue < 0.0f ) ? mMax + wrapValue : mMin + wrapValue;
 }
 

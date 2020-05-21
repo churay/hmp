@@ -414,6 +414,33 @@ void render::circle( const circle_t& pCircle, const float32_t pStartRadians, con
 }
 
 
+void render::border( const float32_t (&pSizes)[4] ) {
+    // NOTE(JRC): The input is given in an order that differs from the convenient
+    // iteration order, so this map serves to bridge the gap between these two
+    // different index spaces.
+    const static uint32_t csBorderIndexMap[] = { 2, 1, 0, 3 };
+
+    glPushMatrix();
+
+    mat4f32_t borderSpace( 1.0f );
+    for( uint32_t sideIdx = 0; sideIdx < 4; sideIdx++ ) {
+        borderSpace = glm::translate( vec3f32_t(0.0f, 1.0f, 0.0f) ) *
+            glm::rotate( -glm::half_pi<float32_t>(), vec3f32_t(0.0f, 0.0f, 1.0f) );
+        glMultMatrixf( &borderSpace[0][0] );
+
+        const float32_t& cSideSize = pSizes[csBorderIndexMap[sideIdx]];
+        glBegin( GL_QUADS ); {
+            glVertex2f( 0.0f, 0.0f );
+            glVertex2f( 0.0f, 1.0f );
+            glVertex2f( cSideSize, 1.0f );
+            glVertex2f( cSideSize, 0.0f );
+        } glEnd();
+    }
+
+    glPopMatrix();
+}
+
+
 void render::text( const char8_t* pText, const box_t& pRenderBox ) {
     const static float64_t csDigitSpaceX = 1.0 / llce::gfx::DIGIT_WIDTH;
     const static float64_t csDigitSpaceY = 1.0 / llce::gfx::DIGIT_HEIGHT;
