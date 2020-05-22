@@ -106,6 +106,11 @@ interval_t interval_t::unionize( const interval_t& pOther ) const {
 }
 
 
+float32_t interval_t::at( const llce::geom::anchor1D_e pAnchor ) const {
+    return mMin + llce::geom::anchor( length(), pAnchor );
+}
+
+
 float32_t interval_t::length() const {
     return valid() ? mMax - mMin : 0.0f;
 }

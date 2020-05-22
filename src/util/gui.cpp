@@ -78,22 +78,29 @@ void menu_t::render() const {
     llce::gfx::render::box();
 
     { // Header //
-        const float32_t cHeaderPadding = 0.05f;
-        const vec2f32_t cHeaderDims = { 1.0f - 2.0f * cHeaderPadding, 0.25f };
-        const vec2f32_t cHeaderPos = { cHeaderPadding, 1.0f - cHeaderPadding - cHeaderDims.y };
+        const static float32_t csHeaderPadding = 0.05f;
+        const static vec2f32_t csHeaderDims = { 1.0f - 2.0f * csHeaderPadding, 0.25f };
+        const static vec2f32_t csHeaderPos = { csHeaderPadding, 1.0f - csHeaderPadding - csHeaderDims.y };
 
         llce::gfx::color_context_t headerCC( mTitleColor );
-        llce::gfx::render::text( mTitle, llce::box_t(cHeaderPos, cHeaderDims) );
+        llce::gfx::render::text( mTitle, llce::box_t(csHeaderPos, csHeaderDims) );
     }
 
     { // Items //
-        const float32_t cItemPadding = 0.05f;
-        const vec2f32_t cItemDims = { 1.0f, 0.10f };
-        const vec2f32_t cItemBase = { 0.0f, 0.50f };
+        const static llce::box_t csItemArea( 0.0f, 0.0f, 1.0f, 0.5f );
+        const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
+        const static float32_t csItemPadFactor = 1.50f;
+        const static float32_t csItemMaxHeight = 0.10f;
+
+        const float32_t cItemFitWidth = 1.0f;
+        const float32_t cItemFitHeight = csItemArea.mDims.y / ( csItemPadFactor * mItemCount );
+        const float32_t cItemWidth = cItemFitWidth;
+        const float32_t cItemHeight = glm::min( csItemMaxHeight, cItemFitHeight );
+        const vec2f32_t cItemDims( cItemWidth, cItemHeight );
 
         for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
-            vec2f32_t itemPos = cItemBase -
-                static_cast<float32_t>( itemIdx ) * vec2f32_t( 0.0f, cItemDims.y + cItemPadding );
+            vec2f32_t itemPos = csItemBase -
+                vec2f32_t( 0.0f, itemIdx * csItemPadFactor * cItemHeight );
 
             llce::gfx::render_context_t itemRC(
                 llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh) );

@@ -59,7 +59,7 @@ void render_gameboard( const hmp::state_t* pState, const hmp::input_t* pInput, c
         if( !pState->roundStarted ) {
             const hmp::ball_t& ball = pState->ballEnt;
             llce::gfx::color_context_t ballCC( ball.mColor );
-            llce::gfx::render::vector( ball.mBBox.center(), ball.mVel, 0.15f );
+            llce::gfx::render::vector( ball.mBBox.mid(), ball.mVel, 0.15f );
         }
     }
 }

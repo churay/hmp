@@ -124,8 +124,16 @@ vec2f32_t box_t::max() const {
 }
 
 
-vec2f32_t box_t::center() const {
+vec2f32_t box_t::mid() const {
     return mPos + 0.5f * mDims;
+}
+
+
+vec2f32_t box_t::at( const llce::geom::anchor2D_e pAnchor ) const {
+    return mPos + vec2f32_t(
+        llce::geom::anchor(mDims.x, static_cast<llce::geom::anchor1D_e>(pAnchor >> 0 & 0b11)),
+        llce::geom::anchor(mDims.y, static_cast<llce::geom::anchor1D_e>(pAnchor >> 2 & 0b11))
+    );
 }
 
 

@@ -36,6 +36,8 @@ class interval_t {
     interval_t intersect( const interval_t& pOther ) const;
     interval_t unionize(  const interval_t& pOther ) const;
 
+    float32_t at( const llce::geom::anchor1D_e pAnchor ) const;
+
     float32_t length() const;
     bool32_t empty() const;
     bool32_t valid() const;

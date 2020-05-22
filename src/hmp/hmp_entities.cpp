@@ -58,7 +58,7 @@ ball_t::ball_t( const llce::box_t& pBBox ) :
 
 
 void ball_t::ricochet( const entity_t* pSurface ) {
-    vec2f32_t contactVec = mBBox.center() - pSurface->mBBox.center();
+    vec2f32_t contactVec = mBBox.mid() - pSurface->mBBox.mid();
     vec2f32_t contactNormal = contactVec; {
         llce::interval_t ballBoundsX = mBBox.xbounds(), ballBoundsY = mBBox.ybounds();
         llce::interval_t surfBoundsX = pSurface->mBBox.xbounds(), surfBoundsY = pSurface->mBBox.ybounds();

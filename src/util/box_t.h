@@ -42,7 +42,9 @@ class box_t {
 
     vec2f32_t min() const;
     vec2f32_t max() const;
-    vec2f32_t center() const;
+    vec2f32_t mid() const;
+    vec2f32_t at( const llce::geom::anchor2D_e pAnchor ) const;
+
     float32_t ratio() const;
     interval_t xbounds() const;
     interval_t ybounds() const;
