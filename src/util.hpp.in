@@ -1,6 +1,8 @@
 #ifndef LLCE_UTIL_H
 #define LLCE_UTIL_H
 
+#include <array>
+
 #include <glm/glm.hpp>
 #include <glm/common.hpp>
 
@@ -14,6 +16,20 @@ template <typename T>
 T normalize( const T& pVector ) {
     return ( glm::length(pVector) > glm::epsilon<float32_t>() ) ?
         glm::normalize( pVector ) : pVector;
+}
+
+
+// NOTE(JRC): This is necessary due to an annoying-but-necessary limitation
+// in C++ wherein static 2D matrix (e.g. T[][]) cannot be converted automatically
+// to a contiguous block of pointers to the constituents of this matrix (e.g. T**).
+// For more information, see: https://stackoverflow.com/a/1584114
+template <typename T, size_t N, size_t M>
+std::array<const T*, N> pointerize( const T (&pMatrix)[N][M] ) {
+    std::array<const T*, N> array;
+    for( uint32_t arrayIdx = 0; arrayIdx < N; arrayIdx++ ) {
+        array[arrayIdx] = &pMatrix[arrayIdx][0];
+    }
+    return array;
 }
 
 };
