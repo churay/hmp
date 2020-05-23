@@ -137,6 +137,11 @@ vec2f32_t box_t::at( const llce::geom::anchor2D_e pAnchor ) const {
 }
 
 
+float32_t box_t::area() const {
+    return mDims.x * mDims.y;
+}
+
+
 float32_t box_t::ratio() const {
     return mDims.x / mDims.y;
 }
