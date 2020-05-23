@@ -12,6 +12,8 @@ include(ExternalProject)
 ### user config ################################################################
 ################################################################################
 
+set(LLCE_CACHE_PREFIX "${PROJECT_SOURCE_DIR}/cache" CACHE PATH "The path of externally downloaded/installed libraries.")
+
 set(LLCE_DYLOAD ON CACHE BOOL "Enable dynamic loading of loop-live library.")
 set(LLCE_FDOUBLE OFF CACHE BOOL "Enable double precision floating-point values.")
 set(LLCE_CAPTURE OFF CACHE BOOL "Enable screen/state capture features (requires libpng).")
@@ -64,16 +66,16 @@ if(LLCE_CAPTURE)
 endif()
 
 ExternalProject_Add(glm
-    PREFIX ${PROJECT_BINARY_DIR}/glm_src
+    PREFIX ${LLCE_CACHE_PREFIX}/stage/glm
     URL https://github.com/g-truc/glm/releases/download/0.9.9.3/glm-0.9.9.3.zip
     URL_HASH MD5=d54fd62d29f690ad37683432921c3654
     DOWNLOAD_NAME "glm.zip"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${PROJECT_BINARY_DIR}/glm_src/src/glm/glm ${PROJECT_BINARY_DIR}/glm/glm
+        ${LLCE_CACHE_PREFIX}/stage/glm/src/glm/glm ${LLCE_CACHE_PREFIX}/glm/glm
     LOG_DOWNLOAD ON)
-set(GLM_INCLUDE_DIRS ${PROJECT_BINARY_DIR}/glm)
+set(GLM_INCLUDE_DIRS ${LLCE_CACHE_PREFIX}/glm)
 
 ################################################################################
 ### sources ####################################################################

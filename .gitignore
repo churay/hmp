@@ -1,5 +1,6 @@
 ## Compiled Binary Files ##
 build/*
+cache/*
 *.out
 
 ## Compiled Source Files ##
