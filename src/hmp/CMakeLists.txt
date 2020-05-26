@@ -14,46 +14,26 @@
 ### sources ####################################################################
 ################################################################################
 
-file(GLOB         hmp_lib_sources     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
-file(GLOB         hmp_lib_headers     ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-file(GLOB         hmp_dat_sources     ${CMAKE_CURRENT_SOURCE_DIR}/hmp_data*.c*)
-file(GLOB         hmp_dat_headers     ${CMAKE_CURRENT_SOURCE_DIR}/hmp_data*.h*)
-list(REMOVE_ITEM  hmp_lib_sources     ${hmp_dat_sources})
-list(REMOVE_ITEM  hmp_lib_headers     ${hmp_dat_headers})
+file(GLOB hmp_lib_sources ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp)
+file(GLOB hmp_lib_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB hmp_dat_sources ${CMAKE_CURRENT_SOURCE_DIR}/hmp_data*.c*)
+file(GLOB hmp_dat_headers ${CMAKE_CURRENT_SOURCE_DIR}/hmp_data*.h*)
+list(REMOVE_ITEM hmp_lib_sources ${hmp_dat_sources})
+list(REMOVE_ITEM hmp_lib_headers ${hmp_dat_headers})
 
 ################################################################################
 ### targets ####################################################################
 ################################################################################
 
-if(BUILD_SHARED_LIBS)
-    set(hmp_lib_type MODULE)
-endif()
-
-add_library(hmpdata ${hmp_lib_type} ${hmp_dat_sources})
-add_library(hmp ${hmp_lib_type} ${hmp_lib_sources})
-foreach(hmp_target hmpdata hmp)
-    target_include_directories(${hmp_target} PRIVATE ${SDL2_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIR})
-    target_link_libraries(${hmp_target} PUBLIC llceutil ${SDL2_LIBRARIES} ${OPENGL_LIBRARIES})
-endforeach()
-
-if(NOT BUILD_SHARED_LIBS)
-    target_link_libraries(hmp PRIVATE hmpdata)
-endif()
+llce_simulation(NAME hmp
+                BASE_SOURCES ${hmp_lib_sources}
+                DATA_SOURCES ${hmp_dat_sources})
 
 ################################################################################
 ### packaging ##################################################################
 ################################################################################
 
-# TODO(JRC): The solution below works when running CMake in serial because the
-# "install.lock" file will necessarily be written before any changes are made
-# to the project's install targets and be removed afterwards based on CMake's
-# install script generation rules. It isn't clear whether or not these rules
-# extend to parallel builds (though they probably do at least for Makefile outputs).
 
-install(CODE "file(WRITE ${CMAKE_INSTALL_PREFIX}/install.lock \"\")")
-install(TARGETS hmpdata DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(TARGETS hmp DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(CODE "file(REMOVE ${CMAKE_INSTALL_PREFIX}/install.lock)")
 
 ################################################################################
 ### sub-packaging ##############################################################

@@ -5,10 +5,10 @@
 
 
 ################################################################################
-### user config ################################################################
+### dependencies ###############################################################
 ################################################################################
 
-
+include(cmake/CMakeMacros.cmake)
 
 ################################################################################
 ### sources ####################################################################
@@ -21,12 +21,12 @@ file(GLOB llce_headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 ### targets ####################################################################
 ################################################################################
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/util")
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/plat")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/util)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/plat)
 if(LLCE_DEBUG)
-    add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/meta")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/meta)
 endif()
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/${LLCE_SIMULATION}")
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/${LLCE_SIMULATION})
 
 add_executable(llcesim ${llce_sources})
 target_link_libraries(llcesim PRIVATE llceutil llceplat $<$<BOOL:${LLCE_DEBUG}>:llcemeta>)

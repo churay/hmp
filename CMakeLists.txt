@@ -6,13 +6,11 @@ cmake_minimum_required(VERSION 3.10)
 
 project(hmp VERSION "0.2.0" LANGUAGES C CXX)
 
-include(ExternalProject)
-
 ################################################################################
 ### user config ################################################################
 ################################################################################
 
-set(LLCE_CACHE_PREFIX "${PROJECT_SOURCE_DIR}/cache" CACHE PATH "The path of externally downloaded/installed libraries.")
+set(LLCE_CACHE_PREFIX ${PROJECT_SOURCE_DIR}/cache CACHE PATH "The path of externally downloaded/installed libraries.")
 
 set(LLCE_DYLOAD ON CACHE BOOL "Enable dynamic loading of loop-live library.")
 set(LLCE_FDOUBLE OFF CACHE BOOL "Enable double precision floating-point values.")
@@ -32,8 +30,6 @@ endif()
 ### compiler/linker ############################################################
 ################################################################################
 
-set(CMAKE_VERBOSE_MAKEFILE OFF)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++1z -Wall -Wno-unused-variable -Wno-unused-value -fno-exceptions")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGL_GLEXT_PROTOTYPES")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DGLM_ENABLE_EXPERIMENTAL -DGLM_FORCE_RADIANS -DGLM_FORCE_XYZW_ONLY")
@@ -44,18 +40,32 @@ set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--enable-new-dtags")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--enable-new-dtags -Wl,--export-dynamic")
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/install" CACHE PATH "Default install path." FORCE)
+    set(CMAKE_INSTALL_PREFIX ${PROJECT_BINARY_DIR}/install CACHE PATH "Default install path." FORCE)
 endif()
 
+set(CMAKE_VERBOSE_MAKEFILE OFF)
 set(BUILD_SHARED_LIBS ${LLCE_DYLOAD})
 set(CMAKE_SKIP_BUILD_RPATH FALSE)
 set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}")
+set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX})
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 ################################################################################
 ### dependencies ###############################################################
 ################################################################################
+
+include(ExternalProject)
+ExternalProject_Add(glm
+    PREFIX ${LLCE_CACHE_PREFIX}/stage/glm
+    URL https://github.com/g-truc/glm/releases/download/0.9.9.3/glm-0.9.9.3.zip
+    URL_HASH MD5=d54fd62d29f690ad37683432921c3654
+    DOWNLOAD_NAME glm.zip
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND ""
+    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${LLCE_CACHE_PREFIX}/stage/glm/src/glm/glm ${LLCE_CACHE_PREFIX}/glm/glm
+    LOG_DOWNLOAD ON)
+set(GLM_INCLUDE_DIRS ${LLCE_CACHE_PREFIX}/glm)
 
 find_package(OpenGL REQUIRED)
 find_package(PkgConfig REQUIRED)
@@ -64,18 +74,6 @@ pkg_search_module(SDL2_ttf REQUIRED SDL2_ttf)
 if(LLCE_CAPTURE)
     pkg_search_module(LIBPNG REQUIRED libpng16)
 endif()
-
-ExternalProject_Add(glm
-    PREFIX ${LLCE_CACHE_PREFIX}/stage/glm
-    URL https://github.com/g-truc/glm/releases/download/0.9.9.3/glm-0.9.9.3.zip
-    URL_HASH MD5=d54fd62d29f690ad37683432921c3654
-    DOWNLOAD_NAME "glm.zip"
-    CONFIGURE_COMMAND ""
-    BUILD_COMMAND ""
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${LLCE_CACHE_PREFIX}/stage/glm/src/glm/glm ${LLCE_CACHE_PREFIX}/glm/glm
-    LOG_DOWNLOAD ON)
-set(GLM_INCLUDE_DIRS ${LLCE_CACHE_PREFIX}/glm)
 
 ################################################################################
 ### sources ####################################################################
@@ -97,7 +95,7 @@ add_library(llceconfig INTERFACE)
 add_dependencies(llceconfig glm)
 target_include_directories(llceconfig INTERFACE ${llce_config_dir} ${GLM_INCLUDE_DIRS})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
+add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 
 ################################################################################
 ### testing ####################################################################
