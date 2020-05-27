@@ -62,6 +62,8 @@ float32_t aspect( const vec2u32_t& pDims );
 float32_t aspect( const vec2f32_t& pDims );
 
 mat4f32_t glMatrix();
+float32_t glAspect();
+
 
 namespace color {
     color4f32_t u82f32( const color4u8_t& pColor );
@@ -77,6 +79,7 @@ namespace color {
     color4f32_t saturateHSV( const color4f32_t& pColorHSV, const float32_t pPercent );
 };
 
+
 namespace render {
     void vector( const vec2f32_t& pOrigin, const vec2f32_t& pDir, const float32_t pLength );
 
@@ -88,6 +91,7 @@ namespace render {
         const float32_t pStartRadians = 0.0f,
         const float32_t pEndRadians = glm::two_pi<float32_t>() );
 
+    void border( const float32_t pSize, const uint32_t pDim = 0 );
     void border( const float32_t (&pSizes)[4] );
 
     void text( const char8_t* pText,

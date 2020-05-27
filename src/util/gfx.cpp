@@ -58,13 +58,11 @@ render_context_t::render_context_t( const box_t& pBox ) {
 
 
 render_context_t::render_context_t( const box_t& pBox, const float32_t pScreenRatio ) : render_context_t( pBox ) {
-    const mat4f32_t cXformMatrix = llce::gfx::glMatrix();
-    const vec4f32_t cXformBases = cXformMatrix * vec4f32_t( 1.0f, 1.0f, 0.0f, 0.0f );
-    const float32_t cXformRatio = cXformBases.x / cXformBases.y;
+    const float32_t cContextRatio = llce::gfx::glAspect();
 
     box_t ratioBox( 0.0f, 0.0f, 1.0f, 1.0f );
-    float32_t wscaled = pScreenRatio * ratioBox.mDims.y / cXformRatio;
-    float32_t hscaled = cXformRatio * ratioBox.mDims.x / pScreenRatio;
+    float32_t wscaled = pScreenRatio * ratioBox.mDims.y / cContextRatio;
+    float32_t hscaled = cContextRatio * ratioBox.mDims.x / pScreenRatio;
     if( wscaled < ratioBox.mDims.x ) {
         ratioBox.mPos.x += ( ratioBox.mDims.x - wscaled ) / 2.0f;
         ratioBox.mDims.x = wscaled;
@@ -199,6 +197,12 @@ mat4f32_t glMatrix() {
     vpMatrix = glm::scale( vpMatrix, vec3f32_t(vpRes.x / 2.0f, vpRes.y / 2.0f, 0.5f) );
 
     return vpMatrix * projMatrix * mvMatrix;
+}
+
+
+float32_t glAspect() {
+    const vec4f32_t cGLBases = llce::gfx::glMatrix() * vec4f32_t( 1.0f, 1.0f, 0.0f, 0.0f );
+    return cGLBases.x / cGLBases.y;
 }
 
 /// 'llce::gfx::color' Functions ///
@@ -414,6 +418,32 @@ void render::circle( const circle_t& pCircle, const float32_t pStartRadians, con
 }
 
 
+void render::border( const float32_t pSize, const uint32_t pDim ) {
+    const float32_t cContextAspect = llce::gfx::glAspect();
+    const vec2f32_t cSideSizes(
+        ( pDim == 0 ) ? pSize : pSize / cContextAspect,
+        ( pDim == 1 ) ? pSize : pSize * cContextAspect
+    );
+
+    glPushMatrix();
+    mat4f32_t borderSpace( 1.0f );
+    for( uint32_t sideIdx = 0; sideIdx < 4; sideIdx++ ) {
+        borderSpace = glm::translate( vec3f32_t(0.0f, 1.0f, 0.0f) ) *
+            glm::rotate( -glm::half_pi<float32_t>(), vec3f32_t(0.0f, 0.0f, 1.0f) );
+        glMultMatrixf( &borderSpace[0][0] );
+
+        const float32_t cSideSize = ( sideIdx % 2 == 0 ) ? cSideSizes.y : cSideSizes.x;
+        glBegin( GL_QUADS ); {
+            glVertex2f( 0.0f, 0.0f );
+            glVertex2f( 0.0f, 1.0f );
+            glVertex2f( cSideSize, 1.0f );
+            glVertex2f( cSideSize, 0.0f );
+        } glEnd();
+    }
+    glPopMatrix();
+}
+
+
 void render::border( const float32_t (&pSizes)[4] ) {
     // NOTE(JRC): The input is given in an order that differs from the convenient
     // iteration order, so this map serves to bridge the gap between these two
@@ -421,7 +451,6 @@ void render::border( const float32_t (&pSizes)[4] ) {
     const static uint32_t csBorderIndexMap[] = { 2, 1, 0, 3 };
 
     glPushMatrix();
-
     mat4f32_t borderSpace( 1.0f );
     for( uint32_t sideIdx = 0; sideIdx < 4; sideIdx++ ) {
         borderSpace = glm::translate( vec3f32_t(0.0f, 1.0f, 0.0f) ) *
@@ -436,7 +465,6 @@ void render::border( const float32_t (&pSizes)[4] ) {
             glVertex2f( cSideSize, 0.0f );
         } glEnd();
     }
-
     glPopMatrix();
 }
 
