@@ -28,11 +28,12 @@ float64_t timer_t::split() {
 }
 
 
-float64_t timer_t::wait( float64_t pTargetFrameTime ) const {
-    ClockDuration waitTime = ( pTargetFrameTime >= 0.0 ) ?
-        std::chrono::duration_cast<ClockDuration>( SecDuration{pTargetFrameTime} ) :
-        mFrameDuration - ( mFrameSplits.back(0) - mFrameSplits.back(1) );
+float64_t timer_t::wait( float64_t pRatio, timer_t::ratio_e pType ) const {
+    SecDuration frameSecs( (pType == timer_t::ratio_e::spf) ? pRatio : 1.0 / pRatio );
+    ClockDuration frameDuration = ( pRatio == 0.0 ) ? mFrameDuration :
+        std::chrono::duration_cast<ClockDuration>( frameSecs );
 
+    ClockDuration waitTime = frameDuration - ( mFrameSplits.back(0) - mFrameSplits.back(1) );
     std::this_thread::sleep_for( waitTime );
 
     SecDuration waitSecs = std::chrono::duration_cast<SecDuration>( waitTime );

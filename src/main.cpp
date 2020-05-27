@@ -427,10 +427,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_DEBUG
     const static uint32_t csTextureTextLength = 20;
-    uint32_t textureGLIDs[] = { 0, 0, 0, 0 };
+    uint32_t textureGLIDs[] = { 0, 0, 0, 0, 0 };
     color4u8_t textureColors[] = { {0xff, 0x00, 0x00, 0xff}, {0x00, 0xff, 0x00, 0xff}, {0x00, 0x00, 0xff, 0xff} };
-    char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???" };
-    const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3;
+    char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???", "Speed: ???x" };
+    const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3, cSpeedTextureID = 4;
 
     const uint32_t cTextureCount = ARRAY_LEN( textureGLIDs );
     for( uint32_t textureIdx = 0; textureIdx < cTextureCount; textureIdx++ ) {
@@ -509,6 +509,8 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     uint32_t currSlotIdx = 0, recSlotIdx = 0;
     uint32_t repFrameIdx = 0, recFrameCount = 0;
 
+    int32_t simSpeedFactor = 0;
+
     bool32_t isCapturing = LLCE_CAPTURE & cIsSimulating;
     uint32_t currCaptureIdx = 0;
 
@@ -578,6 +580,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         llce::input::readInput( appInput );
 
+        // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
+        // increasing the speed and 'alt+tab' decreasing the speed.
+
         if( isKeyDown(appInput->keyboard(), SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
@@ -596,7 +601,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             isStepping = !isStepping;
             doStep = !isStepping;
         } if(isKeyPressed(appInput->keyboard(), SDL_SCANCODE_RETURN)) {
+            // return key = advance during frame advance mode
             doStep = true;
+        }
+
+        if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_TAB) ) {
+            // tab key = manipulate simulation speed
+            bool32_t doSlowDown = isKeyDown( appInput->keyboard(), SDL_SCANCODE_LSHIFT );
+            // TODO(JRC): Enable sped up playback once it can be reasonably achieved
+            // (probably need to disable rendering frames in excess of 60 FPS).
+            simSpeedFactor = glm::clamp( simSpeedFactor + (doSlowDown ? -1 : 1), -2, 0 );
+            LLCE_INFO_DEBUG( "Playback Factor <" << simSpeedFactor << ">" );
         }
 
         if( (currSlotIdx = isKGPressed(appInput->keyboard(), &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
@@ -761,18 +776,32 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
 #if LLCE_DEBUG
         glEnable( GL_TEXTURE_2D ); {
+            glColor4ubv( (uint8_t*)&csWhiteColor );
+
             std::snprintf( &textureTexts[cFPSTextureID][0],
                 csTextureTextLength,
                 "FPS: %0.2f", 1.0 / simDT );
             cGenerateTextTexture( cFPSTextureID, textureColors[cFPSTextureID], textureTexts[cFPSTextureID] );
 
-            glColor4ubv( (uint8_t*)&csWhiteColor );
             glBindTexture( GL_TEXTURE_2D, textureGLIDs[cFPSTextureID] );
             glBegin( GL_QUADS ); {
                 glTexCoord2f( 0.0f, 0.0f ); glVertex2f( -1.0f + 0.0f, -1.0f + 0.2f ); // UL
                 glTexCoord2f( 0.0f, 1.0f ); glVertex2f( -1.0f + 0.0f, -1.0f + 0.0f ); // BL
                 glTexCoord2f( 1.0f, 1.0f ); glVertex2f( -1.0f + 0.5f, -1.0f + 0.0f ); // BR
                 glTexCoord2f( 1.0f, 0.0f ); glVertex2f( -1.0f + 0.5f, -1.0f + 0.2f ); // UR
+            } glEnd();
+
+            std::snprintf( &textureTexts[cSpeedTextureID][0],
+                csTextureTextLength,
+                "Speed: %3.1fx", std::pow(2.0f, simSpeedFactor + 0.0f) );
+            cGenerateTextTexture( cSpeedTextureID, textureColors[cFPSTextureID], textureTexts[cSpeedTextureID] );
+
+            glBindTexture( GL_TEXTURE_2D, textureGLIDs[cSpeedTextureID] );
+            glBegin( GL_QUADS ); {
+                glTexCoord2f( 0.0f, 0.0f ); glVertex2f( +1.0f - 0.5f, -1.0f + 0.2f ); // UL
+                glTexCoord2f( 0.0f, 1.0f ); glVertex2f( +1.0f - 0.5f, -1.0f + 0.0f ); // BL
+                glTexCoord2f( 1.0f, 1.0f ); glVertex2f( +1.0f + 0.0f, -1.0f + 0.0f ); // BR
+                glTexCoord2f( 1.0f, 0.0f ); glVertex2f( +1.0f + 0.0f, -1.0f + 0.2f ); // UR
             } glEnd();
 
             if( isRecording || isReplaying ) {
@@ -886,8 +915,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         SDL_GL_SwapWindow( window );
 
+        const float32_t cFrameFPS = csSimFPS * std::pow( 2.0f, simSpeedFactor + 0.0f );
         simTimer.split();
-        simWT = simTimer.wait( cIsSimulating ? 0.0 : -1.0 );
+        simWT = cIsSimulating ? 0.0 : simTimer.wait( cFrameFPS );
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
         simFrame += 1;
 

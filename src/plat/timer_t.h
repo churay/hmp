@@ -25,7 +25,7 @@ class timer_t {
     /// Class Functions ///
 
     float64_t split();
-    float64_t wait( float64_t pTargetFrameTime = -1.0 ) const;
+    float64_t wait( float64_t pRatio = 0.0, ratio_e pType = ratio_e::fps ) const;
 
     float64_t ft( time_e pType = time_e::real ) const;
     float64_t tt( time_e pType = time_e::real ) const;
