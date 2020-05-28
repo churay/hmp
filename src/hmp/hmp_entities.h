@@ -104,8 +104,8 @@ class scoreboard_t : public entity_t {
 
     /// Class Attributes ///
 
-    constexpr static float32_t PADDING_WIDTH = 1.0e-2f;
-    constexpr static float32_t TALLY_RADIUS = 1.0e-1f;
+    constexpr static float32_t BORDER_SIZE = 5.0e-2f;
+    constexpr static uint32_t BORDER_DIM = 1;
 
     /// Constructors ///
 

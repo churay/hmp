@@ -151,7 +151,6 @@ void scoreboard_t::tally( const int8_t pWestDelta, const int8_t pEastDelta ) {
 void scoreboard_t::render() const {
     llce::gfx::render_context_t entityRC( mBBox );
     llce::gfx::color_context_t entityCC( mColor );
-    llce::gfx::render::box();
 
     for( int8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
         const int8_t teamScore = mScores[team];
@@ -160,30 +159,26 @@ void scoreboard_t::render() const {
         const color4u8_t teamColorScaled = 0.5f * static_cast<color4f32_t>( *teamColor );
         const bool8_t isTeamWest = team == hmp::team::west;
 
-        const float32_t teamOrient = isTeamWest ? -1.0f : 1.0f;
         const auto teamAnchor = isTeamWest ? llce::geom::anchor2D::hl : llce::geom::anchor2D::ll;
-        const vec2f32_t teamBasePos = vec2f32_t( 0.5f, scoreboard_t::PADDING_WIDTH ) +
-            teamOrient * vec2f32_t( scoreboard_t::PADDING_WIDTH, 0.0f );
-        const vec2f32_t teamBaseDims = vec2f32_t( 0.5f, 1.0f ) -
-            ( 2.0f * scoreboard_t::PADDING_WIDTH * vec2f32_t(1.0f, 1.0f) );
-
-        const llce::box_t teamBox( teamBasePos, teamBaseDims, teamAnchor ); {
+        const llce::box_t teamBox( 0.5f, 0.0f, 0.5f, 1.0f, teamAnchor ); {
             llce::gfx::render_context_t teamRC( teamBox );
-            llce::gfx::color_context_t teamCC( &hmp::color::INTERFACE );
+            entityCC.update( &hmp::color::INTERFACE );
             llce::gfx::render::box();
 
-            const llce::box_t scoreBox( isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor ); {
-                llce::gfx::color_context_t scoreCC( &teamColorScaled );
-                llce::gfx::render::box( scoreBox );
-            }
+            entityCC.update( &teamColorScaled );
+            llce::gfx::render::box( llce::box_t(
+                isTeamWest, 0.0f, teamScoreScaled, 1.0f, teamAnchor) );
 
-            const llce::box_t textBox( 0.0f, 0.0f, 1.0f, 1.0f ); {
-                char teamScoreBuffer[2];
-                std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
+            const float32_t teamScoreSize = 1.0f - 4.0f * scoreboard_t::BORDER_SIZE;
+            char teamScoreBuffer[2];
+            std::snprintf( &teamScoreBuffer[0], sizeof(teamScoreBuffer), "%d", teamScore );
+            entityCC.update( teamColor );
+            llce::gfx::render::text( &teamScoreBuffer[0], llce::box_t(
+                0.5f, 0.5f, teamScoreSize, teamScoreSize,
+                llce::geom::anchor2D::mm) );
 
-                llce::gfx::color_context_t scoreCC( teamColor );
-                llce::gfx::render::text( &teamScoreBuffer[0], textBox );
-            }
+            entityCC.update( &hmp::color::BORDER );
+            llce::gfx::render::border( scoreboard_t::BORDER_SIZE, scoreboard_t::BORDER_DIM );
         }
     }
 }

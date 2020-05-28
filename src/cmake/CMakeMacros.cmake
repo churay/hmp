@@ -47,7 +47,7 @@ macro(llce_simulation)
     endforeach()
 
     if(NOT BUILD_SHARED_LIBS)
-        target_link_libraries(${arg_NAME } PRIVATE ${arg_NAME}data)
+        target_link_libraries(${arg_NAME} PRIVATE ${arg_NAME}data)
     endif()
 
     llce_install(TARGETS ${arg_NAME}data ${arg_NAME})
