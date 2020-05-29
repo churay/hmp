@@ -14,7 +14,7 @@ namespace gui {
 /// 'llce::ui::menu_t' Functions ///
 
 menu_t::menu_t() :
-        mTitle( "" ), mItemCount( 0 ), mSelectIndex( 0 ),
+        mTitle( "" ), mItemCount( 0 ), mSelectIndex( 0 ), mSelected( false ),
         mColor( nullptr ), mTitleColor( nullptr ), mItemColor( nullptr ), mSelectColor( nullptr ) {
     
 }
@@ -23,7 +23,7 @@ menu_t::menu_t() :
 menu_t::menu_t( const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCount,
     const color4u8_t* pColor, const color4u8_t* pTitleColor,
     const color4u8_t* pItemColor, const color4u8_t* pSelectColor ) :
-        mItemCount( pItemCount ), mSelectIndex( 0 ),
+        mItemCount( pItemCount ), mSelectIndex( 0 ), mSelected( false ),
         mColor( pColor ), mTitleColor( pTitleColor ),
         mItemColor( pItemColor ), mSelectColor( pSelectColor ) {
     LLCE_ASSERT_ERROR( pItemCount <= MAX_ITEM_COUNT,
@@ -40,36 +40,24 @@ menu_t::menu_t( const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCou
 }
 
 
-event_e menu_t::update( const llce::input::keyboard_t* pInput, const float64_t pDT ) {
+void menu_t::update( const float64_t pDT ) {
     int8_t itemDelta = 0;
-    bool8_t itemSelected = false;
 
-    if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_D) ) {
-        itemSelected = true;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_L) ) {
-        itemSelected = true;
+    while( !mEvents.empty() ) {
+        const auto cCurrEvent = mEvents.pop_front();
+        if( cCurrEvent == llce::gui::event_e::select ) {
+            mSelected = true;
+        } else if( cCurrEvent == llce::gui::event_e::next ) {
+            itemDelta += 1;
+        } else if( cCurrEvent == llce::gui::event_e::prev ) {
+            itemDelta -= 1;
+        }
     }
 
-    if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_W) ) {
-        itemDelta -= 1;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_S) ) {
-        itemDelta += 1;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_I) ) {
-        itemDelta -= 1;
-    } if( llce::input::isKeyPressed(pInput, SDL_SCANCODE_K) ) {
-        itemDelta += 1;
-    }
-
-    event_e status = event_e::none;
-    if( itemSelected ) {
-        status = event_e::select;
-    } else if( itemDelta != 0 ) {
+    if( !mSelected ) {
         int8_t newSelectIndex = ( mSelectIndex + itemDelta ) % mItemCount;
         mSelectIndex = ( newSelectIndex >= 0 ) ? newSelectIndex : mItemCount + newSelectIndex;
-        status = ( itemDelta < 0 ) ? event_e::prev : event_e::next;
     }
-
-    return status;
 }
 
 
@@ -111,6 +99,11 @@ void menu_t::render() const {
             llce::gfx::render::text( mItems[itemIdx] );
         }
     }
+}
+
+
+void menu_t::submit( const event_e pEvent ) {
+    mEvents.push_back( pEvent );
 }
 
 };

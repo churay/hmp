@@ -39,7 +39,9 @@ struct input_t {
     // the harness buffer, the simulation buffer, etc.), so these accessors to the
     // underlying data must be functions and not raw pointers.
     inline keyboard_t* keyboard() { return HAS_KEYBOARD ? &_keyboard[0] : nullptr; }
+    inline const keyboard_t* keyboard() const { return HAS_KEYBOARD ? &_keyboard[0] : nullptr; }
     inline mouse_t* mouse() { return HAS_MOUSE ? &_mouse[0] : nullptr; }
+    inline const mouse_t* mouse() const { return HAS_MOUSE ? &_mouse[0] : nullptr; }
 
     keyboard_t _keyboard[Keyboard];
     mouse_t _mouse[Mouse];

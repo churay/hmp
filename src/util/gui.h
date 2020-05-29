@@ -3,8 +3,8 @@
 
 #include <glm/glm.hpp>
 
-#include "input.h"
 #include "gfx.h"
+#include "deque.hpp"
 
 #include "consts.h"
 
@@ -19,6 +19,7 @@ enum class event_e : uint8_t { none = 0, select = 1, next = 2, prev = 3 };
 /// Namespace Types ///
 
 struct menu_t {
+    constexpr static uint32_t MAX_EVENT_COUNT = 32;
     constexpr static uint32_t MAX_ITEM_LENGTH = 32;
     constexpr static uint32_t MAX_ITEM_COUNT = 16;
 
@@ -27,13 +28,17 @@ struct menu_t {
         const color4u8_t* pColor, const color4u8_t* pTitleColor,
         const color4u8_t* pItemColor, const color4u8_t* pSelectColor );
 
-    event_e update( const llce::input::keyboard_t* pInput, const float64_t pDT );
+    void update( const float64_t pDT );
     void render() const;
 
+    void submit( const event_e pEvent );
+
+    llce::deque<event_e, MAX_EVENT_COUNT> mEvents;
     char8_t mTitle[MAX_ITEM_LENGTH];
     char8_t mItems[MAX_ITEM_COUNT][MAX_ITEM_LENGTH];
     uint8_t mItemCount;
     uint8_t mSelectIndex;
+    bool8_t mSelected;
 
     const color4u8_t* mColor;
     const color4u8_t* mTitleColor;
