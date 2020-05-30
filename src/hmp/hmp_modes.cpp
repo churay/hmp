@@ -24,6 +24,12 @@ namespace mode {
 
 /// Helper Structures ///
 
+constexpr static SDL_Scancode TEAM_UP_KG[] = { SDL_SCANCODE_W, SDL_SCANCODE_I };
+constexpr static SDL_Scancode TEAM_DOWN_KG[] = { SDL_SCANCODE_S, SDL_SCANCODE_K };
+constexpr static SDL_Scancode TEAM_LEFT_KG[] = { SDL_SCANCODE_A, SDL_SCANCODE_J };
+constexpr static SDL_Scancode TEAM_RIGHT_KG[] = { SDL_SCANCODE_D, SDL_SCANCODE_L };
+constexpr static uint32_t TEAM_KG_COUNT = ARRAY_LEN( TEAM_UP_KG );
+
 constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
 constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
@@ -96,6 +102,19 @@ void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, c
                 bufferTypeIdx ? GL_COLOR_BUFFER_BIT : GL_DEPTH_BUFFER_BIT,
                 bufferTypeIdx ? GL_LINEAR : GL_NEAREST );
         }
+    }
+}
+
+
+void update_menu( llce::gui::menu_t& pMenu, const hmp::input_t* pInput ) {
+    if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_UP_KG[0], TEAM_KG_COUNT) ) {
+        pMenu.submit( llce::gui::event_e::prev );
+    } if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_DOWN_KG[0], TEAM_KG_COUNT) ) {
+        pMenu.submit( llce::gui::event_e::next );
+    }
+
+    if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_RIGHT_KG[0], TEAM_KG_COUNT) ) {
+        pMenu.submit( llce::gui::event_e::select );
     }
 }
 
@@ -276,17 +295,20 @@ bool32_t title::init( hmp::state_t* pState ) {
 
 
 bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const auto cMenuEvent = pState->titleMenu.update( pInput->keyboard(), pDT );
-    const uint32_t cMenuIndex = pState->titleMenu.mSelectIndex;
+    const uint32_t cPrevMenuIndex = pState->titleMenu.mSelectIndex;
+    update_menu( pState->titleMenu, pInput );
+    pState->titleMenu.update( pDT );
+    const uint32_t cCurrMenuIndex = pState->titleMenu.mSelectIndex;
+    const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;
 
-    if( cMenuEvent == llce::gui::event_e::select ) {
+    if( pState->titleMenu.mSelected ) {
         pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( cMenuIndex == 0 ) {
+        if( cCurrMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( cMenuIndex == 1 ) {
+        } else if( cCurrMenuIndex == 1 ) {
             pState->pmid = hmp::mode::exit_id;
         }
-    } else if( cMenuEvent != llce::gui::event_e::none ) {
+    } else if( cMenuIndexChanged ) {
         pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
@@ -311,27 +333,31 @@ bool32_t reset::init( hmp::state_t* pState ) {
         cResetItems, RESET_ITEM_COUNT,
         &hmp::color::BACKGROUND, &hmp::color::BACKGROUND2,
         &hmp::color::TEAM[hmp::team::neutral], &hmp::color::BACKGROUND2 );
+    pState->resetMenuUpdated = false;
 
     return true;
 }
 
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const auto cMenuEvent = pState->resetMenu.update( pInput->keyboard(), pDT );
-    const uint32_t cMenuIndex = pState->resetMenu.mSelectIndex;
+    const uint32_t cPrevMenuIndex = pState->resetMenu.mSelectIndex;
+    update_menu( pState->resetMenu, pInput );
+    pState->resetMenu.update( pDT );
+    const uint32_t cCurrMenuIndex = pState->resetMenu.mSelectIndex;
+    const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;
 
-    if( cMenuEvent == llce::gui::event_e::select ) {
+    if( pState->resetMenu.mSelected ) {
         pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( cMenuIndex == 0 ) {
+        if( cCurrMenuIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( cMenuIndex == 1 ) {
+        } else if( cCurrMenuIndex == 1 ) {
             pState->pmid = hmp::mode::title_id;
         }
-    } else if( cMenuEvent != llce::gui::event_e::none ) {
+    } else if( cMenuIndexChanged ) {
         pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
-    { // Set Render Header Based on Winner //
+    if( !pState->resetMenuUpdated ) { // Set Render Header Based on Winner //
         const char8_t cTeamNames[2][8] = { "WEST", "EAST" };
         const auto cTeamWinner = ( pState->scoreEnt.mScores[hmp::team::west] <= 0 ) ?
             hmp::team::west : hmp::team::east;
@@ -343,6 +369,7 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
 
         std::strcpy( &pState->resetMenu.mTitle[0], &headerText[0] );
         pState->resetMenu.mTitleColor = headerColor;
+        pState->resetMenuUpdated = true;
     }
 
     return true;
