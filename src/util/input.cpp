@@ -15,9 +15,9 @@ bool32_t input::readKeyboard( keyboard_t* pKeyboard ) {
 
             pKeyboard->keys[keyIdx] = isKeyDown;
             pKeyboard->diffs[keyIdx] = (
-                (!wasKeyDown && isKeyDown) ? inputdiff_e::down : (
-                (wasKeyDown && !isKeyDown) ? inputdiff_e::up : (
-                inputdiff_e::none)) );
+                (!wasKeyDown && isKeyDown) ? diff_e::down : (
+                (wasKeyDown && !isKeyDown) ? diff_e::up : (
+                diff_e::none)) );
         }
     }
 
@@ -40,9 +40,9 @@ bool32_t input::readMouse( mouse_t* pMouse ) {
 
             pMouse->buttons[buttonIdx] = isButtonDown;
             pMouse->diffs[buttonIdx] = (
-                (!wasButtonDown && isButtonDown) ? inputdiff_e::down : (
-                (wasButtonDown && !isButtonDown) ? inputdiff_e::up : (
-                inputdiff_e::none)) );
+                (!wasButtonDown && isButtonDown) ? diff_e::down : (
+                (wasButtonDown && !isButtonDown) ? diff_e::up : (
+                diff_e::none)) );
         }
 
         // TODO(JRC): Consider readding this field to the 'mouse_t' type should multi-
@@ -69,7 +69,7 @@ uint32_t input::isKGDown( const input::keyboard_t* pKeyboard, const SDL_Scancode
 
 
 bool32_t input::isKeyPressed( const input::keyboard_t* pKeyboard, const SDL_Scancode pKey ) {
-    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == inputdiff_e::down );
+    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == diff_e::down );
 }
 
 
@@ -83,7 +83,7 @@ uint32_t input::isKGPressed( const input::keyboard_t* pKeyboard, const SDL_Scanc
 
 
 bool32_t input::isKeyReleased( const input::keyboard_t* pKeyboard, const SDL_Scancode pKey ) {
-    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == inputdiff_e::up );
+    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == diff_e::up );
 }
 
 

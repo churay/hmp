@@ -11,17 +11,23 @@ namespace input {
 
 /// Namespace Attributes ///
 
-enum class inputdiff_e : uint8_t { none = 0, down = 1, up = 2 };
+// NOTE: An input can be one of many different types based on how its signal can
+// be interpretted: as an on/off switch (0D/d0), as an interval (1D/d1), or as
+// a vector space (2D/d2).
+enum class type_e : uint8_t { d0 = 0, d1 = 1, d2 = 2 };
+// NOTE: For a 0D input, the difference between frames can be encoded as no change
+// (none), a press (down), or a release (up).
+enum class diff_e : uint8_t { none = 0, down = 1, up = 2 };
 
 typedef uint8_t keystate_t[SDL_Scancode::SDL_NUM_SCANCODES];
-typedef inputdiff_e keydiffs_t[SDL_Scancode::SDL_NUM_SCANCODES];
+typedef diff_e keydiffs_t[SDL_Scancode::SDL_NUM_SCANCODES];
 typedef struct keyboard { keystate_t keys = {}; keydiffs_t diffs = {}; } keyboard_t;
 
 // TODO(JRC): Improve this implementation if SDL2 ever offsets a better variable
 // that tracks the number of supported mouse buttons.
 static constexpr uint32_t SDL_NUM_MOUSECODES = SDL_BUTTON_X2 + 1;
 typedef uint8_t mousestate_t[SDL_NUM_MOUSECODES];
-typedef inputdiff_e mousediffs_t[SDL_NUM_MOUSECODES];
+typedef diff_e mousediffs_t[SDL_NUM_MOUSECODES];
 typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons = {}; mousediffs_t diffs = {}; } mouse_t;
 
 /// Namespace Types ///
@@ -31,8 +37,8 @@ typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons 
 // memory footprint.
 template <bool8_t Keyboard, bool8_t Mouse>
 struct input_t {
-    constexpr static uint32_t HAS_KEYBOARD = Keyboard;
-    constexpr static uint32_t HAS_MOUSE = Mouse;
+    constexpr static bool8_t HAS_KEYBOARD = Keyboard;
+    constexpr static bool8_t HAS_MOUSE = Mouse;
 
     // NOTE(JRC): There are a lot of places in the 'llce' code where 'memset' is
     // used to move input data from different buffers (e.g. the replay buffer,
