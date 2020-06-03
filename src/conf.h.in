@@ -14,6 +14,7 @@ typedef double real;
 #define LLCE_VERSION "@PROJECT_VERSION@"
 #define LLCE_FPS @LLCE_FPS@
 #define LLCE_MAX_RESOLUTION @LLCE_MAX_RESOLUTION@
+#define LLCE_MAX_ACTIONS @LLCE_MAX_ACTIONS@
 
 // FIXME(JRC): This should really be spruced up if possible; using an include
 // definition that depends on the relative locations of the main source file

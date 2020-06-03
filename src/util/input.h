@@ -11,6 +11,7 @@ namespace input {
 
 /// Namespace Attributes ///
 
+enum class device_e : uint8_t { keyboard = 0, mouse = 1 }; // gamepad = 2, gyro = 3, ... };
 // NOTE: An input can be one of many different types based on how its signal can
 // be interpretted: as an on/off switch (0D/d0), as an interval (1D/d1), or as
 // a vector space (2D/d2).
@@ -19,8 +20,9 @@ enum class type_e : uint8_t { d0 = 0, d1 = 1, d2 = 2 };
 // (none), a press (down), or a release (up).
 enum class diff_e : uint8_t { none = 0, down = 1, up = 2 };
 
-typedef uint8_t keystate_t[SDL_Scancode::SDL_NUM_SCANCODES];
-typedef diff_e keydiffs_t[SDL_Scancode::SDL_NUM_SCANCODES];
+static constexpr uint32_t SDL_NUM_KEYCODES = SDL_Scancode::SDL_NUM_SCANCODES;
+typedef uint8_t keystate_t[SDL_NUM_KEYCODES];
+typedef diff_e keydiffs_t[SDL_NUM_KEYCODES];
 typedef struct keyboard { keystate_t keys = {}; keydiffs_t diffs = {}; } keyboard_t;
 
 // TODO(JRC): Improve this implementation if SDL2 ever offsets a better variable
@@ -29,6 +31,11 @@ static constexpr uint32_t SDL_NUM_MOUSECODES = SDL_BUTTON_X2 + 1;
 typedef uint8_t mousestate_t[SDL_NUM_MOUSECODES];
 typedef diff_e mousediffs_t[SDL_NUM_MOUSECODES];
 typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons = {}; mousediffs_t diffs = {}; } mouse_t;
+
+// TODO(JRC): This should be improved so tha the position of the mouse is included
+// as an input stream as well.
+static constexpr uint32_t SDL_NUM_DEVCODES[] = { SDL_NUM_KEYCODES, SDL_NUM_MOUSECODES };
+static constexpr uint32_t SDL_NUM_INPUTS = SDL_NUM_DEVCODES[0] + SDL_NUM_DEVCODES[1];
 
 /// Namespace Types ///
 

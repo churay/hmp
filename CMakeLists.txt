@@ -17,6 +17,7 @@ set(LLCE_FDOUBLE OFF CACHE BOOL "Enable double precision floating-point values."
 set(LLCE_CAPTURE OFF CACHE BOOL "Enable screen/state capture features (requires libpng).")
 
 set(LLCE_MAX_RESOLUTION 1024 CACHE STRING "The maximum resolution for the application graphics buffers (applies to both dimensions).")
+set(LLCE_MAX_ACTIONS 32 CACHE STRING "The maximum number of mappable actions in the application.")
 set(LLCE_FPS 60 CACHE STRING "The target frames per second for the application.")
 set(LLCE_SIMULATION demo CACHE STRING "The name of the harness simulation (e.g. 'demo' for 'hmp/src/demo').")
 
