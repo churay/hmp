@@ -9,20 +9,20 @@ namespace input {
 
 /// 'llce::input::stream_t' Functions ///
 
-stream_t::stream_t( uint32_t pID, device_e pDevID ) :
-        mID( pID ), mDevID( pDevID ) {
+stream_t::stream_t( device_e pDevID, uint32_t pID ) :
+        mDevID( pDevID ), mID( pID ) {
     
 }
 
 
-stream_t::stream_t( uint32_t pID, uint32_t pDevID ) :
-        mID( pID ), mDevID( static_cast<device_e>(pDevID) ) {
+stream_t::stream_t( uint32_t pDevID, uint32_t pID ) :
+        mDevID( static_cast<device_e>(pDevID) ), mID( pID ) {
     
 }
 
 
 stream_t::stream_t( uint64_t pGlobalID ) :
-        mID( pGlobalID >> 0 ), mDevID( static_cast<device_e>(pGlobalID >> 32) ) {
+        mDevID( static_cast<device_e>(pGlobalID >> 32) ), mID( pGlobalID >> 0 ) {
     
 }
 
@@ -48,14 +48,14 @@ stream_t::operator uint32_t() const {
 
 
 stream_t::operator uint64_t() const {
-    uint64_t localID = mID, deviceID = static_cast<uint64_t>( mDevID );
+    uint64_t deviceID = static_cast<uint64_t>( mDevID ), localID = mID;
     return ( deviceID << 32 ) | ( localID << 0 );
 }
 
 /// 'llce::input::binding_t' Functions ///
 
 binding_t::binding_t() {
-    std::memset( &mActionBindings[0], ACTION_UNBOUND_ID, sizeof(mActionBindings) );
+    std::memset( &mActionBindings[0], INPUT_UNBOUND_ID, sizeof(mActionBindings) );
     std::memset( &mBoundActions[0], ACTION_UNBOUND_ID, sizeof(mBoundActions) );
 }
 
@@ -63,33 +63,34 @@ binding_t::binding_t() {
 // TODO(JRC): This signature limits default configurations to one binding per
 // action. This should be extended to arbitrary bindings per action (provided
 // such a change doesn't overcomplicate the prototype).
-binding_t::binding_t( const uint32_t* pActionIDs, const uint32_t* pInputGIDs, const uint32_t pInputSize ) :
-        binding_t() {
-    for( uint32_t inputIdx = 0; inputIdx < pInputSize; inputIdx++ ) {
-        mActionBindings[pActionIDs[inputIdx]][0] = pInputGIDs[inputIdx];
+binding_t::binding_t( const uint32_t* pInputGIDs ) : binding_t() {
+    for( uint32_t actionIdx = 1;
+            actionIdx < LLCE_MAX_ACTIONS && pInputGIDs[actionIdx] != INPUT_UNBOUND_ID;
+            actionIdx++ ) {
+        mActionBindings[actionIdx][0] = pInputGIDs[actionIdx];
     }
 }
 
 
-bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs, const uint32_t pInputSize ) {
+bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs ) {
     bool32_t validBind = true;
 
-    LLCE_VERIFY_ERROR( validBind &= (pActionID < LLCE_MAX_ACTIONS),
+    LLCE_VERIFY_ERROR( validBind &= (0 < pActionID && pActionID < LLCE_MAX_ACTIONS),
         "Invalid action ID '" << pActionID << "'; "
-        "valid range is [0, " << LLCE_MAX_ACTIONS << ")." );
-    LLCE_VERIFY_ERROR( validBind &= (pInputSize > 0),
+        "valid range is [1, " << LLCE_MAX_ACTIONS << ")." );
+    LLCE_VERIFY_ERROR( validBind &= (pInputGIDs[0] != INPUT_UNBOUND_ID),
         "Binding no inputs to an action; each bound action must have at least " <<
         "one corresponding input." );
-    LLCE_VERIFY_ERROR( validBind &= (pInputSize <= MAX_ACTION_BINDINGS),
-        "Binding too many inputs " << pInputSize << " to a single action; " <<
-        "the maximum number of bindings is " << MAX_ACTION_BINDINGS << "." );
 
     if( validBind ) {
-        const static uint32_t csActionBytes = MAX_ACTION_BINDINGS * sizeof( uint32_t );
-        std::memset( &mActionBindings[pActionID], ACTION_UNBOUND_ID, csActionBytes );
+        const static uint32_t csActionBytes = ( LLCE_MAX_BINDINGS + 1 ) * sizeof( uint32_t );
+        std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
 
-        const uint32_t cInputBytes = pInputSize * sizeof( uint32_t );
-        std::memcpy( &mActionBindings[pActionID], pInputGIDs, cInputBytes );
+        for( uint32_t bindingIdx = 0;
+                bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx];
+                bindingIdx++ ) {
+            mActionBindings[pActionID][bindingIdx] = pInputGIDs[bindingIdx];
+        }
     }
 
     return validBind;
