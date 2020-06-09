@@ -9,6 +9,12 @@ namespace input {
 
 /// 'llce::input::stream_t' Functions ///
 
+stream_t::stream_t() :
+        mDevID( device_e::unbound ), mID( 0 ) {
+    
+}
+
+
 stream_t::stream_t( device_e pDevID, uint32_t pID ) :
         mDevID( pDevID ), mID( pID ) {
     
@@ -21,8 +27,20 @@ stream_t::stream_t( uint32_t pDevID, uint32_t pID ) :
 }
 
 
-stream_t::stream_t( uint64_t pGlobalID ) :
-        mDevID( static_cast<device_e>(pGlobalID >> 32) ), mID( pGlobalID >> 0 ) {
+stream_t::stream_t( uint32_t pGlobalID ) {
+    uint32_t deviceID = 0, deviceOffset = SDL_NUM_DEVCODES[0];
+    while( deviceOffset < pGlobalID ) {
+        deviceOffset += SDL_NUM_DEVCODES[++deviceID];
+    }
+    uint32_t inputID = pGlobalID - ( deviceOffset - SDL_NUM_DEVCODES[deviceID] );
+
+    mDevID = static_cast<device_e>( deviceID );
+    mID = inputID;
+}
+
+
+stream_t::stream_t( uint64_t pDeviceID ) :
+        mDevID( static_cast<device_e>(pDeviceID >> 32) ), mID( pDeviceID >> 0 ) {
     
 }
 
@@ -87,7 +105,7 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
         std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
 
         for( uint32_t bindingIdx = 0;
-                bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx];
+                bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx] != INPUT_UNBOUND_ID;
                 bindingIdx++ ) {
             mActionBindings[pActionID][bindingIdx] = pInputGIDs[bindingIdx];
         }
@@ -98,6 +116,11 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
 
 
 uint32_t* binding_t::find( const uint32_t pActionID ) {
+    return &mActionBindings[pActionID][0];
+}
+
+
+const uint32_t* binding_t::find( const uint32_t pActionID ) const {
     return &mActionBindings[pActionID][0];
 }
 

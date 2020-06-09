@@ -35,15 +35,12 @@ static constexpr uint32_t SDL_NUM_INPUTS = 1 + SDL_NUM_DEVCODES[0] + SDL_NUM_DEV
 
 /// Namespace Types ///
 
-// TODO(JRC): Any valid global identifier needs to be offset by 1 in order to
-// account for the fact that the universal unbound input ID is 0.
-// NOTE(JRC): The 'stream_t' identifier needs to remain unique (i.e. not customized
-// based on the availability of streams to the application) so that the harness
-// can always use the same inputs for its controls (e.g. keyboard key Q).
 struct stream_t {
+    stream_t();
     stream_t( device_e pDevID, uint32_t pID );
     stream_t( uint32_t pDevID, uint32_t pID );
-    stream_t( uint64_t pGlobalID );
+    stream_t( uint32_t pGlobalID );
+    stream_t( uint64_t pDeviceID );
 
     uint32_t gid() const;
     uint64_t did() const;
@@ -66,6 +63,7 @@ struct binding_t {
 
     bool32_t bind( const uint32_t pActionID, const uint32_t* pInputGIDs );
     uint32_t* find( const uint32_t pActionID );
+    const uint32_t* find( const uint32_t pActionID ) const;
 
     // sim-specific action id => [bound sim-agnostic input global id]
     uint32_t mActionBindings[LLCE_MAX_ACTIONS][LLCE_MAX_BINDINGS + 1];
@@ -74,21 +72,15 @@ struct binding_t {
 };
 
 
-// TODO(JRC): I say try to move 'binding' into input because it is so dang
-// convenient. It will make some things harder, but hopefully the correct structure
-// (e.g. 'binding' at the end, copying most of the space) will make things relatively smooth.
-// TODO(JRC): Start with just copying the binding (unnecessary and decadent, but
-// convenient), then optimize as needed.
-// NOTE(JRC): There are a lot of places in the 'llce' code where 'memset' is
-// used to move input data from different buffers (e.g. the replay buffer,
-// the harness buffer, the simulation buffer, etc.), so these accessors to the
-// underlying data must be functions and not raw pointers.
 template <bool8_t Keyboard, bool8_t Mouse>
 struct input_t {
     keyboard_t _keyboard[Keyboard];
     mouse_t _mouse[Mouse];
-    binding_t binding;
 
+    // NOTE(JRC): There are a lot of places in the 'llce' code where 'memset' is
+    // used to move input data from different buffers (e.g. the replay buffer,
+    // the harness buffer, the simulation buffer, etc.), so these accessors to the
+    // underlying data must be functions and not raw pointers.
     inline keyboard_t* keyboard() { return Keyboard ? &_keyboard[0] : nullptr; }
     inline const keyboard_t* keyboard() const { return Keyboard ? &_keyboard[0] : nullptr; }
 
@@ -99,24 +91,24 @@ struct input_t {
     // bools) from other stream types (e.g. 2D streams, which will likely use floats).
     inline uint8_t* state( device_e pDevID ) {
         return (
-            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard.keys : (
-            (Mouse && pDevID == device_e::mouse) ? &_mouse.buttons : nullptr ));
+            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard[0].keys[0] : (
+            (Mouse && pDevID == device_e::mouse) ? &_mouse[0].buttons[0] : nullptr ));
     }
     inline const uint8_t* state( device_e pDevID ) const {
         return (
-            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard.keys : (
-            (Mouse && pDevID == device_e::mouse) ? &_mouse.buttons : nullptr ));
+            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard[0].keys[0] : (
+            (Mouse && pDevID == device_e::mouse) ? &_mouse[0].buttons[0] : nullptr ));
     }
 
     inline diff_e* diffs( device_e pDevID ) {
         return (
-            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard.diffs : (
-            (Mouse && pDevID == device_e::mouse) ? &_mouse.diffs : nullptr ));
+            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard[0].diffs[0] : (
+            (Mouse && pDevID == device_e::mouse) ? &_mouse[0].diffs[0] : nullptr ));
     }
     inline const diff_e* diffs( device_e pDevID ) const {
         return (
-            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard.diffs : (
-            (Mouse && pDevID == device_e::mouse) ? &_mouse.diffs : nullptr ));
+            (Keyboard && pDevID == device_e::keyboard) ? &_keyboard[0].diffs[0] : (
+            (Mouse && pDevID == device_e::mouse) ? &_mouse[0].diffs[0] : nullptr ));
     }
 };
 
@@ -142,7 +134,6 @@ bool32_t readInput( input_t<Keyboard, Mouse>* pInput ) {
         ( Mouse ? llce::input::readMouse(pInput->mouse()) : true );
 }
 
-// TODO(JRC): 'varargs' variants for each of these functions would be nice.
 
 template <bool8_t Keyboard, bool8_t Mouse>
 bool32_t isDown( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID ) {
@@ -154,15 +145,25 @@ bool32_t isDown( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGI
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isDown( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx != INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isDown( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
 }
 
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isDown( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t* pInputActions ) {
+    uint32_t firstAction = ACTION_UNBOUND_ID;
+    for( uint32_t actionIdx = 0; pInputActions[actionIdx] != ACTION_UNBOUND_ID && firstAction == ACTION_UNBOUND_ID; actionIdx++ ) {
+        const uint32_t* cActionBindings = pBinding->find( pInputActions[actionIdx] );
+        firstAction = isDown( pInput, cActionBindings ) ? pInputActions[actionIdx] : ACTION_UNBOUND_ID;
+    }
+    return firstAction;
+}
+
 
 template <bool8_t Keyboard, bool8_t Mouse>
-bool32_t isPressed( input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID ) {
+bool32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID ) {
     const stream_t cInputStream( pInputGID );
     const diff_e* cInputDiffs = pInput->diffs( cInputStream.mDevID );
     return (bool32_t)( cInputDiffs != nullptr && (cInputDiffs[cInputStream.mID] == diff_e::down) );
@@ -171,15 +172,25 @@ bool32_t isPressed( input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID )
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx != INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isPressed( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
 }
 
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t* pInputActions ) {
+    uint32_t firstAction = ACTION_UNBOUND_ID;
+    for( uint32_t actionIdx = 0; pInputActions[actionIdx] != ACTION_UNBOUND_ID && firstAction == ACTION_UNBOUND_ID; actionIdx++ ) {
+        const uint32_t* cActionBindings = pBinding->find( pInputActions[actionIdx] );
+        firstAction = isPressed( pInput, cActionBindings ) ? pInputActions[actionIdx] : ACTION_UNBOUND_ID;
+    }
+    return firstAction;
+}
+
 
 template <bool8_t Keyboard, bool8_t Mouse>
-bool32_t isReleased( input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID ) {
+bool32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID ) {
     const stream_t cInputStream( pInputGID );
     const diff_e* cInputDiffs = pInput->diffs( cInputStream.mDevID );
     return (bool32_t)( cInputDiffs != nullptr && (cInputDiffs[cInputStream.mID] == diff_e::up) );
@@ -188,10 +199,20 @@ bool32_t isReleased( input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGID 
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx != INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isReleased( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
+}
+
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t* pInputActions ) {
+    uint32_t firstAction = ACTION_UNBOUND_ID;
+    for( uint32_t actionIdx = 0; pInputActions[actionIdx] != ACTION_UNBOUND_ID && firstAction == ACTION_UNBOUND_ID; actionIdx++ ) {
+        const uint32_t* cActionBindings = pBinding->find( pInputActions[actionIdx] );
+        firstAction = isReleased( pInput, cActionBindings ) ? pInputActions[actionIdx] : ACTION_UNBOUND_ID;
+    }
+    return firstAction;
 }
 
 }
