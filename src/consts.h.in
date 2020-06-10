@@ -66,6 +66,11 @@ typedef vec4f32_t color4f32_t;
 #define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
 #define VECTOR_AT(v, i) (&((v).x) + (i))
 
+#define LLCE_ENUM(name, ...) \
+    namespace name { enum name##_e { __VA_ARGS__, _length }; }; \
+    typedef name::name##_e name##_e;
+#define LLCE_ACTION_ENUM(...) LLCE_ENUM(action, unbound, __VA_ARGS__)
+
 // TODO(JRC): Consider changing these functions to use 'printf' functionality
 // instead of 'std::cerr' functionality.
 
