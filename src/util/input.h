@@ -117,16 +117,6 @@ struct input_t {
 bool32_t readKeyboard( keyboard_t* pKeyboard );
 bool32_t readMouse( mouse_t* pMouse );
 
-bool32_t isKeyDown( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGDown( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
-
-bool32_t isKeyPressed( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGPressed( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
-
-bool32_t isKeyReleased( const keyboard_t* pKeyboard, const SDL_Scancode pKey );
-uint32_t isKGReleased( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize );
-
-
 template <bool8_t Keyboard, bool8_t Mouse>
 bool32_t readInput( input_t<Keyboard, Mouse>* pInput ) {
     return
@@ -145,10 +135,15 @@ bool32_t isDown( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInputGI
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isDown( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs != nullptr && pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isDown( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
+}
+
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isDown( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t pInputAction ) {
+    return isDown( pInput, pBinding->find(pInputAction) );
 }
 
 template <bool8_t Keyboard, bool8_t Mouse>
@@ -172,10 +167,15 @@ bool32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInpu
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs != nullptr && pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isPressed( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
+}
+
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isPressed( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t pInputAction ) {
+    return isPressed( pInput, pBinding->find(pInputAction) );
 }
 
 template <bool8_t Keyboard, bool8_t Mouse>
@@ -199,10 +199,15 @@ bool32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const uint32_t pInp
 template <bool8_t Keyboard, bool8_t Mouse>
 uint32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const uint32_t* pInputGIDs ) {
     uint32_t firstIdx = INPUT_UNBOUND_ID;
-    for( uint32_t inputIdx = 0; pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
+    for( uint32_t inputIdx = 0; pInputGIDs != nullptr && pInputGIDs[inputIdx] != INPUT_UNBOUND_ID && firstIdx == INPUT_UNBOUND_ID; inputIdx++ ) {
         firstIdx = isReleased( pInput, pInputGIDs[inputIdx] ) ? pInputGIDs[inputIdx] : INPUT_UNBOUND_ID;
     }
     return firstIdx;
+}
+
+template <bool8_t Keyboard, bool8_t Mouse>
+uint32_t isReleased( const input_t<Keyboard, Mouse>* pInput, const binding_t* pBinding, const uint32_t pInputAction ) {
+    return isReleased( pInput, pBinding->find(pInputAction) );
 }
 
 template <bool8_t Keyboard, bool8_t Mouse>

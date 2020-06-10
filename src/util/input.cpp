@@ -181,48 +181,6 @@ bool32_t readMouse( mouse_t* pMouse ) {
     return readSuccessful;
 }
 
-
-bool32_t isKeyDown( const keyboard_t* pKeyboard, const SDL_Scancode pKey ) {
-    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] );
-}
-
-
-uint32_t isKGDown( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-    uint32_t firstIdx = 0;
-    for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-        firstIdx = isKeyDown( pKeyboard, pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-    }
-    return firstIdx;
-}
-
-
-bool32_t isKeyPressed( const keyboard_t* pKeyboard, const SDL_Scancode pKey ) {
-    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == diff_e::down );
-}
-
-
-uint32_t isKGPressed( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-    uint32_t firstIdx = 0;
-    for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-        firstIdx = isKeyPressed( pKeyboard, pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-    }
-    return firstIdx;
-}
-
-
-bool32_t isKeyReleased( const keyboard_t* pKeyboard, const SDL_Scancode pKey ) {
-    return (bool32_t)( pKeyboard != nullptr && pKeyboard->keys[pKey] && pKeyboard->diffs[pKey] == diff_e::up );
-}
-
-
-uint32_t isKGReleased( const keyboard_t* pKeyboard, const SDL_Scancode* pKeyGroup, const uint32_t pGroupSize ) {
-    uint32_t firstIdx = 0;
-    for( uint32_t groupIdx = 0; groupIdx < pGroupSize && firstIdx == 0; groupIdx++ ) {
-        firstIdx = isKeyReleased( pKeyboard, pKeyGroup[groupIdx] ) ? groupIdx + 1 : 0;
-    }
-    return firstIdx;
-}
-
 }
 
 }

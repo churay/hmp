@@ -44,9 +44,6 @@ typedef bool32_t (*boot_f)( llsim::output_t* );
 typedef bool32_t (*update_f)( llsim::state_t*, llsim::input_t*, const llsim::output_t*, const float64_t );
 typedef bool32_t (*render_f)( const llsim::state_t*, const llsim::input_t*, const llsim::output_t* );
 
-typedef bool32_t (*kscheck_f)( const llce::input::keyboard_t*, const SDL_Scancode );
-typedef uint32_t (*kgcheck_f)( const llce::input::keyboard_t*, const SDL_Scancode*, const uint32_t );
-
 int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
@@ -487,19 +484,33 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // with application-level functionality (e.g. debugging contexts, etc.).
     llsim::input_t* appInput = &baseInput;
 
-    const SDL_Scancode cFXKeyGroup[] = {
-        SDL_SCANCODE_F1, SDL_SCANCODE_F2, SDL_SCANCODE_F3, SDL_SCANCODE_F4,
-        SDL_SCANCODE_F5, SDL_SCANCODE_F6, SDL_SCANCODE_F7, SDL_SCANCODE_F8,
-        SDL_SCANCODE_F9, SDL_SCANCODE_F10, SDL_SCANCODE_F11, SDL_SCANCODE_F12
+    const auto cIsKeyDown = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
+        return llce::input::isDown( pInput, llce::input::stream_t(
+            llce::input::device_e::keyboard, pKeyCode) );
     };
-    const uint32_t cFXKeyGroupSize = ARRAY_LEN( cFXKeyGroup );
+    const auto cIsKeyPressed = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
+        return llce::input::isPressed( pInput, llce::input::stream_t(
+            llce::input::device_e::keyboard, pKeyCode) );
+    };
+    const auto cIsKeyReleased = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
+        return llce::input::isReleased( pInput, llce::input::stream_t(
+            llce::input::device_e::keyboard, pKeyCode) );
+    };
 
-    kscheck_f isKeyDown = llce::input::isKeyDown;
-    kgcheck_f isKGDown = llce::input::isKGDown;
-    kscheck_f isKeyPressed = llce::input::isKeyPressed;
-    kgcheck_f isKGPressed = llce::input::isKGPressed;
-    kscheck_f isKeyReleased = llce::input::isKeyReleased;
-    kgcheck_f isKGReleased = llce::input::isKGReleased;
+    const uint32_t cFXStreams[] = {
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F1 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F2 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F3 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F4 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F5 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F6 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F7 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F8 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F9 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F10 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F11 ),
+        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F12 )
+    };
 
     /// Update/Render Loop ///
 
@@ -583,10 +594,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
         // increasing the speed and 'alt+tab' decreasing the speed.
 
-        if( isKeyDown(appInput->keyboard(), SDL_SCANCODE_Q) ) {
+        if( cIsKeyPressed(appInput, SDL_SCANCODE_Q) ) {
             // q key = quit application
             isRunning = false;
-        } if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_GRAVE) ) {
+        } if( cIsKeyPressed(appInput, SDL_SCANCODE_GRAVE) ) {
             // ` key = capture application
             isCapturing = true;
         }
@@ -595,27 +606,28 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
 
-        if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_SPACE) ) {
+        if( cIsKeyPressed(appInput, SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             LLCE_INFO_DEBUG( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
             isStepping = !isStepping;
             doStep = !isStepping;
-        } if(isKeyPressed(appInput->keyboard(), SDL_SCANCODE_RETURN)) {
+        } if(cIsKeyPressed(appInput, SDL_SCANCODE_RETURN)) {
             // return key = advance during frame advance mode
             doStep = true;
         }
 
-        if( isKeyPressed(appInput->keyboard(), SDL_SCANCODE_TAB) ) {
+        if( cIsKeyPressed(appInput, SDL_SCANCODE_TAB) ) {
             // tab key = manipulate simulation speed
-            bool32_t doSlowDown = isKeyDown( appInput->keyboard(), SDL_SCANCODE_LSHIFT );
+            bool32_t doSlowDown = cIsKeyDown( appInput, SDL_SCANCODE_LSHIFT );
             // TODO(JRC): Enable sped up playback once it can be reasonably achieved
             // (probably need to disable rendering frames in excess of 60 FPS).
             simSpeedFactor = glm::clamp( simSpeedFactor + (doSlowDown ? -1 : 1), -2, 0 );
             LLCE_INFO_DEBUG( "Playback Factor <" << simSpeedFactor << ">" );
         }
 
-        if( (currSlotIdx = isKGPressed(appInput->keyboard(), &cFXKeyGroup[0], cFXKeyGroupSize)) || (cIsSimulating && !isReplaying) ) {
+        if( (currSlotIdx = llce::input::isPressed(appInput, &cFXStreams[0])) || (cIsSimulating && !isReplaying) ) {
             // function key (fx) = debug state operation
+            currSlotIdx = currSlotIdx - cFXStreams[0] + 1;
             recSlotIdx = !cIsSimulating ? currSlotIdx : cSimStateIdx;
 
             char8_t slotStateFileName[csOutputFileNameLength];
@@ -629,7 +641,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             path_t slotStateFilePath( 2, cOutputPath.cstr(), &slotStateFileName[0] );
             path_t slotInputFilePath( 2, cOutputPath.cstr(), &slotInputFileName[0] );
 
-            if( (isKeyDown(appInput->keyboard(), SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
+            if( (cIsKeyDown(appInput, SDL_SCANCODE_LSHIFT) && !isRecording) || cIsSimulating ) {
                 // lshift + fx = toggle slot x replay
                 LLCE_INFO_DEBUG( "Replay Slot {" << recSlotIdx << "} <" << (!isReplaying ? "ON " : "OFF") << ">" );
                 if( !isReplaying ) {
@@ -647,7 +659,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     recInputStream.close();
                 }
                 isReplaying = !isReplaying;
-            } else if( isKeyDown(appInput->keyboard(), SDL_SCANCODE_RSHIFT) && !isRecording ) {
+            } else if( cIsKeyDown(appInput, SDL_SCANCODE_RSHIFT) && !isRecording ) {
                 // rshift + fx = hotload slot x state (reset replay)
                 LLCE_INFO_DEBUG( "Hotload Slot {" << recSlotIdx << "}" );
                 if( isReplaying ) {

@@ -23,6 +23,9 @@
 
 /// Global Declarations ///
 
+typedef llce::input::stream_t stream_t;
+typedef llce::input::device_e device_e;
+
 typedef bool32_t (*init_f)( hmp::state_t* );
 typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::output_t* );
@@ -74,6 +77,19 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     // Initialize Input //
 
     std::memset( pInput, 0, sizeof(hmp::input_t) );
+
+    uint32_t defaultBindings[hmp::action::_length + 1]; {
+        defaultBindings[hmp::action::lup] = stream_t( device_e::keyboard, SDL_SCANCODE_W );
+        defaultBindings[hmp::action::ldn] = stream_t( device_e::keyboard, SDL_SCANCODE_S );
+        defaultBindings[hmp::action::llt] = stream_t( device_e::keyboard, SDL_SCANCODE_A );
+        defaultBindings[hmp::action::lrt] = stream_t( device_e::keyboard, SDL_SCANCODE_D );
+        defaultBindings[hmp::action::rup] = stream_t( device_e::keyboard, SDL_SCANCODE_I );
+        defaultBindings[hmp::action::rdn] = stream_t( device_e::keyboard, SDL_SCANCODE_K );
+        defaultBindings[hmp::action::rlt] = stream_t( device_e::keyboard, SDL_SCANCODE_J );
+        defaultBindings[hmp::action::rrt] = stream_t( device_e::keyboard, SDL_SCANCODE_L );
+        defaultBindings[hmp::action::etc] = stream_t( device_e::keyboard, SDL_SCANCODE_G );
+    }
+    pState->binding = llce::input::binding_t( &defaultBindings[0] );
 
     // Initialize Per-Mode Variables //
 

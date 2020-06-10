@@ -24,11 +24,11 @@ namespace mode {
 
 /// Helper Structures ///
 
-constexpr static SDL_Scancode TEAM_UP_KG[] = { SDL_SCANCODE_W, SDL_SCANCODE_I };
-constexpr static SDL_Scancode TEAM_DOWN_KG[] = { SDL_SCANCODE_S, SDL_SCANCODE_K };
-constexpr static SDL_Scancode TEAM_LEFT_KG[] = { SDL_SCANCODE_A, SDL_SCANCODE_J };
-constexpr static SDL_Scancode TEAM_RIGHT_KG[] = { SDL_SCANCODE_D, SDL_SCANCODE_L };
-constexpr static uint32_t TEAM_KG_COUNT = ARRAY_LEN( TEAM_UP_KG );
+constexpr static uint32_t TEAM_UP_ACTIONS[] = { hmp::action::lup, hmp::action::rup, hmp::action::unbound };
+constexpr static uint32_t TEAM_DOWN_ACTIONS[] = { hmp::action::ldn, hmp::action::rdn, hmp::action::unbound };
+constexpr static uint32_t TEAM_LEFT_ACTIONS[] = { hmp::action::llt, hmp::action::rlt, hmp::action::unbound };
+constexpr static uint32_t TEAM_RIGHT_ACTIONS[] = { hmp::action::lrt, hmp::action::rrt, hmp::action::unbound };
+constexpr static uint32_t PAUSE_ACTION = hmp::action::etc;
 
 constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
@@ -106,14 +106,14 @@ void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, c
 }
 
 
-void update_menu( llce::gui::menu_t& pMenu, const hmp::input_t* pInput ) {
-    if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_UP_KG[0], TEAM_KG_COUNT) ) {
+void update_menu( llce::gui::menu_t& pMenu, hmp::state_t* pState, const hmp::input_t* pInput ) {
+    if( llce::input::isPressed(pInput, &pState->binding, &TEAM_UP_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::prev );
-    } if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_DOWN_KG[0], TEAM_KG_COUNT) ) {
+    } if( llce::input::isPressed(pInput, &pState->binding, &TEAM_DOWN_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::next );
     }
 
-    if( llce::input::isKGPressed(pInput->keyboard(), &TEAM_RIGHT_KG[0], TEAM_KG_COUNT) ) {
+    if( llce::input::isPressed(pInput, &pState->binding, &TEAM_RIGHT_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::select );
     }
 }
@@ -160,26 +160,20 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
 
-    if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_W) ) {
-        dy[0] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_S) ) {
-        dy[0] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_A) ) {
-        dx[0] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_D) ) {
-        dx[0] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_I) ) {
-        dy[1] += 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_K) ) {
-        dy[1] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_J) ) {
-        dx[1] -= 1;
-    } if( llce::input::isKeyDown(pInput->keyboard(), SDL_SCANCODE_L) ) {
-        dx[1] += 1;
+    if( llce::input::isPressed(pInput, &pState->binding, PAUSE_ACTION) ) {
+        pState->roundPaused = !pState->roundPaused;
     }
 
-    if( llce::input::isKeyPressed(pInput->keyboard(), SDL_SCANCODE_G) ) {
-        pState->roundPaused = !pState->roundPaused;
+    for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
+        if( llce::input::isDown(pInput, &pState->binding, TEAM_UP_ACTIONS[team]) ) {
+            dy[team] += 1;
+        } if( llce::input::isDown(pInput, &pState->binding, TEAM_DOWN_ACTIONS[team]) ) {
+            dy[team] -= 1;
+        } if( llce::input::isDown(pInput, &pState->binding, TEAM_LEFT_ACTIONS[team]) ) {
+            dx[team] -= 1;
+        } if( llce::input::isDown(pInput, &pState->binding, TEAM_RIGHT_ACTIONS[team]) ) {
+            dx[team] += 1;
+        }
     }
 
     // Update State //
@@ -296,7 +290,7 @@ bool32_t title::init( hmp::state_t* pState ) {
 
 bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     const uint32_t cPrevMenuIndex = pState->titleMenu.mSelectIndex;
-    update_menu( pState->titleMenu, pInput );
+    update_menu( pState->titleMenu, pState, pInput );
     pState->titleMenu.update( pDT );
     const uint32_t cCurrMenuIndex = pState->titleMenu.mSelectIndex;
     const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;
@@ -341,7 +335,7 @@ bool32_t reset::init( hmp::state_t* pState ) {
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
     const uint32_t cPrevMenuIndex = pState->resetMenu.mSelectIndex;
-    update_menu( pState->resetMenu, pInput );
+    update_menu( pState->resetMenu, pState, pInput );
     pState->resetMenu.update( pDT );
     const uint32_t cCurrMenuIndex = pState->resetMenu.mSelectIndex;
     const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;

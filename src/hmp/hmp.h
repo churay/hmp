@@ -28,6 +28,7 @@ struct state_t {
     mode::mode_e mid; // game mode
     mode::mode_e pmid; // pending mode
 
+    llce::input::binding_t binding; // input binding
     llce::rng_t rng; // random number generator
     llce::sfx::synth_t synth; // sound effect synthesizer
 
