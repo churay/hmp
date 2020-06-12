@@ -90,13 +90,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::state_t* backupStates = (llsim::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::state_t) );
 #endif
 
-    // TODO(JRC): Remove this unnecessary constraint by being more careful about copying
-    // the input data between buffers (e.g. the replay buffer).
     llsim::input_t baseInput;
-    LLCE_ASSERT_ERROR( baseInput.keyboard() != nullptr,
-        "Unable to use loop-live harness for '" << LLCE_SIMULATION_NAME << "'; " <<
-        "this code's input specification is missing a keyboard, which is " <<
-        "required for use within the harness." );
 
 #if LLCE_DEBUG
     // NOTE(JRC): The 'meta' module doesn't participate in loop-live editing, so its
@@ -485,16 +479,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::input_t* appInput = &baseInput;
 
     const auto cIsKeyDown = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return llce::input::isDown( pInput, llce::input::stream_t(
-            llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isDownRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
     };
     const auto cIsKeyPressed = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return llce::input::isPressed( pInput, llce::input::stream_t(
-            llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isPressedRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
     };
     const auto cIsKeyReleased = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return llce::input::isReleased( pInput, llce::input::stream_t(
-            llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isReleasedRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
     };
 
     const uint32_t cFXStreams[] = {
@@ -589,7 +580,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        llce::input::readInput( appInput );
+        appInput->read( llce::input::device_e::keyboard );
 
         // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
         // increasing the speed and 'alt+tab' decreasing the speed.
@@ -625,7 +616,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             LLCE_INFO_DEBUG( "Playback Factor <" << simSpeedFactor << ">" );
         }
 
-        if( (currSlotIdx = llce::input::isPressed(appInput, &cFXStreams[0])) || (cIsSimulating && !isReplaying) ) {
+        if( (currSlotIdx = appInput->isPressedRaw(&cFXStreams[0])) || (cIsSimulating && !isReplaying) ) {
             // function key (fx) = debug state operation
             currSlotIdx = currSlotIdx - cFXStreams[0] + 1;
             recSlotIdx = !cIsSimulating ? currSlotIdx : cSimStateIdx;
@@ -720,7 +711,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         if( doStep ) {
-            llce::input::readInput( simInput );
+            simInput->read( llce::input::device_e::keyboard );
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );
