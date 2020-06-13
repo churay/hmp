@@ -13,6 +13,7 @@
 #include "gfx.h"
 #include "sfx.h"
 #include "geom.h"
+#include "util.hpp"
 
 #include "hmp_modes.h"
 #include "hmp_data.h"
@@ -29,6 +30,8 @@ constexpr static uint32_t TEAM_DOWN_ACTIONS[] = { hmp::action::ldn, hmp::action:
 constexpr static uint32_t TEAM_LEFT_ACTIONS[] = { hmp::action::llt, hmp::action::rlt, hmp::action::unbound };
 constexpr static uint32_t TEAM_RIGHT_ACTIONS[] = { hmp::action::lrt, hmp::action::rrt, hmp::action::unbound };
 constexpr static uint32_t PAUSE_ACTION = hmp::action::etc;
+
+constexpr static uint32_t MENU_ACTIONS[] = { hmp::action::unbound, hmp::action::lrt, hmp::action::lup, hmp::action::ldn };
 
 constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
@@ -105,22 +108,9 @@ void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, c
     }
 }
 
-
-void update_menu( llce::gui::menu_t& pMenu, hmp::state_t* pState, const hmp::input_t* pInput ) {
-    if( pInput->isPressedAct(&TEAM_UP_ACTIONS[0]) ) {
-        pMenu.submit( llce::gui::event_e::prev );
-    } if( pInput->isPressedAct(&TEAM_DOWN_ACTIONS[0]) ) {
-        pMenu.submit( llce::gui::event_e::next );
-    }
-
-    if( pInput->isPressedAct(&TEAM_RIGHT_ACTIONS[0]) ) {
-        pMenu.submit( llce::gui::event_e::select );
-    }
-}
-
 /// 'hmp::mode::game' Functions  ///
 
-bool32_t game::init( hmp::state_t* pState ) {
+bool32_t game::init( hmp::state_t* pState, hmp::input_t* pInput ) {
     pState->rt = 0.0;
     pState->roundStarted = false;
     pState->roundPaused = false;
@@ -277,32 +267,31 @@ bool32_t game::render( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
 /// 'hmp::mode::menu' Functions  ///
 
-bool32_t title::init( hmp::state_t* pState ) {
-    const char8_t* cTitleItems[] = { &TITLE_ITEM_TEXT[0][0], &TITLE_ITEM_TEXT[1][0] };
-    pState->titleMenu = llce::gui::menu_t( "HMP",
-        cTitleItems, TITLE_ITEM_COUNT,
-        &hmp::color::BACKGROUND, &hmp::color::BACKGROUND2,
-        &hmp::color::TEAM[hmp::team::neutral], &hmp::color::BACKGROUND2 );
+bool32_t title::init( hmp::state_t* pState, hmp::input_t* pInput ) {
+    auto cTitleItems = llce::util::pointerize( TITLE_ITEM_TEXT );
+    pState->titleMenu = llce::gui::menu_t(
+        pInput, &MENU_ACTIONS[0],
+        "HMP", cTitleItems.data(), TITLE_ITEM_COUNT,
+        &hmp::color::BACKGROUND,
+        &hmp::color::BACKGROUND2,
+        &hmp::color::TEAM[hmp::team::neutral] );
 
     return true;
 }
 
 
 bool32_t title::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const uint32_t cPrevMenuIndex = pState->titleMenu.mSelectIndex;
-    update_menu( pState->titleMenu, pState, pInput );
     pState->titleMenu.update( pDT );
-    const uint32_t cCurrMenuIndex = pState->titleMenu.mSelectIndex;
-    const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;
 
-    if( pState->titleMenu.mSelected ) {
+    if( pState->titleMenu.changed(llce::gui::event::select) ) {
         pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( cCurrMenuIndex == 0 ) {
+        if( pState->titleMenu.mItemIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( cCurrMenuIndex == 1 ) {
+        } else if( pState->titleMenu.mItemIndex == 1 ) {
             pState->pmid = hmp::mode::exit_id;
         }
-    } else if( cMenuIndexChanged ) {
+    } else if( pState->titleMenu.changed(llce::gui::event::next) ||
+            pState->titleMenu.changed(llce::gui::event::prev) ) {
         pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
@@ -321,12 +310,14 @@ bool32_t title::render( const hmp::state_t* pState, const hmp::input_t* pInput, 
 
 /// 'hmp::mode::reset' Functions  ///
 
-bool32_t reset::init( hmp::state_t* pState ) {
-    const char8_t* cResetItems[] = { &RESET_ITEM_TEXT[0][0], &RESET_ITEM_TEXT[1][0] };
-    pState->resetMenu = llce::gui::menu_t( "",
-        cResetItems, RESET_ITEM_COUNT,
-        &hmp::color::BACKGROUND, &hmp::color::BACKGROUND2,
-        &hmp::color::TEAM[hmp::team::neutral], &hmp::color::BACKGROUND2 );
+bool32_t reset::init( hmp::state_t* pState, hmp::input_t* pInput ) {
+    auto cResetItems = llce::util::pointerize( RESET_ITEM_TEXT );
+    pState->resetMenu = llce::gui::menu_t(
+        pInput, &MENU_ACTIONS[0],
+        "", cResetItems.data(), RESET_ITEM_COUNT,
+        &hmp::color::BACKGROUND,
+        &hmp::color::BACKGROUND2,
+        &hmp::color::TEAM[hmp::team::neutral] );
     pState->resetMenuUpdated = false;
 
     return true;
@@ -334,20 +325,17 @@ bool32_t reset::init( hmp::state_t* pState ) {
 
 
 bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float64_t pDT ) {
-    const uint32_t cPrevMenuIndex = pState->resetMenu.mSelectIndex;
-    update_menu( pState->resetMenu, pState, pInput );
     pState->resetMenu.update( pDT );
-    const uint32_t cCurrMenuIndex = pState->resetMenu.mSelectIndex;
-    const bool32_t cMenuIndexChanged = cPrevMenuIndex != cCurrMenuIndex;
 
-    if( pState->resetMenu.mSelected ) {
+    if( pState->resetMenu.changed(llce::gui::event::select) ) {
         pState->synth.play( SFX_MENU_SELECT, hmp::sfx::BLIP_TIME );
-        if( cCurrMenuIndex == 0 ) {
+        if( pState->resetMenu.mItemIndex == 0 ) {
             pState->pmid = hmp::mode::game_id;
-        } else if( cCurrMenuIndex == 1 ) {
+        } else if( pState->resetMenu.mItemIndex == 1 ) {
             pState->pmid = hmp::mode::title_id;
         }
-    } else if( cMenuIndexChanged ) {
+    } else if( pState->resetMenu.changed(llce::gui::event::next) ||
+            pState->resetMenu.changed(llce::gui::event::prev) ) {
         pState->synth.play( SFX_MENU_CHANGE, hmp::sfx::BLIP_TIME );
     }
 
@@ -362,7 +350,7 @@ bool32_t reset::update( hmp::state_t* pState, hmp::input_t* pInput, const float6
         const color4u8_t* headerColor = &hmp::color::TEAM[cTeamWinner];
 
         std::strcpy( &pState->resetMenu.mTitle[0], &headerText[0] );
-        pState->resetMenu.mTitleColor = headerColor;
+        pState->resetMenu.mColorText = headerColor;
         pState->resetMenuUpdated = true;
     }
 

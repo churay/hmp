@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 
 #include "gfx.h"
+#include "input.h"
 #include "deque.hpp"
 
 #include "consts.h"
@@ -14,7 +15,7 @@ namespace gui {
 
 /// Namespace Attributes ///
 
-enum class event_e : uint8_t { none = 0, select = 1, next = 2, prev = 3 };
+LLCE_ENUM( event, none, select, next, prev );
 
 /// Namespace Types ///
 
@@ -24,26 +25,30 @@ struct menu_t {
     constexpr static uint32_t MAX_ITEM_COUNT = 16;
 
     menu_t();
-    menu_t( const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCount,
-        const color4u8_t* pColor, const color4u8_t* pTitleColor,
-        const color4u8_t* pItemColor, const color4u8_t* pSelectColor );
+    menu_t(
+        const llce::input::input_t* pInput, const uint32_t* pEventActions,
+        const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCount,
+        const color4u8_t* pColorBack, const color4u8_t* pColorFore, const color4u8_t* pColorText );
 
     void update( const float64_t pDT );
     void render() const;
 
-    void submit( const event_e pEvent );
+    bool32_t changed( const llce::gui::event_e pEvent ) const;
 
-    llce::deque<event_e, MAX_EVENT_COUNT> mEvents;
+    const llce::input::input_t* mInput;
+    llce::deque<llce::gui::event_e, MAX_EVENT_COUNT> mEvents;
+    // TODO(JRC): Allow for the binding of multiple actions to an event (similar
+    // to multiple bindings per action).
+    uint32_t mEventActions[llce::gui::event::_length];
+
     char8_t mTitle[MAX_ITEM_LENGTH];
     char8_t mItems[MAX_ITEM_COUNT][MAX_ITEM_LENGTH];
     uint8_t mItemCount;
-    uint8_t mSelectIndex;
-    bool8_t mSelected;
+    uint8_t mItemIndex;
 
-    const color4u8_t* mColor;
-    const color4u8_t* mTitleColor;
-    const color4u8_t* mItemColor;
-    const color4u8_t* mSelectColor;
+    const color4u8_t* mColorBack;
+    const color4u8_t* mColorFore;
+    const color4u8_t* mColorText;
 };
 
 /// Namespace Functions ///

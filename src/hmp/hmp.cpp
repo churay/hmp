@@ -26,7 +26,7 @@
 typedef llce::input::stream_t stream_t;
 typedef llce::input::device_e device_e;
 
-typedef bool32_t (*init_f)( hmp::state_t* );
+typedef bool32_t (*init_f)( hmp::state_t*, hmp::input_t* );
 typedef bool32_t (*update_f)( hmp::state_t*, hmp::input_t*, const float64_t );
 typedef bool32_t (*render_f)( const hmp::state_t*, const hmp::input_t*, const hmp::output_t* );
 
@@ -96,7 +96,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
     bool32_t initStatus = true;
 
     for( uint32_t modeIdx = 0; modeIdx < MODE_COUNT; modeIdx++ ) {
-        initStatus &= MODE_INIT_FUNS[modeIdx]( pState );
+        initStatus &= MODE_INIT_FUNS[modeIdx]( pState, pInput );
     }
 
     return initStatus;
@@ -106,7 +106,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
 extern "C" bool32_t update( hmp::state_t* pState, hmp::input_t* pInput, const hmp::output_t* pOutput, const float64_t pDT ) {
     if( pState->mid != pState->pmid ) {
         if( pState->pmid < 0 ) { return false; }
-        MODE_INIT_FUNS[pState->pmid]( pState );
+        MODE_INIT_FUNS[pState->pmid]( pState, pInput );
         pState->mid = pState->pmid;
     }
 
