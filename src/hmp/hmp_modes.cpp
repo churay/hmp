@@ -107,13 +107,13 @@ void render_rasterize( const hmp::state_t* pState, const hmp::input_t* pInput, c
 
 
 void update_menu( llce::gui::menu_t& pMenu, hmp::state_t* pState, const hmp::input_t* pInput ) {
-    if( llce::input::isPressed(pInput, &pState->binding, &TEAM_UP_ACTIONS[0]) ) {
+    if( pInput->isPressedAct(&TEAM_UP_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::prev );
-    } if( llce::input::isPressed(pInput, &pState->binding, &TEAM_DOWN_ACTIONS[0]) ) {
+    } if( pInput->isPressedAct(&TEAM_DOWN_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::next );
     }
 
-    if( llce::input::isPressed(pInput, &pState->binding, &TEAM_RIGHT_ACTIONS[0]) ) {
+    if( pInput->isPressedAct(&TEAM_RIGHT_ACTIONS[0]) ) {
         pMenu.submit( llce::gui::event_e::select );
     }
 }
@@ -160,18 +160,18 @@ bool32_t game::update( hmp::state_t* pState, hmp::input_t* pInput, const float64
 
     int32_t dx[2] = { 0, 0 }, dy[2] = { 0, 0 };
 
-    if( llce::input::isPressed(pInput, &pState->binding, PAUSE_ACTION) ) {
+    if( pInput->isPressedAct(PAUSE_ACTION) ) {
         pState->roundPaused = !pState->roundPaused;
     }
 
     for( uint8_t team = hmp::team::west; team <= hmp::team::east; team++ ) {
-        if( llce::input::isDown(pInput, &pState->binding, TEAM_UP_ACTIONS[team]) ) {
+        if( pInput->isDownAct(TEAM_UP_ACTIONS[team]) ) {
             dy[team] += 1;
-        } if( llce::input::isDown(pInput, &pState->binding, TEAM_DOWN_ACTIONS[team]) ) {
+        } if( pInput->isDownAct(TEAM_DOWN_ACTIONS[team]) ) {
             dy[team] -= 1;
-        } if( llce::input::isDown(pInput, &pState->binding, TEAM_LEFT_ACTIONS[team]) ) {
+        } if( pInput->isDownAct(TEAM_LEFT_ACTIONS[team]) ) {
             dx[team] -= 1;
-        } if( llce::input::isDown(pInput, &pState->binding, TEAM_RIGHT_ACTIONS[team]) ) {
+        } if( pInput->isDownAct(TEAM_RIGHT_ACTIONS[team]) ) {
             dx[team] += 1;
         }
     }

@@ -28,7 +28,6 @@ struct state_t {
     mode::mode_e mid; // game mode
     mode::mode_e pmid; // pending mode
 
-    llce::input::binding_t binding; // input binding
     llce::rng_t rng; // random number generator
     llce::sfx::synth_t synth; // sound effect synthesizer
 
@@ -59,7 +58,7 @@ constexpr static uint32_t GFX_BUFFER_COUNT = GFX_BUFFER_UI_ID + 1;
 
 constexpr static uint32_t SFX_BUFFER_COUNT = llce::output::BUFFER_SHARED_ID + 1;
 
-typedef llce::input::input_t<true, false> input_t;
+typedef llce::input::input_t input_t;
 typedef llce::output::output_t<GFX_BUFFER_COUNT, SFX_BUFFER_COUNT> output_t;
 
 }
