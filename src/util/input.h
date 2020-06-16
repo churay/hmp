@@ -11,8 +11,7 @@ namespace input {
 
 /// Namespace Attributes ///
 
-enum class device_e : uint8_t { unbound = 0, keyboard = 1, mouse = 2 }; // gamepad = 3, gyro = 4, ... };
-enum class type_e : uint8_t { d0 = 0, d1 = 1, d2 = 2 };
+LLCE_ENUM( device, unbound, keyboard, mouse ); // gamepad, gyro );
 enum class diff_e : uint8_t { none = 0, down = 1, up = 2 };
 
 constexpr static uint32_t ACTION_UNBOUND_ID = 0;
@@ -88,9 +87,9 @@ struct binding_t {
 // data coupling. Is there any good way (e.g. via #defines) to provide a pointer
 // to the start of the 'input_t', and then the size, depending on user configuration?
 struct input_t {
-    keyboard_t keyboard;
-    mouse_t mouse;
-    binding_t binding;
+    keyboard_t mKeyboard;
+    mouse_t mMouse;
+    binding_t mBinding;
 
     // declare size as static so that it can be used by the harness when doing 'memcpy' operations
 

@@ -22,11 +22,12 @@ LLCE_ENUM( event, none, select, next, prev );
 struct menu_t {
     constexpr static uint32_t MAX_EVENT_COUNT = 32;
     constexpr static uint32_t MAX_ITEM_LENGTH = 32;
+    // FIXME(JRC): Changing this value to 32 causes weird things to happen.
     constexpr static uint32_t MAX_ITEM_COUNT = 16;
 
     menu_t();
     menu_t(
-        const llce::input::input_t* pInput, const uint32_t* pEventActions,
+        llce::input::input_t* pInput, const uint32_t* pEventActions,
         const char8_t* pTitle, const char8_t** pItems, uint32_t pItemCount,
         const color4u8_t* pColorBack, const color4u8_t* pColorFore, const color4u8_t* pColorText );
 
@@ -35,7 +36,7 @@ struct menu_t {
 
     bool32_t changed( const llce::gui::event_e pEvent ) const;
 
-    const llce::input::input_t* mInput;
+    llce::input::input_t* mInput;
     llce::deque<llce::gui::event_e, MAX_EVENT_COUNT> mEvents;
     // TODO(JRC): Allow for the binding of multiple actions to an event (similar
     // to multiple bindings per action).
@@ -49,6 +50,21 @@ struct menu_t {
     const color4u8_t* mColorBack;
     const color4u8_t* mColorFore;
     const color4u8_t* mColorText;
+};
+
+
+struct bind_menu_t : public menu_t {
+    bind_menu_t();
+    bind_menu_t(
+        llce::input::input_t* pInput, const uint32_t* pEventActions,
+        const char8_t** pActionNames, uint32_t pActionCount,
+        const color4u8_t* pColorBack, const color4u8_t* pColorFore, const color4u8_t* pColorText );
+
+    void update( const float64_t pDT );
+    void render() const;
+
+    llce::deque<uint32_t, LLCE_MAX_BINDINGS> mCurrBindings;
+    bool8_t mBinding;
 };
 
 /// Namespace Functions ///

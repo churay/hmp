@@ -89,7 +89,7 @@ extern "C" bool32_t init( hmp::state_t* pState, hmp::input_t* pInput ) {
         defaultBindings[hmp::action::rrt] = stream_t( device_e::keyboard, SDL_SCANCODE_L );
         defaultBindings[hmp::action::etc] = stream_t( device_e::keyboard, SDL_SCANCODE_G );
     }
-    pInput->binding = llce::input::binding_t( &defaultBindings[0] );
+    pInput->mBinding = llce::input::binding_t( &defaultBindings[0] );
 
     // Initialize Per-Mode Variables //
 

@@ -31,7 +31,7 @@ constexpr static uint32_t TEAM_LEFT_ACTIONS[] = { hmp::action::llt, hmp::action:
 constexpr static uint32_t TEAM_RIGHT_ACTIONS[] = { hmp::action::lrt, hmp::action::rrt, hmp::action::unbound };
 constexpr static uint32_t PAUSE_ACTION = hmp::action::etc;
 
-constexpr static uint32_t MENU_ACTIONS[] = { hmp::action::unbound, hmp::action::lrt, hmp::action::lup, hmp::action::ldn };
+constexpr static uint32_t MENU_ACTIONS[] = { hmp::action::unbound, hmp::action::lrt, hmp::action::ldn, hmp::action::lup };
 
 constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
 constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );

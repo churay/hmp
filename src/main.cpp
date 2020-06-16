@@ -479,28 +479,28 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::input_t* appInput = &baseInput;
 
     const auto cIsKeyDown = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return pInput->isDownRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isDownRaw( llce::input::stream_t(llce::input::device::keyboard, pKeyCode) );
     };
     const auto cIsKeyPressed = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return pInput->isPressedRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isPressedRaw( llce::input::stream_t(llce::input::device::keyboard, pKeyCode) );
     };
     const auto cIsKeyReleased = [] ( const llsim::input_t* pInput, const SDL_Scancode pKeyCode ) {
-        return pInput->isReleasedRaw( llce::input::stream_t(llce::input::device_e::keyboard, pKeyCode) );
+        return pInput->isReleasedRaw( llce::input::stream_t(llce::input::device::keyboard, pKeyCode) );
     };
 
     const uint32_t cFXStreams[] = {
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F1 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F2 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F3 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F4 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F5 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F6 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F7 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F8 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F9 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F10 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F11 ),
-        llce::input::stream_t( llce::input::device_e::keyboard, SDL_SCANCODE_F12 )
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F1 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F2 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F3 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F4 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F5 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F6 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F7 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F8 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F9 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F10 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F11 ),
+        llce::input::stream_t( llce::input::device::keyboard, SDL_SCANCODE_F12 )
     };
 
     /// Update/Render Loop ///
@@ -580,7 +580,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        appInput->read( llce::input::device_e::keyboard );
+        appInput->read( llce::input::device::keyboard );
 
         // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
         // increasing the speed and 'alt+tab' decreasing the speed.
@@ -711,7 +711,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         if( doStep ) {
-            simInput->read( llce::input::device_e::keyboard );
+            simInput->read( llce::input::device::keyboard );
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );

@@ -141,12 +141,12 @@ bool32_t input_t::read( const device_e pDevID ) {
     if( pDevID == device_e::unbound || pDevID == device_e::keyboard ) {
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
 
-        for( uint32_t keyIdx = 0; keyIdx < sizeof(keyboard.keys); keyIdx++ ) {
-            const bool8_t wasKeyDown = keyboard.keys[keyIdx];
+        for( uint32_t keyIdx = 0; keyIdx < sizeof(mKeyboard.keys); keyIdx++ ) {
+            const bool8_t wasKeyDown = mKeyboard.keys[keyIdx];
             const bool8_t isKeyDown = keyboardState[keyIdx];
 
-            keyboard.keys[keyIdx] = isKeyDown;
-            keyboard.diffs[keyIdx] = (
+            mKeyboard.keys[keyIdx] = isKeyDown;
+            mKeyboard.diffs[keyIdx] = (
                 (!wasKeyDown && isKeyDown) ? diff_e::down : (
                 (wasKeyDown && !isKeyDown) ? diff_e::up : (
                 diff_e::none)) );
@@ -158,15 +158,15 @@ bool32_t input_t::read( const device_e pDevID ) {
         // regardless of where it's located on the screen where the window mouse
         // state will only report buttons pressed while the mouse is in focus.
         // This being the case, the window button mask is preferred as user input.
-        const uint32_t cWindowButtonMask = SDL_GetMouseState( &mouse.window.x, &mouse.window.y );
-        SDL_GetGlobalMouseState( &mouse.global.x, &mouse.global.y );
+        const uint32_t cWindowButtonMask = SDL_GetMouseState( &mMouse.window.x, &mMouse.window.y );
+        SDL_GetGlobalMouseState( &mMouse.global.x, &mMouse.global.y );
 
-        for( uint32_t buttonIdx = 1; buttonIdx < sizeof(mouse.buttons); buttonIdx++ ) {
-            const bool8_t wasButtonDown = mouse.buttons[buttonIdx];
+        for( uint32_t buttonIdx = 1; buttonIdx < sizeof(mMouse.buttons); buttonIdx++ ) {
+            const bool8_t wasButtonDown = mMouse.buttons[buttonIdx];
             const bool8_t isButtonDown = cWindowButtonMask & SDL_BUTTON( buttonIdx );
 
-            mouse.buttons[buttonIdx] = isButtonDown;
-            mouse.diffs[buttonIdx] = (
+            mMouse.buttons[buttonIdx] = isButtonDown;
+            mMouse.diffs[buttonIdx] = (
                 (!wasButtonDown && isButtonDown) ? diff_e::down : (
                 (wasButtonDown && !isButtonDown) ? diff_e::up : (
                 diff_e::none)) );
@@ -174,7 +174,7 @@ bool32_t input_t::read( const device_e pDevID ) {
 
         // TODO(JRC): Consider readding this field to the 'mouse_t' type should multi-
         // window simulations ever become supported.
-        // mouse.focus = SDL_GetMouseFocus();
+        // mMouse.focus = SDL_GetMouseFocus();
         success &= true;
     }
 
@@ -184,29 +184,29 @@ bool32_t input_t::read( const device_e pDevID ) {
 
 uint8_t* input_t::state( const device_e pDevID ) {
     return (
-        (pDevID == device_e::keyboard) ? &keyboard.keys[0] : (
-        (pDevID == device_e::mouse) ? &mouse.buttons[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.keys[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.buttons[0] : nullptr ));
 }
 
 
 const uint8_t* input_t::state( const device_e pDevID ) const {
     return (
-        (pDevID == device_e::keyboard) ? &keyboard.keys[0] : (
-        (pDevID == device_e::mouse) ? &mouse.buttons[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.keys[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.buttons[0] : nullptr ));
 }
 
 
 diff_e* input_t::diffs( const device_e pDevID ) {
     return (
-        (pDevID == device_e::keyboard) ? &keyboard.diffs[0] : (
-        (pDevID == device_e::mouse) ? &mouse.diffs[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.diffs[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.diffs[0] : nullptr ));
 }
 
 
 const diff_e* input_t::diffs( const device_e pDevID ) const {
     return (
-        (pDevID == device_e::keyboard) ? &keyboard.diffs[0] : (
-        (pDevID == device_e::mouse) ? &mouse.diffs[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.diffs[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.diffs[0] : nullptr ));
 }
 
 
@@ -229,7 +229,7 @@ uint32_t input_t::isDiffRaw( diff_f pDiff, const uint32_t* pInputGIDs ) const {
 
 
 uint32_t input_t::isDiffAct( diff_f pDiff, const uint32_t pInputAction ) const {
-    return isDiffRaw( pDiff, binding.find(pInputAction) );
+    return isDiffRaw( pDiff, mBinding.find(pInputAction) );
 }
 
 
@@ -239,7 +239,7 @@ uint32_t input_t::isDiffAct( diff_f pDiff, const uint32_t* pInputActions ) const
             pInputActions[actionIdx] != ACTION_UNBOUND_ID &&
             firstAction == ACTION_UNBOUND_ID;
             actionIdx++ ) {
-        firstAction = isDiffRaw( pDiff, binding.find(pInputActions[actionIdx]) ) ?
+        firstAction = isDiffRaw( pDiff, mBinding.find(pInputActions[actionIdx]) ) ?
             pInputActions[actionIdx] : ACTION_UNBOUND_ID;
     }
     return firstAction;

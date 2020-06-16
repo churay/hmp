@@ -66,6 +66,14 @@ const T& front( const size_t& pIndex ) const {
     return mBuffer[_sindex(pIndex)];
 }
 
+T* data() {
+    return mBuffer.data();
+}
+
+const T* data() const {
+    return mBuffer.data();
+}
+
 size_t size() const {
     return mSize;
 }
