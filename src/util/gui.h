@@ -58,13 +58,18 @@ struct bind_menu_t : public menu_t {
     bind_menu_t(
         llce::input::input_t* pInput, const uint32_t* pEventActions,
         const char8_t** pActionNames, uint32_t pActionCount,
-        const color4u8_t* pColorBack, const color4u8_t* pColorFore, const color4u8_t* pColorText );
+        const color4u8_t* pColorBack, const color4u8_t* pColorFore,
+        const color4u8_t* pColorText, const color4u8_t* pColorBorder );
 
     void update( const float64_t pDT );
     void render() const;
 
     llce::deque<uint32_t, LLCE_MAX_BINDINGS> mCurrBindings;
     bool8_t mBinding;
+
+    uint8_t mRenderIndex;
+
+    const color4u8_t* mColorBorder;
 };
 
 /// Namespace Functions ///

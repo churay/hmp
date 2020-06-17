@@ -104,8 +104,8 @@ void menu_t::render() const {
             llce::gfx::render_context_t itemRC(
                 llce::box_t(itemPos, cItemDims, llce::geom::anchor2D::lh) );
             llce::gfx::color_context_t itemCC( mColorFore );
-            if( itemIdx == mItemIndex ) { llce::gfx::render::box(); }
 
+            if( itemIdx == mItemIndex ) { llce::gfx::render::box(); }
             llce::gfx::color_context_t textCC( mColorText );
             llce::gfx::render::text( mItems[itemIdx] );
         }
@@ -126,7 +126,7 @@ bool32_t menu_t::changed( const llce::gui::event_e pEvent ) const {
 /// 'llce::gui::bind_menu_t' Functions ///
 
 bind_menu_t::bind_menu_t() : menu_t(),
-        mBinding( false ) {
+        mBinding( false ), mRenderIndex( 0 ), mColorBorder( nullptr ) {
     
 }
 
@@ -134,9 +134,10 @@ bind_menu_t::bind_menu_t() : menu_t(),
 bind_menu_t::bind_menu_t(
     llce::input::input_t* pInput, const uint32_t* pEventActions,
     const char8_t** pActionNames, uint32_t pActionCount,
-    const color4u8_t* pColorBack, const color4u8_t* pColorFore, const color4u8_t* pColorText ) :
+    const color4u8_t* pColorBack, const color4u8_t* pColorFore,
+    const color4u8_t* pColorText, const color4u8_t* pColorBorder ) :
         menu_t( pInput, pEventActions, "BINDING", pActionNames, pActionCount + 1, pColorBack, pColorFore, pColorText ),
-        mBinding( false ) {
+        mBinding( false ), mRenderIndex( 0 ), mColorBorder( pColorBorder ) {
     std::strncpy( &mItems[pActionCount][0], "EXIT", MAX_ITEM_LENGTH - 1 );
     mItems[pActionCount][MAX_ITEM_LENGTH - 1] = '\0';
 }
@@ -146,7 +147,12 @@ void bind_menu_t::update( const float64_t pDT ) {
     if( !mBinding ) {
         menu_t::update( pDT );
         mBinding = mItemIndex != mItemCount - 1 && changed( llce::gui::event::select );
+        // TODO(JRC): Update the position of 'mRenderIndex'; need to look at
+        // display window and change if we're too far outside the window.
     } else {
+        // TODO(JRC): Wait for the input to be inactive once (user is still
+        // pressing select if we detect immediately) and then start registering
+        // inputs; on the second inactivity, then it's time to stop binding.
         bool32_t inputActive = false;
 
         for( uint32_t deviceID = llce::input::device::keyboard;
@@ -184,33 +190,76 @@ void bind_menu_t::render() const {
     llce::gfx::color_context_t menuCC( mColorBack );
     llce::gfx::render::box();
 
-    // TODO(JRC): Need to do some different rendering in order to properly represent
-    // the bindings associated with each action. The menu should look like:
-    //
-    //                   TITLE
-    //
-    //        ACTION              BINDINGS
-    //        ACTION              BINDINGS
-    //                    ....
-    //                    EXIT
+    const static auto csPadAnchor = llce::geom::anchor2D::mm;
 
     { // Header //
-        const static float32_t csHeaderPadding = 0.05f;
-        const static vec2f32_t csHeaderDims = { 1.0f - 2.0f * csHeaderPadding, 0.25f };
-        const static vec2f32_t csHeaderPos = { csHeaderPadding, 1.0f - csHeaderPadding - csHeaderDims.y };
+        const static float32_t csHeaderPadding = 2.0e-2f;
+        const static vec2f32_t csHeaderDims = { 1.0f, 0.2f };
+        const static vec2f32_t csHeaderInnerDims =
+            csHeaderDims - 2.0f * csHeaderPadding * vec2f32_t( 1.0f, 1.0f );
+        const static vec2f32_t csHeaderPos = { 0.5f, 1.0f - 0.2f * 0.5f };
 
         llce::gfx::color_context_t headerCC( mColorText );
-        llce::gfx::render::text( mTitle, llce::box_t(csHeaderPos, csHeaderDims) );
+        llce::gfx::render::text( mTitle,
+            llce::box_t(csHeaderPos, csHeaderInnerDims, csPadAnchor) );
     }
 
     { // Items //
-        const static llce::box_t csItemArea( 0.0f, 0.0f, 1.0f, 0.5f );
-        const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
-        const static float32_t csItemPadFactor = 1.50f;
-        const static float32_t csItemMaxHeight = 0.10f;
+        const static float32_t csItemPadding = 2.0e-2f;
+        const static llce::box_t csItemArea( 0.0f, 0.0f, 1.0f, 0.8f );
+        const static vec2f32_t csItemDims = { csItemArea.mDims.x / 1.0f, csItemArea.mDims.y / 4.5f };
+        const static vec2f32_t csItemInnerDims =
+            csItemDims - 2.0f * csItemPadding * vec2f32_t( 1.0f, 1.0f );
 
-        // TODO(JRC): Introduce a minimum height as well, with a scroll bar to capture
-        // all entries in some fashion.
+        const static vec2f32_t csItemSectionDims = { 0.5f - 2.0f * csItemPadding, 1.0f };
+        const static vec2f32_t csItemTextDims =
+            vec2f32_t( 1.0f, 1.0f ) - 2.0f * csItemPadding * vec2f32_t( 1.0f, 1.0f );
+        const static vec2f32_t csItemActionPos = { 0.25f, 0.5f };
+        const static vec2f32_t csItemBindingPos = { 0.75f, 0.5f };
+
+        llce::gfx::color_context_t footerCC( mColorBorder );
+
+        const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
+        for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
+            // TODO(JRC): Need to adjust 'mRenderIndex' offset so that interim
+            // windows display 25% of off-window before and after items, while
+            // boundary windows just display 50% of the internal off-window option.
+            vec2f32_t itemPos = csItemBase -
+                vec2f32_t( 0.0f, (itemIdx - mRenderIndex) * csItemDims.y ) +
+                0.5f * vec2f32_t( csItemDims.x, -csItemDims.y );
+
+            if( itemIdx == mItemIndex ) {
+                footerCC.update( mColorBorder );
+                llce::gfx::render::box(
+                    llce::box_t(itemPos, csItemDims, csPadAnchor) );
+            }
+
+            llce::gfx::render_context_t itemRC(
+               llce::box_t(itemPos, csItemInnerDims, csPadAnchor) );
+
+            { // Item Action Section //
+                llce::gfx::render_context_t itemActionRC(
+                   llce::box_t(csItemActionPos, csItemSectionDims, csPadAnchor) );
+
+                footerCC.update( mColorFore );
+                llce::gfx::render::box();
+
+                footerCC.update( mColorText );
+                llce::gfx::render::text( mItems[itemIdx],
+                    llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
+            }
+
+            { // Item Binding Section //
+                llce::gfx::render_context_t itemBindingnRC(
+                   llce::box_t(csItemBindingPos, csItemSectionDims, csPadAnchor) );
+
+                footerCC.update( mColorFore );
+                llce::gfx::render::box();
+
+                // TODO(JRC): Implement rendering algorithm for input streams
+                // (first, just render these as buttons w/ string ids).
+            }
+        }
     }
 }
 
