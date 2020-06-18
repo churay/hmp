@@ -54,6 +54,10 @@ struct menu_t {
 
 
 struct bind_menu_t : public menu_t {
+    constexpr static float32_t MAX_ITEMS_VISIBLE = 4.5f;
+    constexpr static uint32_t ITEM_FULL_COUNT = 4;
+    constexpr static float32_t ITEM_PART_VISIBILITY = 0.5f;
+
     bind_menu_t();
     bind_menu_t(
         llce::input::input_t* pInput, const uint32_t* pEventActions,

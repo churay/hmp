@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <cstdio>
 
 #include "input.h"
 
@@ -265,6 +266,23 @@ bool32_t isReleased( const input_t* pInput, const uint32_t pInputGID ) {
     const stream_t cInputStream( pInputGID );
     const diff_e* cInputDiffs = pInput->diffs( cInputStream.mDevID );
     return (bool32_t)( cInputDiffs != nullptr && (cInputDiffs[cInputStream.mID] == diff_e::up) );
+}
+
+
+bool32_t identify( const uint32_t pInputGID, char8_t* pBuffer, const uint32_t pBufferLength ) {
+    const stream_t cInputStream( pInputGID );
+
+    if( cInputStream.mDevID == device_e::keyboard ) {
+        const char8_t* keyName = SDL_GetKeyName(
+            SDL_GetKeyFromScancode((SDL_Scancode)cInputStream.mID) );
+        std::strncpy( &pBuffer[0], &keyName[0], pBufferLength );
+    } else if( cInputStream.mDevID == device_e::mouse ) {
+        std::snprintf( &pBuffer[0], pBufferLength, "M%d", cInputStream.mID );
+    } else {
+        std::strncpy( &pBuffer[0], "", pBufferLength );
+    }
+
+    return (bool32_t)( pBuffer[0] != '\0' );
 }
 
 }

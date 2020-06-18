@@ -147,8 +147,9 @@ void bind_menu_t::update( const float64_t pDT ) {
     if( !mBinding ) {
         menu_t::update( pDT );
         mBinding = mItemIndex != mItemCount - 1 && changed( llce::gui::event::select );
-        // TODO(JRC): Update the position of 'mRenderIndex'; need to look at
-        // display window and change if we're too far outside the window.
+        mRenderIndex = (
+            (mItemIndex >= mRenderIndex + ITEM_FULL_COUNT) ? mItemIndex - ITEM_FULL_COUNT + 1 : (
+            (mItemIndex < mRenderIndex) ? mItemIndex : (mRenderIndex)) );
     } else {
         // TODO(JRC): Wait for the input to be inactive once (user is still
         // pressing select if we detect immediately) and then start registering
@@ -182,7 +183,6 @@ void bind_menu_t::update( const float64_t pDT ) {
             mBinding = false;
         }
     }
-
 }
 
 
@@ -207,7 +207,8 @@ void bind_menu_t::render() const {
     { // Items //
         const static float32_t csItemPadding = 2.0e-2f;
         const static llce::box_t csItemArea( 0.0f, 0.0f, 1.0f, 0.8f );
-        const static vec2f32_t csItemDims = { csItemArea.mDims.x / 1.0f, csItemArea.mDims.y / 4.5f };
+        const static vec2f32_t csItemDims =
+            { csItemArea.mDims.x, csItemArea.mDims.y / MAX_ITEMS_VISIBLE };
         const static vec2f32_t csItemInnerDims =
             csItemDims - 2.0f * csItemPadding * vec2f32_t( 1.0f, 1.0f );
 
@@ -216,17 +217,20 @@ void bind_menu_t::render() const {
             vec2f32_t( 1.0f, 1.0f ) - 2.0f * csItemPadding * vec2f32_t( 1.0f, 1.0f );
         const static vec2f32_t csItemActionPos = { 0.25f, 0.5f };
         const static vec2f32_t csItemBindingPos = { 0.75f, 0.5f };
+        const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
 
         llce::gfx::color_context_t footerCC( mColorBorder );
-
-        const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
+        // TODO(JRC): Need to adjust 'mRenderIndex' offset so that interim
+        // windows display 25% of off-window before and after items, while
+        // boundary windows just display 50% of the internal off-window option.
+        // const vec2f32_t cItemRenderOffset = vec2f32_t( 0.0f, csItemDims.y ) * (
+        //     (mRenderIndex == 0) ? 0.0f : (
+        //     (mRenderIndex == mItemCount - 1) ? ITEM_PART_VISIBILITY : (
+        //     ITEM_PART_VISIBILITY / 2.0f )) );
         for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
-            // TODO(JRC): Need to adjust 'mRenderIndex' offset so that interim
-            // windows display 25% of off-window before and after items, while
-            // boundary windows just display 50% of the internal off-window option.
-            vec2f32_t itemPos = csItemBase -
-                vec2f32_t( 0.0f, (itemIdx - mRenderIndex) * csItemDims.y ) +
-                0.5f * vec2f32_t( csItemDims.x, -csItemDims.y );
+            vec2f32_t itemPos = csItemBase
+                - vec2f32_t( 0.0f, (itemIdx - mRenderIndex) * csItemDims.y )
+                + 0.5f * vec2f32_t( csItemDims.x, -csItemDims.y );
 
             if( itemIdx == mItemIndex ) {
                 footerCC.update( mColorBorder );
@@ -237,9 +241,9 @@ void bind_menu_t::render() const {
             llce::gfx::render_context_t itemRC(
                llce::box_t(itemPos, csItemInnerDims, csPadAnchor) );
 
-            { // Item Action Section //
-                llce::gfx::render_context_t itemActionRC(
-                   llce::box_t(csItemActionPos, csItemSectionDims, csPadAnchor) );
+            if( itemIdx == mItemCount - 1 ) {
+                llce::gfx::render_context_t exitActionRC(
+                   llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
 
                 footerCC.update( mColorFore );
                 llce::gfx::render::box();
@@ -247,17 +251,57 @@ void bind_menu_t::render() const {
                 footerCC.update( mColorText );
                 llce::gfx::render::text( mItems[itemIdx],
                     llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
-            }
+            } else {
+                { // Item Action Section //
+                    llce::gfx::render_context_t itemActionRC(
+                       llce::box_t(csItemActionPos, csItemSectionDims, csPadAnchor) );
 
-            { // Item Binding Section //
-                llce::gfx::render_context_t itemBindingnRC(
-                   llce::box_t(csItemBindingPos, csItemSectionDims, csPadAnchor) );
+                    footerCC.update( mColorFore );
+                    llce::gfx::render::box();
 
-                footerCC.update( mColorFore );
-                llce::gfx::render::box();
+                    footerCC.update( mColorText );
+                    llce::gfx::render::text( mItems[itemIdx],
+                        llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
+                }
 
-                // TODO(JRC): Implement rendering algorithm for input streams
-                // (first, just render these as buttons w/ string ids).
+                { // Item Binding Section //
+                    llce::gfx::render_context_t itemBindingRC(
+                       llce::box_t(csItemBindingPos, csItemSectionDims, csPadAnchor) );
+
+                    footerCC.update( mColorFore );
+                    llce::gfx::render::box();
+
+                    char8_t bindingNames[LLCE_MAX_BINDINGS][16];
+                    uint32_t bindingIdx = 0, bindingCount = 0, bindingLength = 0;
+                    const uint32_t* cItemBinding = mInput->mBinding.find( itemIdx + 1 );
+                    for( bindingIdx = 0;
+                            cItemBinding[bindingIdx] != llce::input::INPUT_UNBOUND_ID;
+                            bindingIdx++, bindingCount++ ) {
+                        llce::input::identify( cItemBinding[bindingIdx],
+                            &bindingNames[bindingIdx][0], 16 );
+                        bindingLength += std::strlen( &bindingNames[bindingIdx][0] );
+                    } for( ; bindingIdx < LLCE_MAX_BINDINGS; bindingIdx++ ) {
+                        std::strcpy( &bindingNames[bindingIdx][0], "" );
+                    }
+
+                    // TODO(JRC): The following code naively segments the output GUI
+                    // space so that bindings are widely spread; this should be improved
+                    // so that the bindings are all centered and only small interrim
+                    // distances are maintained.
+                    float32_t bindingGUIPos = 0.0f;
+                    for( bindingIdx = 0; bindingIdx < bindingCount; bindingIdx++ ) {
+                        const char8_t* bindingName = &bindingNames[bindingIdx][0];
+                        float32_t bindingGUILength = std::strlen( bindingName ) / ( bindingLength + 0.0f );
+
+                        footerCC.update( mColorText );
+                        llce::gfx::render_context_t bindingRC(
+                           llce::box_t(bindingGUIPos, 0.0f, bindingGUILength, 1.0f) );
+                        llce::gfx::render::text( bindingName,
+                            llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
+
+                        bindingGUIPos += bindingGUILength;
+                    }
+                }
             }
         }
     }

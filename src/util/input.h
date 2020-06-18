@@ -128,6 +128,8 @@ struct input_t {
 // bool32_t isPressed( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
 // bool32_t isReleased( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
 
+bool32_t identify( const uint32_t pInputGID, char8_t* pBuffer, const uint32_t pBufferLength );
+
 }
 
 }
