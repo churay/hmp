@@ -126,7 +126,7 @@ bool32_t menu_t::changed( const llce::gui::event_e pEvent ) const {
 /// 'llce::gui::bind_menu_t' Functions ///
 
 bind_menu_t::bind_menu_t() : menu_t(),
-        mBinding( false ), mRenderIndex( 0 ), mColorBorder( nullptr ) {
+        mBinding( false ), mListening( false ), mRenderIndex( 0 ), mColorBorder( nullptr ) {
     
 }
 
@@ -137,7 +137,7 @@ bind_menu_t::bind_menu_t(
     const color4u8_t* pColorBack, const color4u8_t* pColorFore,
     const color4u8_t* pColorText, const color4u8_t* pColorBorder ) :
         menu_t( pInput, pEventActions, "BINDING", pActionNames, pActionCount + 1, pColorBack, pColorFore, pColorText ),
-        mBinding( false ), mRenderIndex( 0 ), mColorBorder( pColorBorder ) {
+        mBinding( false ), mListening( false ), mRenderIndex( 0 ), mColorBorder( pColorBorder ) {
     std::strncpy( &mItems[pActionCount][0], "EXIT", MAX_ITEM_LENGTH - 1 );
     mItems[pActionCount][MAX_ITEM_LENGTH - 1] = '\0';
 }
@@ -150,12 +150,8 @@ void bind_menu_t::update( const float64_t pDT ) {
         mRenderIndex = (
             (mItemIndex >= mRenderIndex + ITEM_FULL_COUNT) ? mItemIndex - ITEM_FULL_COUNT + 1 : (
             (mItemIndex < mRenderIndex) ? mItemIndex : (mRenderIndex)) );
-    } else {
-        // TODO(JRC): Wait for the input to be inactive once (user is still
-        // pressing select if we detect immediately) and then start registering
-        // inputs; on the second inactivity, then it's time to stop binding.
-        bool32_t inputActive = false;
-
+    } else if( !mListening ) {
+        bool8_t inputActive = false;
         for( uint32_t deviceID = llce::input::device::keyboard;
                 deviceID <= llce::input::device::_length;
                 deviceID++ ) {
@@ -163,24 +159,42 @@ void bind_menu_t::update( const float64_t pDT ) {
                     streamID < llce::input::SDL_NUM_DEVCODES[deviceID];
                     streamID++ ) {
                 llce::input::stream_t stream( deviceID, streamID );
+                inputActive |= mInput->isDownRaw( stream );
+            }
+        }
+
+        if( (mListening = !inputActive) ) {
+            mInput->mBinding.unbind( mItemIndex + 1 );
+        }
+    } else {
+        bool8_t inputActive = false;
+        for( uint32_t deviceID = llce::input::device::keyboard;
+                deviceID <= llce::input::device::_length;
+                deviceID++ ) {
+            for( uint32_t streamID = 0;
+                    streamID < llce::input::SDL_NUM_DEVCODES[deviceID];
+                    streamID++ ) {
+                llce::input::stream_t stream( deviceID, streamID );
+                inputActive |= mInput->isDownRaw( stream );
 
                 if( mInput->isReleasedRaw(stream) ) {
                     mCurrBindings.push_back( stream );
-                } if( mInput->isDownRaw(stream) ) {
-                    inputActive = true;
                 }
             }
         }
 
         if( !mCurrBindings.empty() && !inputActive ) {
             uint32_t bindingBuffer[LLCE_MAX_BINDINGS + 1];
-            std::memcpy( &bindingBuffer[0], mCurrBindings.data(),
-                sizeof(uint32_t) * mCurrBindings.size() );
-            bindingBuffer[LLCE_MAX_BINDINGS] = llce::input::INPUT_UNBOUND_ID;
+            for( uint32_t bindingIdx = 0; bindingIdx < mCurrBindings.size(); bindingIdx++ ) {
+                bindingBuffer[bindingIdx] = mCurrBindings.front( bindingIdx );
+            }
+            bindingBuffer[mCurrBindings.size()] = llce::input::INPUT_UNBOUND_ID;
+
             mInput->mBinding.bind( mItemIndex + 1, &bindingBuffer[0] );
 
             mCurrBindings.clear();
             mBinding = false;
+            mListening = false;
         }
     }
 }

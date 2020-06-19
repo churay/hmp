@@ -125,6 +125,22 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
 }
 
 
+bool32_t binding_t::unbind( const uint32_t pActionID ) {
+    bool32_t validBind = true;
+
+    LLCE_VERIFY_ERROR( validBind &= (0 < pActionID && pActionID < LLCE_MAX_ACTIONS),
+        "Invalid action ID '" << pActionID << "'; "
+        "valid range is [1, " << LLCE_MAX_ACTIONS << ")." );
+
+    if( validBind ) {
+        const static uint32_t csActionBytes = ( LLCE_MAX_BINDINGS + 1 ) * sizeof( uint32_t );
+        std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
+    }
+
+    return validBind;
+}
+
+
 uint32_t* binding_t::find( const uint32_t pActionID ) {
     return &mActionBindings[pActionID][0];
 }

@@ -70,6 +70,7 @@ struct bind_menu_t : public menu_t {
 
     llce::deque<uint32_t, LLCE_MAX_BINDINGS> mCurrBindings;
     bool8_t mBinding;
+    bool8_t mListening;
 
     uint8_t mRenderIndex;
 

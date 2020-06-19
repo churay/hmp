@@ -46,6 +46,7 @@ T pop_back() {
 
 void clear() {
     mStartIndex = ( mEndIndex + 1 ) % N;
+    mSize = 0;
 }
 
 // Access Operators //

@@ -69,6 +69,8 @@ struct binding_t {
     binding_t( const uint32_t* pInputGIDs );
 
     bool32_t bind( const uint32_t pActionID, const uint32_t* pInputGIDs );
+    bool32_t unbind( const uint32_t pActionID );
+
     uint32_t* find( const uint32_t pActionID );
     const uint32_t* find( const uint32_t pActionID ) const;
 
