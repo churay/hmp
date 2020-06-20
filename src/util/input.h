@@ -69,8 +69,6 @@ struct binding_t {
     binding_t( const uint32_t* pInputGIDs );
 
     bool32_t bind( const uint32_t pActionID, const uint32_t* pInputGIDs );
-    bool32_t unbind( const uint32_t pActionID );
-
     uint32_t* find( const uint32_t pActionID );
     const uint32_t* find( const uint32_t pActionID ) const;
 
@@ -130,6 +128,7 @@ struct input_t {
 // bool32_t isPressed( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
 // bool32_t isReleased( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
 
+const char8_t* identify( const uint32_t pInputGID );
 bool32_t identify( const uint32_t pInputGID, char8_t* pBuffer, const uint32_t pBufferLength );
 
 }

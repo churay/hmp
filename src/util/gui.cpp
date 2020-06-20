@@ -150,22 +150,6 @@ void bind_menu_t::update( const float64_t pDT ) {
         mRenderIndex = (
             (mItemIndex >= mRenderIndex + ITEM_FULL_COUNT) ? mItemIndex - ITEM_FULL_COUNT + 1 : (
             (mItemIndex < mRenderIndex) ? mItemIndex : (mRenderIndex)) );
-    } else if( !mListening ) {
-        bool8_t inputActive = false;
-        for( uint32_t deviceID = llce::input::device::keyboard;
-                deviceID <= llce::input::device::_length;
-                deviceID++ ) {
-            for( uint32_t streamID = 0;
-                    streamID < llce::input::SDL_NUM_DEVCODES[deviceID];
-                    streamID++ ) {
-                llce::input::stream_t stream( deviceID, streamID );
-                inputActive |= mInput->isDownRaw( stream );
-            }
-        }
-
-        if( (mListening = !inputActive) ) {
-            mInput->mBinding.unbind( mItemIndex + 1 );
-        }
     } else {
         bool8_t inputActive = false;
         for( uint32_t deviceID = llce::input::device::keyboard;
@@ -177,24 +161,27 @@ void bind_menu_t::update( const float64_t pDT ) {
                 llce::input::stream_t stream( deviceID, streamID );
                 inputActive |= mInput->isDownRaw( stream );
 
-                if( mInput->isReleasedRaw(stream) ) {
+                if( mListening && mInput->isReleasedRaw(stream) ) {
                     mCurrBindings.push_back( stream );
                 }
             }
         }
 
-        if( !mCurrBindings.empty() && !inputActive ) {
-            uint32_t bindingBuffer[LLCE_MAX_BINDINGS + 1];
-            for( uint32_t bindingIdx = 0; bindingIdx < mCurrBindings.size(); bindingIdx++ ) {
-                bindingBuffer[bindingIdx] = mCurrBindings.front( bindingIdx );
+        if( !inputActive ) {
+            if( !mListening ) {
+                mListening = true;
+            } else if( !mCurrBindings.empty() ) {
+                uint32_t bindingBuffer[LLCE_MAX_BINDINGS + 1];
+                for( uint32_t bindingIdx = 0; bindingIdx < mCurrBindings.size(); bindingIdx++ ) {
+                    bindingBuffer[bindingIdx] = mCurrBindings.front( bindingIdx );
+                }
+                bindingBuffer[mCurrBindings.size()] = llce::input::INPUT_UNBOUND_ID;
+
+                bool32_t bindingSuccess =
+                    mInput->mBinding.bind( mItemIndex + 1, &bindingBuffer[0] );
+                mCurrBindings.clear();
+                mBinding = mListening = !bindingSuccess;
             }
-            bindingBuffer[mCurrBindings.size()] = llce::input::INPUT_UNBOUND_ID;
-
-            mInput->mBinding.bind( mItemIndex + 1, &bindingBuffer[0] );
-
-            mCurrBindings.clear();
-            mBinding = false;
-            mListening = false;
         }
     }
 }
@@ -285,35 +272,37 @@ void bind_menu_t::render() const {
                     footerCC.update( mColorFore );
                     llce::gfx::render::box();
 
-                    char8_t bindingNames[LLCE_MAX_BINDINGS][16];
-                    uint32_t bindingIdx = 0, bindingCount = 0, bindingLength = 0;
-                    const uint32_t* cItemBinding = mInput->mBinding.find( itemIdx + 1 );
-                    for( bindingIdx = 0;
-                            cItemBinding[bindingIdx] != llce::input::INPUT_UNBOUND_ID;
-                            bindingIdx++, bindingCount++ ) {
-                        llce::input::identify( cItemBinding[bindingIdx],
-                            &bindingNames[bindingIdx][0], 16 );
-                        bindingLength += std::strlen( &bindingNames[bindingIdx][0] );
-                    } for( ; bindingIdx < LLCE_MAX_BINDINGS; bindingIdx++ ) {
-                        std::strcpy( &bindingNames[bindingIdx][0], "" );
-                    }
+                    if( !(mListening && itemIdx == mItemIndex) ) {
+                        char8_t bindingNames[LLCE_MAX_BINDINGS][16];
+                        uint32_t bindingIdx = 0, bindingCount = 0, bindingLength = 0;
+                        const uint32_t* cItemBinding = mInput->mBinding.find( itemIdx + 1 );
+                        for( bindingIdx = 0;
+                                cItemBinding[bindingIdx] != llce::input::INPUT_UNBOUND_ID;
+                                bindingIdx++, bindingCount++ ) {
+                            llce::input::identify( cItemBinding[bindingIdx],
+                                &bindingNames[bindingIdx][0], 16 );
+                            bindingLength += std::strlen( &bindingNames[bindingIdx][0] );
+                        } for( ; bindingIdx < LLCE_MAX_BINDINGS; bindingIdx++ ) {
+                            std::strcpy( &bindingNames[bindingIdx][0], "" );
+                        }
 
-                    // TODO(JRC): The following code naively segments the output GUI
-                    // space so that bindings are widely spread; this should be improved
-                    // so that the bindings are all centered and only small interrim
-                    // distances are maintained.
-                    float32_t bindingGUIPos = 0.0f;
-                    for( bindingIdx = 0; bindingIdx < bindingCount; bindingIdx++ ) {
-                        const char8_t* bindingName = &bindingNames[bindingIdx][0];
-                        float32_t bindingGUILength = std::strlen( bindingName ) / ( bindingLength + 0.0f );
+                        // TODO(JRC): The following code naively segments the output GUI
+                        // space so that bindings are widely spread; this should be improved
+                        // so that the bindings are all centered and only small interrim
+                        // distances are maintained.
+                        float32_t bindingGUIPos = 0.0f;
+                        for( bindingIdx = 0; bindingIdx < bindingCount; bindingIdx++ ) {
+                            const char8_t* bindingName = &bindingNames[bindingIdx][0];
+                            float32_t bindingGUILength = std::strlen( bindingName ) / ( bindingLength + 0.0f );
 
-                        footerCC.update( mColorText );
-                        llce::gfx::render_context_t bindingRC(
-                           llce::box_t(bindingGUIPos, 0.0f, bindingGUILength, 1.0f) );
-                        llce::gfx::render::text( bindingName,
-                            llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
+                            footerCC.update( mColorText );
+                            llce::gfx::render_context_t bindingRC(
+                               llce::box_t(bindingGUIPos, 0.0f, bindingGUILength, 1.0f) );
+                            llce::gfx::render::text( bindingName,
+                                llce::box_t(vec2f32_t(0.5f, 0.5f), csItemTextDims, csPadAnchor) );
 
-                        bindingGUIPos += bindingGUILength;
+                            bindingGUIPos += bindingGUILength;
+                        }
                     }
                 }
             }

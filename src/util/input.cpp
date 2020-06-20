@@ -96,6 +96,7 @@ binding_t::binding_t( const uint32_t* pInputGIDs ) : binding_t() {
             actionIdx < LLCE_MAX_ACTIONS && pInputGIDs[actionIdx] != INPUT_UNBOUND_ID;
             actionIdx++ ) {
         mActionBindings[actionIdx][0] = pInputGIDs[actionIdx];
+        mBoundActions[pInputGIDs[actionIdx]] = actionIdx;
     }
 }
 
@@ -103,38 +104,46 @@ binding_t::binding_t( const uint32_t* pInputGIDs ) : binding_t() {
 bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs ) {
     bool32_t validBind = true;
 
-    LLCE_VERIFY_ERROR( validBind &= (0 < pActionID && pActionID < LLCE_MAX_ACTIONS),
+    LLCE_VERIFY_WARNING( validBind &= (0 < pActionID && pActionID < LLCE_MAX_ACTIONS),
         "Invalid action ID '" << pActionID << "'; "
         "valid range is [1, " << LLCE_MAX_ACTIONS << ")." );
-    LLCE_VERIFY_ERROR( validBind &= (pInputGIDs[0] != INPUT_UNBOUND_ID),
-        "Binding no inputs to an action; each bound action must have at least " <<
-        "one corresponding input." );
+    LLCE_VERIFY_WARNING( validBind &= (pInputGIDs[0] != INPUT_UNBOUND_ID),
+        "Skipping binding of empty input list to action '" << pActionID << "'; " <<
+        "each bound action must have at least one corresponding input." );
+
+    // TODO(JRC): Robustify this code to allow for the rebinding of inputs from
+    // overloaded source bindings (e.g. if we're binding stream<E> to action<UP>
+    // and stream<E> is bound to action<DOWN> with stream<K>, then we allow this binding).
+    // TODO(JRC): This code needs to have a contingency where it allows an input
+    // to be re-bound to the same action.
+    for( uint32_t bindingIdx = 0;
+            bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx] != INPUT_UNBOUND_ID;
+            bindingIdx++ ) {
+        LLCE_VERIFY_WARNING( validBind &= (mBoundActions[pInputGIDs[bindingIdx]] == ACTION_UNBOUND_ID),
+            "Skipping binding for action '" << pActionID << "'; " <<
+            "binding request includes input '" << identify(pInputGIDs[bindingIdx]) << "' " <<
+            "with pre-existing binding to action '" << mBoundActions[pInputGIDs[bindingIdx]] << "'." );
+    }
+
 
     if( validBind ) {
+        uint32_t* actionBindings = mActionBindings[pActionID];
+
+        for( uint32_t bindingIdx = 0;
+                bindingIdx < LLCE_MAX_BINDINGS && mActionBindings[pActionID][bindingIdx] != INPUT_UNBOUND_ID;
+                bindingIdx++ ) {
+            mBoundActions[actionBindings[bindingIdx]] = ACTION_UNBOUND_ID;
+        }
+
         const static uint32_t csActionBytes = ( LLCE_MAX_BINDINGS + 1 ) * sizeof( uint32_t );
         std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
 
         for( uint32_t bindingIdx = 0;
                 bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx] != INPUT_UNBOUND_ID;
                 bindingIdx++ ) {
-            mActionBindings[pActionID][bindingIdx] = pInputGIDs[bindingIdx];
+            actionBindings[bindingIdx] = pInputGIDs[bindingIdx];
+            mBoundActions[pInputGIDs[bindingIdx]] = pActionID;
         }
-    }
-
-    return validBind;
-}
-
-
-bool32_t binding_t::unbind( const uint32_t pActionID ) {
-    bool32_t validBind = true;
-
-    LLCE_VERIFY_ERROR( validBind &= (0 < pActionID && pActionID < LLCE_MAX_ACTIONS),
-        "Invalid action ID '" << pActionID << "'; "
-        "valid range is [1, " << LLCE_MAX_ACTIONS << ")." );
-
-    if( validBind ) {
-        const static uint32_t csActionBytes = ( LLCE_MAX_BINDINGS + 1 ) * sizeof( uint32_t );
-        std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
     }
 
     return validBind;
@@ -282,6 +291,16 @@ bool32_t isReleased( const input_t* pInput, const uint32_t pInputGID ) {
     const stream_t cInputStream( pInputGID );
     const diff_e* cInputDiffs = pInput->diffs( cInputStream.mDevID );
     return (bool32_t)( cInputDiffs != nullptr && (cInputDiffs[cInputStream.mID] == diff_e::up) );
+}
+
+
+const char8_t* identify( const uint32_t pInputGID ) {
+    const static uint32_t csMaxIdentityLength = 32;
+    static char8_t sIdentityBuffer[csMaxIdentityLength];
+
+    llce::input::identify( pInputGID, &sIdentityBuffer[0], csMaxIdentityLength );
+
+    return &sIdentityBuffer[0];
 }
 
 
