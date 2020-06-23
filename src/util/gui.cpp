@@ -153,7 +153,7 @@ void bind_menu_t::update( const float64_t pDT ) {
     } else {
         bool8_t inputActive = false;
         for( uint32_t deviceID = llce::input::device::keyboard;
-                deviceID <= llce::input::device::_length;
+                deviceID < llce::input::device::_length;
                 deviceID++ ) {
             for( uint32_t streamID = 0;
                     streamID < llce::input::SDL_NUM_DEVCODES[deviceID];

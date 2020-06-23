@@ -580,7 +580,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             }
         }
 
-        appInput->read( llce::input::device::keyboard );
+        appInput->read();
 
         // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
         // increasing the speed and 'alt+tab' decreasing the speed.
@@ -711,7 +711,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         if( doStep ) {
-            simInput->read( llce::input::device::keyboard );
+            simInput->read();
 #if LLCE_DEBUG
             if( isRecording ) {
                 recInputStream.write( (bit8_t*)simInput, sizeof(llsim::input_t) );

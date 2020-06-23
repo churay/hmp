@@ -111,6 +111,8 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
         "Skipping binding of empty input list to action '" << pActionID << "'; " <<
         "each bound action must have at least one corresponding input." );
 
+    // TODO(JRC): Consider introducing sizes to this structure to allow for simpler
+    // traversal/checking to see if any action will be eliminated of its inputs.
     // TODO(JRC): Robustify this code to allow for the rebinding of inputs from
     // overloaded source bindings (e.g. if we're binding stream<E> to action<UP>
     // and stream<E> is bound to action<DOWN> with stream<K>, then we allow this binding).
@@ -124,7 +126,6 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
             "binding request includes input '" << identify(pInputGIDs[bindingIdx]) << "' " <<
             "with pre-existing binding to action '" << mBoundActions[pInputGIDs[bindingIdx]] << "'." );
     }
-
 
     if( validBind ) {
         uint32_t* actionBindings = mActionBindings[pActionID];

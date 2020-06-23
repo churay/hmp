@@ -33,7 +33,7 @@ typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons 
 // TODO(JRC): This should be improved so that the position of the mouse is included
 // as an input stream as well.
 static constexpr uint32_t SDL_NUM_DEVCODES[] = { 1, SDL_NUM_KEYCODES, SDL_NUM_MOUSECODES };
-static constexpr uint32_t SDL_NUM_INPUTS = 1 + SDL_NUM_DEVCODES[0] + SDL_NUM_DEVCODES[1];
+static constexpr uint32_t SDL_NUM_INPUTS = 1 + SDL_NUM_KEYCODES + SDL_NUM_MOUSECODES;
 
 bool32_t isDown( const input_t* pInput, const uint32_t pInputGID );
 bool32_t isPressed( const input_t* pInput, const uint32_t pInputGID );
@@ -93,7 +93,7 @@ struct input_t {
 
     // declare size as static so that it can be used by the harness when doing 'memcpy' operations
 
-    bool32_t read( const device_e pDevID );
+    bool32_t read( const device_e pDevID = llce::input::device::unbound );
 
     uint8_t* state( const device_e pDevID );
     const uint8_t* state( const device_e pDevID ) const;
