@@ -147,9 +147,14 @@ void bind_menu_t::update( const float64_t pDT ) {
     if( !mBinding ) {
         menu_t::update( pDT );
         mBinding = mItemIndex != mItemCount - 1 && changed( llce::gui::event::select );
+
+        // TODO(JRC): This is rather hard to understand given the case complexity
+        // and thus should be simplified if at all possible.
         mRenderIndex = (
+            (mItemIndex < mRenderIndex) ? mItemIndex : (
             (mItemIndex >= mRenderIndex + ITEM_FULL_COUNT) ? mItemIndex - ITEM_FULL_COUNT + 1 : (
-            (mItemIndex < mRenderIndex) ? mItemIndex : (mRenderIndex)) );
+            (mItemIndex == mRenderIndex && mItemIndex != 0) ? mItemIndex - 1 : (mRenderIndex))) );
+        mRenderIndex = std::min( mRenderIndex, (uint8_t)(mItemCount - ITEM_FULL_COUNT - 1) );
     } else {
         bool8_t inputActive = false;
         for( uint32_t deviceID = llce::input::device::keyboard;
@@ -193,18 +198,6 @@ void bind_menu_t::render() const {
 
     const static auto csPadAnchor = llce::geom::anchor2D::mm;
 
-    { // Header //
-        const static float32_t csHeaderPadding = 2.0e-2f;
-        const static vec2f32_t csHeaderDims = { 1.0f, 0.2f };
-        const static vec2f32_t csHeaderInnerDims =
-            csHeaderDims - 2.0f * csHeaderPadding * vec2f32_t( 1.0f, 1.0f );
-        const static vec2f32_t csHeaderPos = { 0.5f, 1.0f - 0.2f * 0.5f };
-
-        llce::gfx::color_context_t headerCC( mColorText );
-        llce::gfx::render::text( mTitle,
-            llce::box_t(csHeaderPos, csHeaderInnerDims, csPadAnchor) );
-    }
-
     { // Items //
         const static float32_t csItemPadding = 2.0e-2f;
         const static llce::box_t csItemArea( 0.0f, 0.0f, 1.0f, 0.8f );
@@ -221,15 +214,12 @@ void bind_menu_t::render() const {
         const static vec2f32_t csItemBase = csItemArea.at( llce::geom::anchor2D::lh );
 
         llce::gfx::color_context_t footerCC( mColorBorder );
-        // TODO(JRC): Need to adjust 'mRenderIndex' offset so that interim
-        // windows display 25% of off-window before and after items, while
-        // boundary windows just display 50% of the internal off-window option.
-        // const vec2f32_t cItemRenderOffset = vec2f32_t( 0.0f, csItemDims.y ) * (
-        //     (mRenderIndex == 0) ? 0.0f : (
-        //     (mRenderIndex == mItemCount - 1) ? ITEM_PART_VISIBILITY : (
-        //     ITEM_PART_VISIBILITY / 2.0f )) );
+        const vec2f32_t cItemRenderOffset = vec2f32_t( 0.0f, csItemDims.y ) * (
+            (mRenderIndex == 0) ? 0.0f : (
+            (mRenderIndex == mItemCount - ITEM_FULL_COUNT - 1) ? ITEM_PART_VISIBILITY : (
+            ITEM_PART_VISIBILITY / 2.0f )) );
         for( uint32_t itemIdx = 0; itemIdx < mItemCount; itemIdx++ ) {
-            vec2f32_t itemPos = csItemBase
+            vec2f32_t itemPos = csItemBase + cItemRenderOffset
                 - vec2f32_t( 0.0f, (itemIdx - mRenderIndex) * csItemDims.y )
                 + 0.5f * vec2f32_t( csItemDims.x, -csItemDims.y );
 
@@ -307,6 +297,22 @@ void bind_menu_t::render() const {
                 }
             }
         }
+    }
+
+    { // Header //
+        const static float32_t csHeaderPadding = 2.0e-2f;
+        const static vec2f32_t csHeaderDims = { 1.0f, 0.2f };
+        const static vec2f32_t csHeaderInnerDims =
+            csHeaderDims - 2.0f * csHeaderPadding * vec2f32_t( 1.0f, 1.0f );
+        const static vec2f32_t csHeaderPos = { 0.5f, 1.0f - 0.2f * 0.5f };
+
+        llce::gfx::color_context_t headerCC( mColorBack );
+        llce::gfx::render::box(
+            llce::box_t(vec2f32_t(0.0f, 0.8f), csHeaderDims) );
+
+        headerCC.update( mColorText );
+        llce::gfx::render::text( mTitle,
+            llce::box_t(csHeaderPos, csHeaderInnerDims, csPadAnchor) );
     }
 }
 

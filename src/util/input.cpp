@@ -88,9 +88,6 @@ binding_t::binding_t() {
 }
 
 
-// TODO(JRC): This signature limits default configurations to one binding per
-// action. This should be extended to arbitrary bindings per action (provided
-// such a change doesn't overcomplicate the prototype).
 binding_t::binding_t( const uint32_t* pInputGIDs ) : binding_t() {
     for( uint32_t actionIdx = 1;
             actionIdx < LLCE_MAX_ACTIONS && pInputGIDs[actionIdx] != INPUT_UNBOUND_ID;

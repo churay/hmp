@@ -60,10 +60,6 @@ struct stream_t {
 };
 
 
-// TODO(JRC): The GID functions can potentially be changed to 'stream_t' functions
-// and use C++ replace-in-place substitution to cut down on typing.
-// TODO(JRC): Experiment with dictionary-esque interface (e.g. for bind/find;
-// read/write) to see if it improves usability/terseness.
 struct binding_t {
     binding_t();
     binding_t( const uint32_t* pInputGIDs );
