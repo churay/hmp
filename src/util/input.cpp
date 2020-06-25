@@ -82,6 +82,7 @@ stream_t::operator uint64_t() const {
 
 /// 'llce::input::binding_t' Functions ///
 
+
 binding_t::binding_t() {
     std::memset( &mActionBindings[0], INPUT_UNBOUND_ID, sizeof(mActionBindings) );
     std::memset( &mBoundActions[0], ACTION_UNBOUND_ID, sizeof(mBoundActions) );
@@ -115,9 +116,7 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
     // and stream<E> is bound to action<DOWN> with stream<K>, then we allow this binding).
     // TODO(JRC): This code needs to have a contingency where it allows an input
     // to be re-bound to the same action.
-    for( uint32_t bindingIdx = 0;
-            bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx] != INPUT_UNBOUND_ID;
-            bindingIdx++ ) {
+    for( uint32_t bindingIdx = 0; valid(pInputGIDs, bindingIdx); bindingIdx++ ) {
         LLCE_VERIFY_WARNING( validBind &= (mBoundActions[pInputGIDs[bindingIdx]] == ACTION_UNBOUND_ID),
             "Skipping binding for action '" << pActionID << "'; " <<
             "binding request includes input '" << identify(pInputGIDs[bindingIdx]) << "' " <<
@@ -125,21 +124,15 @@ bool32_t binding_t::bind( const uint32_t pActionID, const uint32_t* pInputGIDs )
     }
 
     if( validBind ) {
-        uint32_t* actionBindings = mActionBindings[pActionID];
-
-        for( uint32_t bindingIdx = 0;
-                bindingIdx < LLCE_MAX_BINDINGS && mActionBindings[pActionID][bindingIdx] != INPUT_UNBOUND_ID;
-                bindingIdx++ ) {
-            mBoundActions[actionBindings[bindingIdx]] = ACTION_UNBOUND_ID;
+        for( uint32_t bindingIdx = 0; valid(mActionBindings[pActionID], bindingIdx); bindingIdx++ ) {
+            mBoundActions[mActionBindings[pActionID][bindingIdx]] = ACTION_UNBOUND_ID;
         }
 
         const static uint32_t csActionBytes = ( LLCE_MAX_BINDINGS + 1 ) * sizeof( uint32_t );
         std::memset( &mActionBindings[pActionID], INPUT_UNBOUND_ID, csActionBytes );
 
-        for( uint32_t bindingIdx = 0;
-                bindingIdx < LLCE_MAX_BINDINGS && pInputGIDs[bindingIdx] != INPUT_UNBOUND_ID;
-                bindingIdx++ ) {
-            actionBindings[bindingIdx] = pInputGIDs[bindingIdx];
+        for( uint32_t bindingIdx = 0; valid(pInputGIDs, bindingIdx); bindingIdx++ ) {
+            mActionBindings[pActionID][bindingIdx] = pInputGIDs[bindingIdx];
             mBoundActions[pInputGIDs[bindingIdx]] = pActionID;
         }
     }

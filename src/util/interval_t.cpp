@@ -66,6 +66,20 @@ float32_t interval_t::wrap( const float32_t pValue ) const {
 }
 
 
+float32_t interval_t::clamp( const float32_t pValue ) const {
+    return (
+        (pValue > mMax) ? mMax : (
+        (pValue < mMin) ? mMin : (pValue) ));
+}
+
+
+float32_t interval_t::distance( const float32_t pValue ) const {
+    return (
+        (pValue > mMax) ? pValue - mMax : (
+        (pValue < mMin) ? pValue - mMin : (0.0f) ));
+}
+
+
 float32_t interval_t::interp( const float32_t pValue ) const {
     return pValue * ( mMax - mMin ) + mMin;
 }

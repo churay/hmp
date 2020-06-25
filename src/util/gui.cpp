@@ -148,13 +148,12 @@ void bind_menu_t::update( const float64_t pDT ) {
         menu_t::update( pDT );
         mBinding = mItemIndex != mItemCount - 1 && changed( llce::gui::event::select );
 
-        // TODO(JRC): This is rather hard to understand given the case complexity
-        // and thus should be simplified if at all possible.
-        mRenderIndex = (
-            (mItemIndex < mRenderIndex) ? mItemIndex : (
-            (mItemIndex >= mRenderIndex + ITEM_FULL_COUNT) ? mItemIndex - ITEM_FULL_COUNT + 1 : (
-            (mItemIndex == mRenderIndex && mItemIndex != 0) ? mItemIndex - 1 : (mRenderIndex))) );
-        mRenderIndex = std::min( mRenderIndex, (uint8_t)(mItemCount - ITEM_FULL_COUNT - 1) );
+        const llce::interval_t cCurrRenderInt( mRenderIndex + 1, mRenderIndex + ITEM_FULL_COUNT - 1 );
+        const llce::interval_t cMaxRenderInt( 0,  mItemCount - ITEM_FULL_COUNT - 1 );
+        int32_t renderIndexDiff = cCurrRenderInt.distance( mItemIndex );
+        if( renderIndexDiff != 0 ) {
+            mRenderIndex = cMaxRenderInt.clamp( mRenderIndex + renderIndexDiff );
+        }
     } else {
         bool8_t inputActive = false;
         for( uint32_t deviceID = llce::input::device::keyboard;
@@ -176,14 +175,10 @@ void bind_menu_t::update( const float64_t pDT ) {
             if( !mListening ) {
                 mListening = true;
             } else if( !mCurrBindings.empty() ) {
-                uint32_t bindingBuffer[LLCE_MAX_BINDINGS + 1];
-                for( uint32_t bindingIdx = 0; bindingIdx < mCurrBindings.size(); bindingIdx++ ) {
-                    bindingBuffer[bindingIdx] = mCurrBindings.front( bindingIdx );
-                }
+                auto bindingBuffer = mCurrBindings.compact();
                 bindingBuffer[mCurrBindings.size()] = llce::input::INPUT_UNBOUND_ID;
 
-                bool32_t bindingSuccess =
-                    mInput->mBinding.bind( mItemIndex + 1, &bindingBuffer[0] );
+                bool32_t bindingSuccess = mInput->mBinding.bind( mItemIndex + 1, bindingBuffer.data() );
                 mCurrBindings.clear();
                 mBinding = mListening = !bindingSuccess;
             }

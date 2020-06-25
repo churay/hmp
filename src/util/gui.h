@@ -22,8 +22,7 @@ LLCE_ENUM( event, none, select, next, prev );
 struct menu_t {
     constexpr static uint32_t MAX_EVENT_COUNT = 32;
     constexpr static uint32_t MAX_ITEM_LENGTH = 32;
-    // FIXME(JRC): Changing this value to 32 causes weird things to happen.
-    constexpr static uint32_t MAX_ITEM_COUNT = 16;
+    constexpr static uint32_t MAX_ITEM_COUNT = 32;
 
     menu_t();
     menu_t(
@@ -68,7 +67,7 @@ struct bind_menu_t : public menu_t {
     void update( const float64_t pDT );
     void render() const;
 
-    llce::deque<uint32_t, LLCE_MAX_BINDINGS> mCurrBindings;
+    llce::deque<uint32_t, LLCE_MAX_BINDINGS + 1> mCurrBindings;
     bool8_t mBinding;
     bool8_t mListening;
 

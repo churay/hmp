@@ -68,6 +68,12 @@ struct binding_t {
     uint32_t* find( const uint32_t pActionID );
     const uint32_t* find( const uint32_t pActionID ) const;
 
+    // NOTE(JRC): This function is often in loop evaluations and thus must
+    // be fast to evaluate.
+    static inline bool32_t valid( const uint32_t* pInputGIDs, const uint32_t pIndex ) {
+        return pIndex < LLCE_MAX_BINDINGS && pInputGIDs[pIndex] != INPUT_UNBOUND_ID;
+    }
+
     // sim-specific action id => [bound sim-agnostic input global id]
     uint32_t mActionBindings[LLCE_MAX_ACTIONS][LLCE_MAX_BINDINGS + 1];
     // sim-agnostic global id => sim-specific action id

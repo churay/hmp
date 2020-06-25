@@ -15,8 +15,8 @@ public:
 // Initializers //
 
 deque() {
-    mStartIndex = 1;
-    mEndIndex = 0;
+    mStartIndex = 0;
+    mEndIndex = N - 1;
     mSize = 0;
 }
 
@@ -73,6 +73,14 @@ T* data() {
 
 const T* data() const {
     return mBuffer.data();
+}
+
+std::array<T, N> compact() const {
+    std::array<T, N> array;
+    for( size_t index = 0; index < mSize; index++ ) {
+        array[index] = mBuffer[_sindex(index)];
+    }
+    return array;
 }
 
 size_t size() const {
