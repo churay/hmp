@@ -361,9 +361,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     const static uint32_t csSimAudioEnabled = llsim::output_t::NUM_SFX_BUFFERS > 0;
 
-    const static uint32_t csAudioFrequency = 48000;                                     // audio samples / second
+    const static uint32_t csAudioFrequency = LLCE_SPS;                                  // audio samples / second
     const static SDL_AudioFormat csAudioFormat = AUDIO_S16LSB;                          // audio sample data format
-    const static uint32_t csAudioChannelCount = 2;                                      // audio channels (2: stereo)
+    const static uint32_t csAudioChannelCount = LLCE_MAX_CHANNELS;                      // audio channels (2: stereo)
     const static uint32_t csAudioSampleBytes = sizeof( int16_t ) * csAudioChannelCount; // audio bytes / sample
 
     const static uint32_t csAudioSamplesPerFrames = csAudioFrequency / csSimFPS;        // audio buffer size in audio frames
@@ -536,6 +536,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         simOutput->sfxConfig = realAudioConfig;
         simOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] = (bit8_t*)&audioBuffer[0];
         simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
+#if LLCE_DEBUG
+        // if( cShowMeta ) {
+        //     metaOutput->sfxConfig = realAudioConfig;
+        //     metaOutput->sfxBuffers[llce::output::BUFFER_SHARED_ID] = (bit8_t*)&audioBuffer[0];
+        //     metaOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = 0;
+        // }
+#endif
     }
 
     while( isRunning ) {
@@ -568,11 +575,15 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 #endif
 
+        // TODO(JRC): This section takes a very long time to complete (O(1e-1)
+        // seconds) when many inputs are pressed on the same frame (e.g. O(1e1)).
+        // Disabling polling causes all inputs to be ignored (even by direct
+        // input reading functions), so its unclear how to fix this issue.
         SDL_Event event;
         while( SDL_PollEvent(&event) ) {
             if( event.type == SDL_QUIT ) {
                 isRunning = false;
-            } else if( event.type == SDL_WINDOWEVENT  && (
+            } else if( event.type == SDL_WINDOWEVENT && (
                    event.window.event == SDL_WINDOWEVENT_RESIZED ||
                    event.window.event == SDL_WINDOWEVENT_EXPOSED) ) {
                 SDL_GetWindowSize( window, &windowDims.x, &windowDims.y );
@@ -581,9 +592,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         }
 
         appInput->read();
-
-        // TODO(JRC): The key for toggling speed will be 'tab', with 'tab'
-        // increasing the speed and 'alt+tab' decreasing the speed.
 
         if( cIsKeyPressed(appInput, SDL_SCANCODE_Q) ) {
             // q key = quit application
@@ -707,6 +715,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 const uint32_t cQueuedAudioBytes = SDL_GetQueuedAudioSize( audioDeviceID );
                 const uint32_t cQueuedAudioFrames = cQueuedAudioBytes / csAudioBytesPerFrame;
                 simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = csAudioBufferFrames - cQueuedAudioFrames;
+#if LLCE_DEBUG
+                // metaOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID] = simOutput->sfxBufferFrames[llce::output::BUFFER_SHARED_ID];
+#endif
             }
         }
 

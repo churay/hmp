@@ -13,18 +13,25 @@ namespace meta {
 
 /// State Types/Variables ///
 
-constexpr static uint32_t UI_FPS_FRAME_COUNT = 2 * LLCE_FPS;
-constexpr static color4u8_t UI_FPS_BACKGROUND_COLOR = { 0xFF, 0xFF, 0xFF, 0xFF };
+LLCE_ENUM( mode, fps, audio );
+
+constexpr static uint32_t FPS_FRAME_COUNT = 2 * LLCE_FPS;
+constexpr static uint32_t AUDIO_SAMPLE_COUNT = 5 * LLCE_SPS * LLCE_MAX_CHANNELS;
 
 struct state_t {
+    mode_e mode;
+
     // FPS State //
-    llce::deque<float64_t, meta::UI_FPS_FRAME_COUNT> dts;
+    llce::deque<float64_t, meta::FPS_FRAME_COUNT> frameDTs;
+
+    // Audio State //
+    llce::deque<int16_t, meta::AUDIO_SAMPLE_COUNT> audioSamples;
 };
 
 /// Input/Output Types/Variables ///
 
 typedef llce::input::input_t input_t;
-typedef llce::output::output_t<1, 0> output_t;
+typedef llce::output::output_t<1, 1> output_t;
 
 /// Functions ///
 
