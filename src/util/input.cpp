@@ -58,13 +58,6 @@ uint64_t stream_t::did() const {
 }
 
 
-const char8_t* stream_t::name() const {
-    // TODO(JRC): Implement this function.
-    // SDL_SCANCODE_TO_KEYCODE
-    return nullptr;
-}
-
-
 stream_t::operator uint32_t() const {
     uint32_t deviceOffset = 0;
     for( uint32_t deviceID = 0; deviceID < (uint32_t)mDevID; deviceID++ ) {

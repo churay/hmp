@@ -60,31 +60,6 @@ float32_t interval_t::exbed( const interval_t& pOther ) {
 }
 
 
-float32_t interval_t::wrap( const float32_t pValue ) const {
-    float32_t wrapValue = std::fmod( pValue - mMin, mMax - mMin );
-    return ( wrapValue < 0.0f ) ? mMax + wrapValue : mMin + wrapValue;
-}
-
-
-float32_t interval_t::clamp( const float32_t pValue ) const {
-    return (
-        (pValue > mMax) ? mMax : (
-        (pValue < mMin) ? mMin : (pValue) ));
-}
-
-
-float32_t interval_t::distance( const float32_t pValue ) const {
-    return (
-        (pValue > mMax) ? pValue - mMax : (
-        (pValue < mMin) ? pValue - mMin : (0.0f) ));
-}
-
-
-float32_t interval_t::interp( const float32_t pValue ) const {
-    return pValue * ( mMax - mMin ) + mMin;
-}
-
-
 bool32_t interval_t::contains( const float32_t pValue ) const {
     // TODO(JRC): Replace with equivalent fuzzy comparison operator.
     return mMin <= pValue && pValue <= mMax;
@@ -117,6 +92,36 @@ interval_t interval_t::unionize( const interval_t& pOther ) const {
     // TODO(JRC): Consider returning an invalid 'interval_t' if the two argument
     // intervals don't overlap or abut.
     return interval_t( std::min(mMin, pOther.mMin), std::max(mMax, pOther.mMax) );
+}
+
+
+float32_t interval_t::wrap( const float32_t pValue ) const {
+    float32_t wrapValue = std::fmod( pValue - mMin, mMax - mMin );
+    return ( wrapValue < 0.0f ) ? mMax + wrapValue : mMin + wrapValue;
+}
+
+
+float32_t interval_t::clamp( const float32_t pValue ) const {
+    return (
+        (pValue > mMax) ? mMax : (
+        (pValue < mMin) ? mMin : (pValue) ));
+}
+
+
+float32_t interval_t::distance( const float32_t pValue ) const {
+    return (
+        (pValue > mMax) ? pValue - mMax : (
+        (pValue < mMin) ? pValue - mMin : (0.0f) ));
+}
+
+
+float32_t interval_t::interp( const float32_t pValue ) const {
+    return pValue * ( mMax - mMin ) + mMin;
+}
+
+
+float32_t interval_t::mid() const {
+    return ( mMax + mMin ) / 2.0f;
 }
 
 

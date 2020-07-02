@@ -50,7 +50,6 @@ struct stream_t {
 
     uint32_t gid() const;
     uint64_t did() const;
-    const char8_t* name() const;
 
     operator uint32_t() const;
     operator uint64_t() const;
