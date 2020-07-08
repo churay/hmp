@@ -102,15 +102,26 @@ box_t box_t::unionize( const box_t& pOther ) const {
 }
 
 
-bool32_t box_t::empty() const {
+vec2f32_t box_t::wrap( const vec2f32_t& pValue ) const {
     const interval_t tx = xbounds(), ty = ybounds();
-    return tx.empty() || ty.empty();
+    return vec2f32_t( tx.wrap(pValue.x), ty.wrap(pValue.y) );
 }
 
 
-bool32_t box_t::valid() const {
+vec2f32_t box_t::clamp( const vec2f32_t& pValue ) const {
     const interval_t tx = xbounds(), ty = ybounds();
-    return tx.valid() && ty.valid();
+    return vec2f32_t( tx.clamp(pValue.x), ty.clamp(pValue.y) );
+}
+
+
+vec2f32_t box_t::distance( const vec2f32_t& pValue ) const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    return vec2f32_t( tx.distance(pValue.x), ty.distance(pValue.y) );
+}
+
+
+vec2f32_t box_t::interp( const vec2f32_t& pValue ) const {
+    return mPos + vec2f32_t( mDims.x * pValue.x, mDims.y * pValue.y );
 }
 
 
@@ -139,6 +150,18 @@ vec2f32_t box_t::at( const llce::geom::anchor2D_e pAnchor ) const {
 
 float32_t box_t::area() const {
     return mDims.x * mDims.y;
+}
+
+
+bool32_t box_t::empty() const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    return tx.empty() || ty.empty();
+}
+
+
+bool32_t box_t::valid() const {
+    const interval_t tx = xbounds(), ty = ybounds();
+    return tx.valid() && ty.valid();
 }
 
 

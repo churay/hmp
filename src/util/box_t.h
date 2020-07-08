@@ -37,8 +37,10 @@ class box_t {
     box_t intersect( const box_t& pOther ) const;
     box_t unionize( const box_t& pOther ) const;
 
-    bool32_t empty() const;
-    bool32_t valid() const;
+    vec2f32_t wrap( const vec2f32_t& pValue ) const;
+    vec2f32_t clamp( const vec2f32_t& pValue ) const;
+    vec2f32_t distance( const vec2f32_t& pValue ) const;
+    vec2f32_t interp( const vec2f32_t& pValue ) const;
 
     vec2f32_t min() const;
     vec2f32_t max() const;
@@ -46,6 +48,8 @@ class box_t {
     vec2f32_t at( const llce::geom::anchor2D_e pAnchor ) const;
 
     float32_t area() const;
+    bool32_t empty() const;
+    bool32_t valid() const;
     float32_t ratio() const;
     interval_t xbounds() const;
     interval_t ybounds() const;
