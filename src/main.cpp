@@ -855,27 +855,32 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         if( isCapturing ) {
             LLCE_INFO_RELEASE( "Capture Slot {" << recSlotIdx << "-" << currCaptureIdx << "}" );
 
-            glEnable( GL_TEXTURE_2D );
-            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llce::output::BUFFER_SHARED_ID] );
-
             char8_t slotCaptureFileName[csOutputFileNameLength];
             std::snprintf( &slotCaptureFileName[0],
                 sizeof(slotCaptureFileName),
                 cRenderFileFormat, recSlotIdx, currCaptureIdx++ );
             path_t capturePath( 2, cOutputPath.cstr(), slotCaptureFileName );
 
-            // TODO(JRC): An option should be added to capture in terms of rendered
-            // resolution instead of native simulation frame buffer resolution.
+            glEnable( GL_TEXTURE_2D );
+            glBindTexture( GL_TEXTURE_2D, simOutput->gfxBufferCBOs[llce::output::BUFFER_SHARED_ID] );
+
             // TODO(JRC): Reversing the colors results in the proper color values,
             // but it's unclear why this is necessary given that they're stored
             // internally in the order requested. Debugging may be required in the
             // future when adapting this code to work on multiple platforms.
-            vec2u32_t captureDims = simOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID];
-            glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
+            bool8_t doWindowCapture = cIsKeyDown( appInput, SDL_SCANCODE_LSHIFT );
+            vec2u32_t captureDims( 0, 0 );
+            if( doWindowCapture ) {
+                captureDims = windowDims;
+                glReadPixels( 0, 0, windowDims.x, windowDims.y, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
+            } else { // if( doBufferCapture ) {
+                captureDims = simOutput->gfxBufferRess[llce::output::BUFFER_SHARED_ID];
+                glGetTexImage( GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, sCaptureBuffer );
+            }
 
             // TODO(JRC): Ultimately, it would be best if the data could just
             // be funneled natively into the PNG interface instead of having
-            // to mirror it about the y-axis.
+            // to mirror it about the y=h/2 axis.
             color4u8_t tempBuffer[LLCE_MAX_RESOLUTION];
             uint32_t bufferByteCount = captureDims.x * sizeof( color4u8_t );
             for( uint32_t rowIdx = 0; rowIdx < captureDims.y / 2; rowIdx++ ) {
