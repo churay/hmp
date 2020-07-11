@@ -34,9 +34,9 @@ constexpr static uint32_t PAUSE_ACTION = hmp::action::etc;
 constexpr static uint32_t MENU_ACTIONS[] = { hmp::action::unbound, hmp::action::lrt, hmp::action::ldn, hmp::action::lup };
 
 constexpr static char8_t TITLE_ITEM_TEXT[][32] = { "START", "EXIT " };
-constexpr static uint32_t TITLE_ITEM_COUNT = ARRAY_LEN( TITLE_ITEM_TEXT );
+constexpr static uint32_t TITLE_ITEM_COUNT = LLCE_ELEM_COUNT( TITLE_ITEM_TEXT );
 constexpr static char8_t RESET_ITEM_TEXT[][32] = { "REPLAY", "EXIT  " };
-constexpr static uint32_t RESET_ITEM_COUNT = ARRAY_LEN( RESET_ITEM_TEXT );
+constexpr static uint32_t RESET_ITEM_COUNT = LLCE_ELEM_COUNT( RESET_ITEM_TEXT );
 
 const static auto SFX_MENU_CHANGE = llce::sfx::waveform::sawtooth<'c', 0, 4>;
 const static auto SFX_MENU_SELECT = llce::sfx::waveform::sawtooth<'c', 0, 5>;

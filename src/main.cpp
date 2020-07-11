@@ -75,11 +75,11 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // in the 'doc/static_address.md' documentation file.
     bit8_t* const cBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
     const uint64_t cBackupBufferCount = LLCE_DEBUG ? static_cast<uint64_t>( 2.0 * csSimFPS ) : 0;
-    const uint64_t cSimBufferIdx = 0, cSimBufferLength = MEGABYTE_BL( 1 );
+    const uint64_t cSimBufferIdx = 0, cSimBufferLength = llce::util::bytes<'M'>( 1 );
     const uint64_t cBackupBufferIdx = 1, cBackupBufferLength = cBackupBufferCount * cSimBufferLength;
     const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
 
-    llce::memory_t mem( ARRAY_LEN(cBufferLengths), &cBufferLengths[0], cBufferAddress );
+    llce::memory_t mem( LLCE_ELEM_COUNT(cBufferLengths), &cBufferLengths[0], cBufferAddress );
 
     llsim::state_t* simState = (llsim::state_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::state_t) );
     llsim::input_t* simInput = (llsim::input_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::input_t) );
@@ -131,7 +131,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Load Dynamic Shared Libraries ///
 
     const static char8_t* csDLLFileNames[] = { LLCE_SIMULATION_DATA_LIBRARY, LLCE_SIMULATION_SOURCE_LIBRARY };
-    const static uint32_t csDLLCount = ARRAY_LEN( csDLLFileNames );
+    const static uint32_t csDLLCount = LLCE_ELEM_COUNT( csDLLFileNames );
     const uint32_t cDataDLLID = 0, cCodeDLLID = 1;
 
     path_t dllFilePaths[csDLLCount];
@@ -248,10 +248,10 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     vec2i32_t viewportRess[] = { {0, 0}, {0, 0} };
     vec2i32_t viewportPoss[] = { {0, 0}, {0, 0} };
     const uint32_t cSimViewportID = 0, cMetaViewportID = 1;
-    const uint32_t cViewportCount = ARRAY_LEN( viewportRess );
+    const uint32_t cViewportCount = LLCE_ELEM_COUNT( viewportRess );
 
     const auto cRecalcViewports = [ &cViewportBoxs, &windowDims, &viewportRess, &viewportPoss ] () {
-        const uint32_t cViewportCount = ARRAY_LEN( viewportRess );
+        const uint32_t cViewportCount = LLCE_ELEM_COUNT( viewportRess );
         for( uint32_t viewportIdx = 0; viewportIdx < cViewportCount; viewportIdx++ ) {
             viewportRess[viewportIdx] = {
                 cViewportBoxs[viewportIdx].mDims.x * windowDims.x,
@@ -330,7 +330,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
         { // Load OpenGL Extensions //
             const static char8_t* csGLExtensionNames[] = { "GL_EXT_framebuffer_object", "GL_EXT_framebuffer_blit" };
-            const static uint32_t csGLExtensionCount = ARRAY_LEN( csGLExtensionNames );
+            const static uint32_t csGLExtensionCount = LLCE_ELEM_COUNT( csGLExtensionNames );
             for( uint32_t extensionIdx = 0; extensionIdx < csGLExtensionCount; ++extensionIdx ) {
                 const char8_t* glExtensionName = csGLExtensionNames[extensionIdx];
                 LLCE_ASSERT_ERROR( SDL_GL_ExtensionSupported(glExtensionName),
@@ -423,7 +423,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     char8_t textureTexts[][csTextureTextLength] = { "FPS: ???", "Recording ???", "Replaying ???", "Time: ???", "Speed: ???x" };
     const uint32_t cFPSTextureID = 0, cRecTextureID = 1, cRepTextureID = 2, cTimeTextureID = 3, cSpeedTextureID = 4;
 
-    const uint32_t cTextureCount = ARRAY_LEN( textureGLIDs );
+    const uint32_t cTextureCount = LLCE_ELEM_COUNT( textureGLIDs );
     for( uint32_t textureIdx = 0; textureIdx < cTextureCount; textureIdx++ ) {
         uint32_t& textureGLID = textureGLIDs[textureIdx];
         glGenTextures( 1, &textureGLID );

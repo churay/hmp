@@ -140,7 +140,7 @@ bool32_t fbo_t::valid() const {
 
 fbo_context_t::fbo_context_t( const uint32_t pFBID, const vec2u32_t pFBRes ) {
     const static int32_t csContextFlags[] = { GL_VIEWPORT, GL_SCISSOR_BOX };
-    const uint32_t cContextCount = ARRAY_LEN( csContextFlags );
+    const uint32_t cContextCount = LLCE_ELEM_COUNT( csContextFlags );
 
     vec2i32_t* cContextParams[] = { &mViewport[0], &mScissor[0] };
     for( uint32_t contextIdx = 0; contextIdx < cContextCount; contextIdx++ ) {

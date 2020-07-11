@@ -38,7 +38,7 @@ constexpr static update_f MODE_UPDATE_FUNS[] = {
     hmp::mode::game::update, hmp::mode::title::update, hmp::mode::reset::update };
 constexpr static render_f MODE_RENDER_FUNS[] = {
     hmp::mode::game::render, hmp::mode::title::render, hmp::mode::reset::render };
-constexpr static uint32_t MODE_COUNT = ARRAY_LEN( MODE_INIT_FUNS );
+constexpr static uint32_t MODE_COUNT = LLCE_ELEM_COUNT( MODE_INIT_FUNS );
 
 /// Interface Functions ///
 

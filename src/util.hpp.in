@@ -12,6 +12,12 @@ namespace util {
 
 /// Namespace Functions ///
 
+template <char B> inline size_t bytes( const size_t pAmount ) { return pAmount; }
+template <> inline size_t bytes<'K'>( const size_t pAmount ) { return 1024ul * pAmount; }
+template <> inline size_t bytes<'M'>( const size_t pAmount ) { return 1024ul * 1024ul * pAmount; }
+template <> inline size_t bytes<'G'>( const size_t pAmount ) { return 1024ul * 1024ul * 1024ul * pAmount; }
+template <> inline size_t bytes<'T'>( const size_t pAmount ) { return 1024ul * 1024ul * 1024ul * 1024ul * pAmount; }
+
 template <typename T>
 T normalize( const T& pVector ) {
     return ( glm::length(pVector) > glm::epsilon<float32_t>() ) ?

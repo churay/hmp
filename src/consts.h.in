@@ -53,24 +53,16 @@ typedef vec4f32_t color4f32_t;
 
 /// Macros ///
 
-// TODO(JRC): Abstract away the platform-specific code from this module (e.g.
-// 'exit', setting the error number, etc.).
-// TODO(JRC): Define types that have same byte length as the pointer types
-// for the current platform.
-
-#define KILOBYTE_BL(v) ((v)*1024)
-#define MEGABYTE_BL(v) (KILOBYTE_BL(v)*1024)
-#define GIGABYTE_BL(v) (MEGABYTE_BL(v)*1024)
-#define TERABYTE_BL(v) (GIGABYTE_BL(v)*1024)
-
-#define ARRAY_LEN(a) (sizeof(a) / sizeof((a)[0]))
-#define VECTOR_AT(v, i) (&((v).x) + (i))
+#define LLCE_ELEM_COUNT(a) (sizeof(a) / sizeof((a)[0]))
+#define LLCE_VECTOR_AT(v, i) (&((v).x) + (i))
 
 #define LLCE_ENUM(name, ...) \
     namespace name { enum name##_e { __VA_ARGS__, _length }; }; \
     typedef name::name##_e name##_e;
 #define LLCE_ACTION_ENUM(...) LLCE_ENUM(action, unbound, __VA_ARGS__)
 
+// TODO(JRC): Abstract away the platform-specific code from this module (e.g.
+// 'exit', setting the error number, etc.).
 // TODO(JRC): Consider changing these functions to use 'printf' functionality
 // instead of 'std::cerr' functionality.
 
