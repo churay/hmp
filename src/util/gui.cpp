@@ -160,7 +160,7 @@ void bind_menu_t::update( const float64_t pDT ) {
                 deviceID < llce::input::device::_length;
                 deviceID++ ) {
             for( uint32_t streamID = 0;
-                    streamID < llce::input::SDL_NUM_DEVCODES[deviceID];
+                    streamID < llce::input::SDL_NUM_DEVICE_INPUTS[deviceID];
                     streamID++ ) {
                 llce::input::stream_t stream( deviceID, streamID );
                 inputActive |= mInput->isDownRaw( stream );

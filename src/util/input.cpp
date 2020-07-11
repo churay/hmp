@@ -31,11 +31,11 @@ stream_t::stream_t( uint32_t pDevID, uint32_t pID ) :
 
 
 stream_t::stream_t( uint32_t pGlobalID ) {
-    uint32_t deviceID = 0, deviceOffset = SDL_NUM_DEVCODES[0];
+    uint32_t deviceID = 0, deviceOffset = SDL_NUM_DEVICE_INPUTS[0];
     while( deviceOffset < pGlobalID ) {
-        deviceOffset += SDL_NUM_DEVCODES[++deviceID];
+        deviceOffset += SDL_NUM_DEVICE_INPUTS[++deviceID];
     }
-    uint32_t inputID = pGlobalID - ( deviceOffset - SDL_NUM_DEVCODES[deviceID] );
+    uint32_t inputID = pGlobalID - ( deviceOffset - SDL_NUM_DEVICE_INPUTS[deviceID] );
 
     mDevID = static_cast<device_e>( deviceID );
     mID = inputID;
@@ -61,7 +61,7 @@ uint64_t stream_t::did() const {
 stream_t::operator uint32_t() const {
     uint32_t deviceOffset = 0;
     for( uint32_t deviceID = 0; deviceID < (uint32_t)mDevID; deviceID++ ) {
-        deviceOffset += SDL_NUM_DEVCODES[deviceID];
+        deviceOffset += SDL_NUM_DEVICE_INPUTS[deviceID];
     }
 
     return deviceOffset + mID;
@@ -151,12 +151,12 @@ bool32_t input_t::read( const device_e pDevID ) {
     if( pDevID == device_e::unbound || pDevID == device_e::keyboard ) {
         const uint8_t* keyboardState = SDL_GetKeyboardState( nullptr );
 
-        for( uint32_t keyIdx = 0; keyIdx < sizeof(mKeyboard.keys); keyIdx++ ) {
-            const bool8_t wasKeyDown = mKeyboard.keys[keyIdx];
+        for( uint32_t keyIdx = 0; keyIdx < keyboard_t::NUM_BUTTONS; keyIdx++ ) {
+            const bool8_t wasKeyDown = mKeyboard.buttons[keyIdx];
             const bool8_t isKeyDown = keyboardState[keyIdx];
 
-            mKeyboard.keys[keyIdx] = isKeyDown;
-            mKeyboard.diffs[keyIdx] = (
+            mKeyboard.buttons[keyIdx] = isKeyDown;
+            mKeyboard.dbuttons[keyIdx] = (
                 (!wasKeyDown && isKeyDown) ? diff_e::down : (
                 (wasKeyDown && !isKeyDown) ? diff_e::up : (
                 diff_e::none)) );
@@ -168,18 +168,27 @@ bool32_t input_t::read( const device_e pDevID ) {
         // regardless of where it's located on the screen where the window mouse
         // state will only report buttons pressed while the mouse is in focus.
         // This being the case, the window button mask is preferred as user input.
-        const uint32_t cWindowButtonMask = SDL_GetMouseState( &mMouse.window.x, &mMouse.window.y );
-        SDL_GetGlobalMouseState( &mMouse.global.x, &mMouse.global.y );
+        vec2i32_t isticks[mouse_t::NUM_STICKS];
+        const uint32_t cWindowButtonMask = SDL_GetMouseState( &isticks[0].x, &isticks[0].y );
+        SDL_GetGlobalMouseState( &isticks[1].x, &isticks[1].y );
 
-        for( uint32_t buttonIdx = 1; buttonIdx < sizeof(mMouse.buttons); buttonIdx++ ) {
+        // NOTE(JRC): The mouse button identifiers start at 1 instead of 0 for SDL.
+        for( uint32_t buttonIdx = 1; buttonIdx < mouse_t::NUM_BUTTONS; buttonIdx++ ) {
             const bool8_t wasButtonDown = mMouse.buttons[buttonIdx];
             const bool8_t isButtonDown = cWindowButtonMask & SDL_BUTTON( buttonIdx );
 
             mMouse.buttons[buttonIdx] = isButtonDown;
-            mMouse.diffs[buttonIdx] = (
+            mMouse.dbuttons[buttonIdx] = (
                 (!wasButtonDown && isButtonDown) ? diff_e::down : (
                 (wasButtonDown && !isButtonDown) ? diff_e::up : (
                 diff_e::none)) );
+        }
+
+        for( uint32_t stickIdx = 0; stickIdx < mouse_t::NUM_STICKS; stickIdx++ ) {
+            mMouse.dsticks[stickIdx].x = isticks[stickIdx].x - mMouse.sticks[stickIdx].x;
+            mMouse.dsticks[stickIdx].y = isticks[stickIdx].y - mMouse.sticks[stickIdx].y;
+            mMouse.sticks[stickIdx].x = isticks[stickIdx].x + 0.0f;
+            mMouse.sticks[stickIdx].y = isticks[stickIdx].y + 0.0f;
         }
 
         // TODO(JRC): Consider readding this field to the 'mouse_t' type should multi-
@@ -194,29 +203,29 @@ bool32_t input_t::read( const device_e pDevID ) {
 
 uint8_t* input_t::state( const device_e pDevID ) {
     return (
-        (pDevID == device_e::keyboard) ? &mKeyboard.keys[0] : (
+        (pDevID == device_e::keyboard) ? &mKeyboard.buttons[0] : (
         (pDevID == device_e::mouse) ? &mMouse.buttons[0] : nullptr ));
 }
 
 
 const uint8_t* input_t::state( const device_e pDevID ) const {
     return (
-        (pDevID == device_e::keyboard) ? &mKeyboard.keys[0] : (
+        (pDevID == device_e::keyboard) ? &mKeyboard.buttons[0] : (
         (pDevID == device_e::mouse) ? &mMouse.buttons[0] : nullptr ));
 }
 
 
 diff_e* input_t::diffs( const device_e pDevID ) {
     return (
-        (pDevID == device_e::keyboard) ? &mKeyboard.diffs[0] : (
-        (pDevID == device_e::mouse) ? &mMouse.diffs[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.dbuttons[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.dbuttons[0] : nullptr ));
 }
 
 
 const diff_e* input_t::diffs( const device_e pDevID ) const {
     return (
-        (pDevID == device_e::keyboard) ? &mKeyboard.diffs[0] : (
-        (pDevID == device_e::mouse) ? &mMouse.diffs[0] : nullptr ));
+        (pDevID == device_e::keyboard) ? &mKeyboard.dbuttons[0] : (
+        (pDevID == device_e::mouse) ? &mMouse.dbuttons[0] : nullptr ));
 }
 
 

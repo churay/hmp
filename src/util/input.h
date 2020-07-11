@@ -13,33 +13,51 @@ namespace input {
 
 LLCE_ENUM( device, unbound, keyboard, mouse ); // gamepad, gyro );
 enum class diff_e : uint8_t { none = 0, down = 1, up = 2 };
+enum class type_e : uint8_t { button = 0, lever = 1, stick = 2 };
 
 constexpr static uint32_t ACTION_UNBOUND_ID = 0;
 constexpr static uint32_t INPUT_UNBOUND_ID = 0;
 
-struct input_t;
-typedef bool32_t (*diff_f)( const input_t* pInput, const uint32_t pInputGID );
-
-static constexpr uint32_t SDL_NUM_KEYCODES = SDL_Scancode::SDL_NUM_SCANCODES;
-typedef uint8_t keystate_t[SDL_NUM_KEYCODES];
-typedef diff_e keydiffs_t[SDL_NUM_KEYCODES];
-typedef struct keyboard { keystate_t keys = {}; keydiffs_t diffs = {}; } keyboard_t;
-
-static constexpr uint32_t SDL_NUM_MOUSECODES = SDL_BUTTON_X2 + 1;
-typedef uint8_t mousestate_t[SDL_NUM_MOUSECODES];
-typedef diff_e mousediffs_t[SDL_NUM_MOUSECODES];
-typedef struct mouse { vec2i32_t global; vec2i32_t window; mousestate_t buttons = {}; mousediffs_t diffs = {}; } mouse_t;
-
-// TODO(JRC): This should be improved so that the position of the mouse is included
-// as an input stream as well.
-static constexpr uint32_t SDL_NUM_DEVCODES[] = { 1, SDL_NUM_KEYCODES, SDL_NUM_MOUSECODES };
-static constexpr uint32_t SDL_NUM_INPUTS = 1 + SDL_NUM_KEYCODES + SDL_NUM_MOUSECODES;
-
-bool32_t isDown( const input_t* pInput, const uint32_t pInputGID );
-bool32_t isPressed( const input_t* pInput, const uint32_t pInputGID );
-bool32_t isReleased( const input_t* pInput, const uint32_t pInputGID );
-
 /// Namespace Types ///
+
+// TODO(JRC): Introduce a concept of per-stream boundaries (i.e. 'interval_t'
+// instances for 1D and 'box_t' for 2D) to make it easier to normale and uniformly
+// handle a unique set of abstractly similar streams (e.g. subsitute mouse cursor
+// for an analog stick and vice versa).
+template <uint32_t Buttons, uint32_t Levers, uint32_t Sticks>
+struct device_t {
+    // Metadata //
+    const static uint32_t NUM_BUTTONS = Buttons;
+    const static uint32_t NUM_LEVERS = Levers;
+    const static uint32_t NUM_STICKS = Sticks;
+    const static uint32_t NUM_INPUTS = Buttons + Levers + Sticks;
+
+    // Buttons (0D) //
+    typedef uint8_t buttonstates_t[Buttons];
+    typedef diff_e buttondiffs_t[Buttons];
+    buttonstates_t buttons = {};
+    buttondiffs_t dbuttons = {};
+
+    // Levers (1D) //
+    typedef float32_t leverstates_t[Levers];
+    typedef float32_t leverdiffs_t[Levers];
+    leverstates_t levers = {};
+    leverdiffs_t dlevers = {};
+
+    // Sticks (2D) //
+    typedef vec2f32_t stickstates_t[Sticks];
+    typedef vec2f32_t stickdiffs_t[Sticks];
+    stickstates_t sticks = {};
+    stickdiffs_t dsticks = {};
+};
+
+
+typedef device_t<1, 0, 0> dummy_t;
+typedef device_t<SDL_Scancode::SDL_NUM_SCANCODES, 0, 0> keyboard_t;
+typedef device_t<SDL_BUTTON_X2 + 1, 0, 2> mouse_t;
+static constexpr uint32_t SDL_NUM_DEVICE_INPUTS[] = { dummy_t::NUM_INPUTS, keyboard_t::NUM_INPUTS, mouse_t::NUM_INPUTS };
+static constexpr uint32_t SDL_NUM_INPUTS = dummy_t::NUM_INPUTS + keyboard_t::NUM_INPUTS + mouse_t::NUM_INPUTS;
+
 
 struct stream_t {
     stream_t();
@@ -78,6 +96,20 @@ struct binding_t {
     // sim-agnostic global id => sim-specific action id
     uint32_t mBoundActions[SDL_NUM_INPUTS];
 };
+
+/// Namespace Functions ///
+
+struct input_t;
+typedef bool32_t (*diff_f)( const input_t* pInput, const uint32_t pInputGID );
+
+bool32_t isDown( const input_t* pInput, const uint32_t pInputGID );
+bool32_t isPressed( const input_t* pInput, const uint32_t pInputGID );
+bool32_t isReleased( const input_t* pInput, const uint32_t pInputGID );
+
+const char8_t* identify( const uint32_t pInputGID );
+bool32_t identify( const uint32_t pInputGID, char8_t* pBuffer, const uint32_t pBufferLength );
+
+/// Namespace Potpourri ///
 
 // TODO(JRC): If so desired, the nice feature of only allocating memory to
 // relevant/supported input streams can be implemented by having pre-processor
@@ -122,15 +154,6 @@ struct input_t {
     inline uint32_t isReleasedAct( const uint32_t pInputAction ) const { return isDiffAct(isReleased, pInputAction); }
     inline uint32_t isReleasedAct( const uint32_t* pInputActions ) const { return isDiffAct(isReleased, pInputActions); }
 };
-
-/// Namespace Functions ///
-
-// bool32_t isDown( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
-// bool32_t isPressed( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
-// bool32_t isReleased( const uint32_t* pState, const diff_e* pDiffs, const uint32_t pInputGID );
-
-const char8_t* identify( const uint32_t pInputGID );
-bool32_t identify( const uint32_t pInputGID, char8_t* pBuffer, const uint32_t pBufferLength );
 
 }
 
