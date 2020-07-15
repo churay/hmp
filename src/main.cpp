@@ -48,6 +48,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     /// Initialize Global Constant State ///
 
     const static float64_t csSimFPS = static_cast<float64_t>( LLCE_FPS );
+    const static uint64_t csBackupBufferCount = LLCE_DEBUG ? 2 * LLCE_FPS : 0;
 
     /// Parse Input Arguments ///
 
@@ -74,20 +75,24 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // NOTE(JRC): This base address was chosen by following the steps enumerated
     // in the 'doc/static_address.md' documentation file.
     bit8_t* const cBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
-    const uint64_t cBackupBufferCount = LLCE_DEBUG ? static_cast<uint64_t>( 2.0 * csSimFPS ) : 0;
-    const uint64_t cSimBufferIdx = 0, cSimBufferLength = llce::util::bytes<'M'>( 1 );
-    const uint64_t cBackupBufferIdx = 1, cBackupBufferLength = cBackupBufferCount * cSimBufferLength;
-    const uint64_t cBufferLengths[2] = { cSimBufferLength, cBackupBufferLength };
+    const uint64_t cBufferLength = llce::util::bytes<'M'>( 1 );
 
-    llce::memory_t mem( LLCE_ELEM_COUNT(cBufferLengths), &cBufferLengths[0], cBufferAddress );
-
-    llsim::state_t* simState = (llsim::state_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::state_t) );
-    llsim::input_t* simInput = (llsim::input_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::input_t) );
-    llsim::output_t* simOutput = (llsim::output_t*)mem.allocate( cSimBufferIdx, sizeof(llsim::output_t) );
+    llce::memory_t memory( cBufferLength, cBufferAddress );
+    llsim::state_t* simState = (llsim::state_t*)memory.salloc( sizeof(llsim::state_t) );
+    llsim::input_t* simInput = (llsim::input_t*)memory.salloc( sizeof(llsim::input_t) );
+    llsim::output_t* simOutput = (llsim::output_t*)memory.salloc( sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
-    llsim::input_t* backupInputs = (llsim::input_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::input_t) );
-    llsim::state_t* backupStates = (llsim::state_t*)mem.allocate( cBackupBufferIdx, cBackupBufferCount * sizeof(llsim::state_t) );
+    // NOTE(JRC): In an ideal world, the 'backupStates' and 'backupInputs' arrays
+    // would be static arrays since their bounds are known at compile time. Unfortunately,
+    // since C++ default initializes class members of static arrays, this becomes
+    // impractical/infeasible, so a pseudo-malloc mechanism is used instead.
+    bit8_t* const cBackupAddress = nullptr;
+    const uint64_t cBackupLength = csBackupBufferCount * ( sizeof(llsim::state_t) + sizeof(llsim::input_t) );
+
+    llce::memory_t backup( cBackupLength, cBackupAddress );
+    llsim::state_t* backupStates = (llsim::state_t*)backup.salloc( csBackupBufferCount * sizeof(llsim::state_t) );
+    llsim::input_t* backupInputs = (llsim::input_t*)backup.salloc( csBackupBufferCount * sizeof(llsim::input_t) );
 #endif
 
     llsim::input_t baseInput;
@@ -601,9 +606,9 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             isCapturing = true;
         }
 #if LLCE_DEBUG
-        uint64_t backupIdx = simFrame % cBackupBufferCount;
-        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
+        uint64_t backupIdx = simFrame % csBackupBufferCount;
         std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
+        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
 
         if( cIsKeyPressed(appInput, SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
@@ -689,14 +694,14 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                 // TODO(JRC): It's potentially worth putting a guard on this
                 // function or improving the backup state implementation so
                 // that hot-saving before the number of total backups is possible.
-                uint64_t backupStartIdx = ( backupIdx + 1 ) % cBackupBufferCount;
+                uint64_t backupStartIdx = ( backupIdx + 1 ) % csBackupBufferCount;
                 recStateStream.open( slotStateFilePath, cIOModeW );
                 recStateStream.write( (bit8_t*)&backupStates[backupStartIdx], sizeof(llsim::state_t) );
                 recStateStream.close();
 
                 recInputStream.open( slotInputFilePath, cIOModeW );
-                for( uint32_t bufferIdx = 0; bufferIdx < cBackupBufferCount; bufferIdx++ ) {
-                    uint64_t bbIdx = (backupStartIdx + bufferIdx) % cBackupBufferCount;
+                for( uint32_t bufferIdx = 0; bufferIdx < csBackupBufferCount; bufferIdx++ ) {
+                    uint64_t bbIdx = (backupStartIdx + bufferIdx) % csBackupBufferCount;
                     recInputStream.write( (bit8_t*)&backupInputs[bbIdx], sizeof(llsim::input_t) );
                 }
                 recInputStream.close();
