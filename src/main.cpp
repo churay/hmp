@@ -87,7 +87,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // would be static arrays since their bounds are known at compile time. Unfortunately,
     // since C++ default initializes class members of static arrays, this becomes
     // impractical/infeasible, so a pseudo-malloc mechanism is used instead.
-    bit8_t* const cBackupAddress = nullptr;
+    bit8_t* const cBackupAddress = LLCE_DEBUG ? cBufferAddress + cBufferLength : nullptr;
     const uint64_t cBackupLength = csBackupBufferCount * ( sizeof(llsim::state_t) + sizeof(llsim::input_t) );
 
     llce::memory_t backup( cBackupLength, cBackupAddress );
@@ -606,10 +606,6 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
             isCapturing = true;
         }
 #if LLCE_DEBUG
-        uint64_t backupIdx = simFrame % csBackupBufferCount;
-        std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
-        std::memcpy( (void*)&backupInputs[backupIdx], (void*)appInput, sizeof(llsim::input_t) );
-
         if( cIsKeyPressed(appInput, SDL_SCANCODE_SPACE) ) {
             // space key = toggle frame advance mode
             LLCE_INFO_DEBUG( "Frame Advance <" << (!isStepping ? "ON " : "OFF") << ">" );
@@ -688,13 +684,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
                     recInputStream.close();
                 }
                 isRecording = !isRecording;
-            } else if(recSlotIdx == 1 && !isReplaying ) {
+            } else if( recSlotIdx == 1 && !isReplaying ) {
                 // f1 = instant backup record
                 LLCE_INFO_DEBUG( "Hotsave Slot {" << recSlotIdx << "}" );
                 // TODO(JRC): It's potentially worth putting a guard on this
                 // function or improving the backup state implementation so
                 // that hot-saving before the number of total backups is possible.
-                uint64_t backupStartIdx = ( backupIdx + 1 ) % csBackupBufferCount;
+                uint64_t backupStartIdx = simFrame % csBackupBufferCount;
                 recStateStream.open( slotStateFilePath, cIOModeW );
                 recStateStream.write( (bit8_t*)&backupStates[backupStartIdx], sizeof(llsim::state_t) );
                 recStateStream.close();
@@ -747,6 +743,17 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
             isRunning &= dllUpdate( simState, simInput, simOutput, simDT );
             isRunning &= dllRender( simState, simInput, simOutput );
+
+#if LLCE_DEBUG
+            // TODO(JRC): It may be worth experimenting with allowing for the
+            // saving of inputs during replaying/recording to allow for building
+            // on old replays with new inputs.
+            if( !isRecording && !isReplaying ) {
+                uint64_t backupIdx = simFrame % csBackupBufferCount;
+                std::memcpy( (void*)&backupStates[backupIdx], (void*)simState, sizeof(llsim::state_t) );
+                std::memcpy( (void*)&backupInputs[backupIdx], (void*)simInput, sizeof(llsim::input_t) );
+            }
+#endif
         }
 
         glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
@@ -943,7 +950,7 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
         simTimer.split();
         simWT = cIsSimulating ? 0.0 : simTimer.wait( cFrameFPS );
         simDT = simTimer.ft( llce::timer_t::time_e::ideal );
-        simFrame += 1;
+        simFrame++;
 
         LLCE_ASSERT_WARNING( simWT >= 0.0 || simFrame == 0,
             "Frame {" << simFrame << "} lagged; achieved " <<
