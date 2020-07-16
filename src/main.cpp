@@ -74,25 +74,25 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
 
     // NOTE(JRC): This base address was chosen by following the steps enumerated
     // in the 'doc/static_address.md' documentation file.
-    bit8_t* const cBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
-    const uint64_t cBufferLength = llce::util::bytes<'M'>( 1 );
+    bit8_t* const cSimBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
+    const uint64_t cSimBufferLength = llce::util::bytes<'M'>( 1 );
 
-    llce::memory_t memory( cBufferLength, cBufferAddress );
-    llsim::state_t* simState = (llsim::state_t*)memory.salloc( sizeof(llsim::state_t) );
-    llsim::input_t* simInput = (llsim::input_t*)memory.salloc( sizeof(llsim::input_t) );
-    llsim::output_t* simOutput = (llsim::output_t*)memory.salloc( sizeof(llsim::output_t) );
+    llce::memory_t simMemory( cSimBufferLength, cSimBufferAddress );
+    llsim::state_t* simState = (llsim::state_t*)simMemory.salloc( sizeof(llsim::state_t) );
+    llsim::input_t* simInput = (llsim::input_t*)simMemory.salloc( sizeof(llsim::input_t) );
+    llsim::output_t* simOutput = (llsim::output_t*)simMemory.salloc( sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
     // NOTE(JRC): In an ideal world, the 'backupStates' and 'backupInputs' arrays
     // would be static arrays since their bounds are known at compile time. Unfortunately,
     // since C++ default initializes class members of static arrays, this becomes
     // impractical/infeasible, so a pseudo-malloc mechanism is used instead.
-    bit8_t* const cBackupAddress = LLCE_DEBUG ? cBufferAddress + cBufferLength : nullptr;
+    bit8_t* const cBackupAddress = nullptr;
     const uint64_t cBackupLength = csBackupBufferCount * ( sizeof(llsim::state_t) + sizeof(llsim::input_t) );
 
-    llce::memory_t backup( cBackupLength, cBackupAddress );
-    llsim::state_t* backupStates = (llsim::state_t*)backup.salloc( csBackupBufferCount * sizeof(llsim::state_t) );
-    llsim::input_t* backupInputs = (llsim::input_t*)backup.salloc( csBackupBufferCount * sizeof(llsim::input_t) );
+    llce::memory_t backupMemory( cBackupLength, cBackupAddress );
+    llsim::state_t* backupStates = (llsim::state_t*)backupMemory.salloc( csBackupBufferCount * sizeof(llsim::state_t) );
+    llsim::input_t* backupInputs = (llsim::input_t*)backupMemory.salloc( csBackupBufferCount * sizeof(llsim::input_t) );
 #endif
 
     llsim::input_t baseInput;

@@ -12,16 +12,16 @@ memory_t::memory_t( uint64_t pBufferLength, bit8_t* pBufferBase ) :
 
 memory_t::memory_t( const uint64_t* pPartitionLengths, uint64_t pPartitionCount, bit8_t* pBufferBase ) {
     LLCE_CHECK_ERROR( pPartitionCount <= memory_t::MAX_PARTITIONS,
-        "Couldn't allocate memory chunk with " << pPartitionCount << " blocks; " <<
-        "block count has a maximum value of " << memory_t::MAX_PARTITIONS << "." );
+        "Couldn't allocate memory chunk with " << pPartitionCount << " partitions; " <<
+        "patition count has a maximum value of " << memory_t::MAX_PARTITIONS << "." );
 
     mPartitionCount = pPartitionCount;
     mBufferLength = 0;
-    for( uint64_t blockIdx = 0; blockIdx < pPartitionCount; blockIdx++ ) {
-        mPartitionLengths[blockIdx] = pPartitionLengths[blockIdx];
-        mPartitionSallocs[blockIdx] = 0;
-        mPartitionMallocs[blockIdx] = 0;
-        mBufferLength += pPartitionLengths[blockIdx];
+    for( uint64_t partitionIdx = 0; partitionIdx < pPartitionCount; partitionIdx++ ) {
+        mPartitionLengths[partitionIdx] = pPartitionLengths[partitionIdx];
+        mPartitionStackIndices[partitionIdx] = 0;
+        mPartitionStackAllocs[partitionIdx][0] = 0;
+        mBufferLength += pPartitionLengths[partitionIdx];
     }
 
     mBuffer = platform::allocBuffer( mBufferLength, pBufferBase );
@@ -30,8 +30,8 @@ memory_t::memory_t( const uint64_t* pPartitionLengths, uint64_t pPartitionCount,
         "at base address " << pBufferBase << ".");
 
     mPartitionBuffers[0] = mBuffer;
-    for( uint64_t blockIdx = 1; blockIdx < pPartitionCount; blockIdx++ ) {
-        mPartitionBuffers[blockIdx] = mPartitionBuffers[blockIdx-1] + mPartitionLengths[blockIdx-1];
+    for( uint64_t partitionIdx = 1; partitionIdx < pPartitionCount; partitionIdx++ ) {
+        mPartitionBuffers[partitionIdx] = mPartitionBuffers[partitionIdx-1] + mPartitionLengths[partitionIdx-1];
     }
 }
 
@@ -42,24 +42,25 @@ memory_t::~memory_t() {
 
 
 bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionIdx ) {
-    bit8_t* partitionBuffer = mPartitionBuffers[(pPartitionIdx < mPartitionCount) ? pPartitionIdx : 0];
-    uint64_t partitionLength = mPartitionLengths[(pPartitionIdx < mPartitionCount) ? pPartitionIdx : 0];
-    uint64_t& partitionAlloc = mPartitionSallocs[(pPartitionIdx < mPartitionCount) ? pPartitionIdx : 0];
+    pPartitionIdx = ( pPartitionIdx < mPartitionCount ) ? pPartitionIdx : 0;
 
-    LLCE_CHECK_ERROR( partitionAlloc + pAllocLength <= partitionLength,
+    bit8_t* partitionBuffer = mPartitionBuffers[pPartitionIdx];
+    uint64_t partitionLength = mPartitionLengths[pPartitionIdx];
+    uint64_t* stackPointer = &mPartitionStackAllocs[pPartitionIdx][0];
+    uint64_t& stackIndex = mPartitionStackIndices[pPartitionIdx];
+
+    LLCE_CHECK_ERROR( stackPointer[stackIndex] + pAllocLength <= partitionLength,
         "Cannot allocate an additional " << pAllocLength << " bytes to buffer " <<
-        pPartitionIdx << "; allocation puts block over " << partitionAlloc <<
+        pPartitionIdx << "; allocation puts partition over " << stackPointer[stackIndex] <<
         "/" << partitionLength << " allocation capacity." );
 
-    bit8_t* allocBuffer = partitionBuffer + partitionAlloc;
-    partitionAlloc += pAllocLength;
-    return allocBuffer;
+    stackPointer[stackIndex + 1] = stackPointer[stackIndex] + pAllocLength;
+    return partitionBuffer + stackPointer[stackIndex++];
 }
 
 
-bit8_t* memory_t::malloc( uint64_t pAllocLength, uint64_t pPartitionIdx ) {
+void memory_t::sfree( uint64_t pPartitionIdx ) {
     // TODO(JRC): Implement this function.
-    return nullptr;
 }
 
 
