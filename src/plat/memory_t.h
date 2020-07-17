@@ -21,14 +21,14 @@ class memory_t {
 
     /// Class Functions ///
 
-    bit8_t* salloc( uint64_t pAllocLength, uint64_t pPartitionIdx = -1 );
-    // bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionIdx = -1 );
+    bit8_t* salloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
+    // bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
 
-    void sfree( uint64_t pPartitionIdx = -1 );
+    void sfree( uint64_t pPartitionID = 0 );
     // void hfree( const bit8_t* pAlloc );
 
-    bit8_t* buffer( uint64_t pPartitionIdx = -1 ) const;
-    uint64_t length( uint64_t pPartitionIdx = -1 ) const;
+    bit8_t* buffer( uint64_t pPartitionID = 0 ) const;
+    uint64_t length( uint64_t pPartitionID = 0 ) const;
 
     private:
 

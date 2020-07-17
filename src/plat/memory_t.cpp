@@ -41,36 +41,46 @@ memory_t::~memory_t() {
 }
 
 
-bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionIdx ) {
-    pPartitionIdx = ( pPartitionIdx < mPartitionCount ) ? pPartitionIdx : 0;
+bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
+    bit8_t* partitionBuffer = mPartitionBuffers[pPartitionID];
+    uint64_t partitionLength = mPartitionLengths[pPartitionID];
+    uint64_t* stackPointer = &mPartitionStackAllocs[pPartitionID][0];
+    uint64_t& stackIndex = mPartitionStackIndices[pPartitionID];
 
-    bit8_t* partitionBuffer = mPartitionBuffers[pPartitionIdx];
-    uint64_t partitionLength = mPartitionLengths[pPartitionIdx];
-    uint64_t* stackPointer = &mPartitionStackAllocs[pPartitionIdx][0];
-    uint64_t& stackIndex = mPartitionStackIndices[pPartitionIdx];
-
+    LLCE_CHECK_ERROR( stackIndex < MAX_STACK_SIZE,
+        "Cannot allocate an additional stack frame; partition " << pPartitionID <<
+        " is currently at its stack frame capacity with " <<
+        MAX_STACK_SIZE << "/" << MAX_STACK_SIZE << " occupied frames." );
     LLCE_CHECK_ERROR( stackPointer[stackIndex] + pAllocLength <= partitionLength,
-        "Cannot allocate an additional " << pAllocLength << " bytes to buffer " <<
-        pPartitionIdx << "; allocation puts partition over " << stackPointer[stackIndex] <<
-        "/" << partitionLength << " allocation capacity." );
+        "Cannot allocate " << pAllocLength << " bytes to stack partition " <<
+        pPartitionID << "; allocation puts partition over " <<
+        stackPointer[stackIndex] << "/" << partitionLength << " allocation capacity." );
 
     stackPointer[stackIndex + 1] = stackPointer[stackIndex] + pAllocLength;
     return partitionBuffer + stackPointer[stackIndex++];
 }
 
 
-void memory_t::sfree( uint64_t pPartitionIdx ) {
-    // TODO(JRC): Implement this function.
+void memory_t::sfree( uint64_t pPartitionID ) {
+    uint64_t* stackPointer = &mPartitionStackAllocs[pPartitionID][0];
+    uint64_t& stackIndex = mPartitionStackIndices[pPartitionID];
+
+    LLCE_CHECK_ERROR( stackIndex > 0,
+        "Cannot deallocate an additional stack frame; partition " << pPartitionID <<
+        " currently has no occupied stack frames." );
+
+    stackPointer[stackIndex] = 0;
+    stackIndex--;
 }
 
 
-bit8_t* memory_t::buffer( uint64_t pPartitionIdx ) const {
-    return mPartitionBuffers[(pPartitionIdx < mPartitionCount) ? pPartitionIdx : 0];
+bit8_t* memory_t::buffer( uint64_t pPartitionID ) const {
+    return mPartitionBuffers[pPartitionID];
 }
 
 
-uint64_t memory_t::length( uint64_t pPartitionIdx ) const {
-    return mPartitionLengths[(pPartitionIdx < mPartitionCount) ? pPartitionIdx : 0];
+uint64_t memory_t::length( uint64_t pPartitionID ) const {
+    return mPartitionLengths[pPartitionID];
 }
 
 }
