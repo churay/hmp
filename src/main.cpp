@@ -83,16 +83,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     llsim::output_t* simOutput = (llsim::output_t*)simMemory.salloc( sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
-    // NOTE(JRC): In an ideal world, the 'backupStates' and 'backupInputs' arrays
-    // would be static arrays since their bounds are known at compile time. Unfortunately,
-    // since C++ default initializes class members of static arrays, this becomes
-    // impractical/infeasible, so a pseudo-malloc mechanism is used instead.
-    bit8_t* const cBackupAddress = nullptr;
-    const uint64_t cBackupLength = csBackupBufferCount * ( sizeof(llsim::state_t) + sizeof(llsim::input_t) );
-
-    llce::memory_t backupMemory( cBackupLength, cBackupAddress );
-    llsim::state_t* backupStates = (llsim::state_t*)backupMemory.salloc( csBackupBufferCount * sizeof(llsim::state_t) );
-    llsim::input_t* backupInputs = (llsim::input_t*)backupMemory.salloc( csBackupBufferCount * sizeof(llsim::input_t) );
+    // NOTE(JRC): This workaround for 'allocating' the 'backupStates' and 'backupInputs'
+    // arrays is necessary because C++ default initialize the members of class/struct arrays
+    // and the 'state_t'/'input_t' types do not support such initialization options.
+    static bit8_t sBackupStateBuffer[csBackupBufferCount * sizeof(llsim::state_t)];
+    llsim::state_t* backupStates = (llsim::state_t*)&sBackupStateBuffer[0];
+    static bit8_t sBackupInputBuffer[csBackupBufferCount * sizeof(llsim::input_t)];
+    llsim::state_t* backupInputs = (llsim::state_t*)&sBackupInputBuffer[0];
 #endif
 
     llsim::input_t baseInput;
