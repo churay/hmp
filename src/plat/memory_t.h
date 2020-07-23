@@ -13,11 +13,14 @@ class memory_t {
     /// Class Attributes ///
 
     const static uint32_t MAX_PARTITIONS = 8;
+    const static uint32_t MAX_ALLOCATION_OFFSET = sizeof(size_t) - 1;
 
-    const static uint64_t STACK_HEADER_LENGTH = sizeof(size_t);
-    const static uint64_t STACK_MAX_ALLOCATION = std::numeric_limits<size_t>::max() - STACK_HEADER_LENGTH;
-    const static uint64_t HEAP_HEADER_LENGTH = sizeof(size_t);
-    const static uint64_t HEAP_MAX_ALLOCATION = (std::numeric_limits<size_t>::max() >> 1) - HEAP_HEADER_LENGTH;
+    const static uint64_t STACK_TAG_LENGTH = sizeof(size_t);
+    const static uint64_t HEAP_TAG_LENGTH = sizeof(size_t);
+    const static uint64_t STACK_MAX_ALLOCATION =
+        std::numeric_limits<size_t>::max() - STACK_TAG_LENGTH - MAX_ALLOCATION_OFFSET;
+    const static uint64_t HEAP_MAX_ALLOCATION =
+        (std::numeric_limits<size_t>::max() >> 1) - 2 * HEAP_TAG_LENGTH - MAX_ALLOCATION_OFFSET;
 
     /// Constructors ///
 
@@ -28,10 +31,9 @@ class memory_t {
     /// Class Functions ///
 
     bit8_t* salloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
-    bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
-
     void sfree( uint64_t pPartitionID = 0 );
-    void hfree( const bit8_t* pAlloc, uint64_t pPartitionID = 0 );
+    bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
+    void hfree( bit8_t* pAllocBlock, uint64_t pPartitionID = 0 );
 
     bit8_t* buffer( uint64_t pPartitionID = 0 ) const;
     uint64_t length( uint64_t pPartitionID = 0 ) const;

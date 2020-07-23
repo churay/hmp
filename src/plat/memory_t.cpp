@@ -4,6 +4,17 @@
 
 namespace llce {
 
+/// Helper Functions ///
+
+// NOTE(JRC): In order to optimize machine word access, we attempt to align
+// allocated addresses to the machine's word size. See here for details:
+// https://developer.ibm.com/technologies/systems/articles/pa-dalign/
+inline uint64_t walign( uint64_t pBaseLength, uint64_t pHeaderLength ) {
+    return pBaseLength + pHeaderLength + ( (pBaseLength + pHeaderLength) % (2 * sizeof(size_t)) );
+}
+
+/// Class Functions ///
+
 memory_t::memory_t( uint64_t pBufferLength, bit8_t* pBufferBase ) :
         memory_t( &pBufferLength, 1, pBufferBase ) {
     
@@ -51,9 +62,9 @@ memory_t::~memory_t() {
 
 
 bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
-    uint64_t allocLength = pAllocLength + STACK_HEADER_LENGTH;
     bit8_t*& partitionStack = mPartitionStacks[pPartitionID];
     bit8_t* partitionHeap = mPartitionHeaps[pPartitionID];
+    uint64_t allocLength = walign( pAllocLength, STACK_TAG_LENGTH );
 
     LLCE_CHECK_ERROR( pAllocLength <= STACK_MAX_ALLOCATION,
         "<<P" << pPartitionID << ">> " <<
@@ -64,30 +75,19 @@ bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
         "Cannot allocate an additional stack frame of size " << pAllocLength << "; " <<
         "stack has only " << partitionStack - partitionHeap << " remaining bytes available." );
 
-    // NOTE(JRC): In order to optimize machine word access, we attempt to align
-    // allocated addresses to the machine's word size. See here for details:
-    // https://developer.ibm.com/technologies/systems/articles/pa-dalign/
-    bit8_t* newStack = partitionStack - allocLength;
-    uint64_t newStackOffset = ( newStack - (bit8_t*)0x0 ) % ( 2 * sizeof(size_t) );
-    partitionStack = newStack - newStackOffset;
-    *(size_t*)partitionStack = allocLength;
+    partitionStack -= allocLength;
+    *(size_t*)partitionStack = static_cast<size_t>( allocLength );
 
-    return partitionStack + STACK_HEADER_LENGTH;
-}
-
-
-bit8_t* memory_t::halloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
-    // TODO(JRC): Implement this function.
-    return nullptr;
+    return partitionStack + STACK_TAG_LENGTH;
 }
 
 
 void memory_t::sfree( uint64_t pPartitionID ) {
     bit8_t*& partitionStack = mPartitionStacks[pPartitionID];
 
-    bit8_t* partitionMax = ( pPartitionID != mPartitionCount - 1 ) ?
+    const bit8_t* cStackMax = ( pPartitionID != mPartitionCount - 1 ) ?
         mPartitionBuffers[pPartitionID + 1] : mBuffer + mBufferLength;
-    LLCE_CHECK_ERROR( partitionStack != partitionMax,
+    LLCE_CHECK_ERROR( partitionStack != cStackMax,
         "<<P" << pPartitionID << ">> " <<
         "Cannot deallocate an additional stack frame; there are currently " <<
         "no active stack frames in this partition." );
@@ -96,7 +96,45 @@ void memory_t::sfree( uint64_t pPartitionID ) {
 }
 
 
-void memory_t::hfree( const bit8_t* pAlloc, uint64_t pPartitionID ) {
+bit8_t* memory_t::halloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
+    bit8_t*& partitionHeap = mPartitionHeaps[pPartitionID];
+    bit8_t* partitionStack = mPartitionStacks[pPartitionID];
+    uint64_t allocLength = walign( pAllocLength, 2 * HEAP_TAG_LENGTH );
+
+    LLCE_CHECK_ERROR( pAllocLength <= HEAP_MAX_ALLOCATION,
+        "<<P" << pPartitionID << ">> " <<
+        "Cannot allocate an additional heap chunk of size " << pAllocLength << "; " <<
+        "heap chunks are restricted to sizes <= " << HEAP_MAX_ALLOCATION << "." );
+
+    bit8_t* allocBlock = nullptr;
+    for( bit8_t* heapIter = mPartitionBuffers[pPartitionID];
+            heapIter != partitionHeap || allocBlock != nullptr;
+            heapIter += (*(size_t*)heapIter >> 1) ) {
+        if( (*(size_t*)heapIter & 0b1) && allocLength <= (*(size_t*)heapIter >> 1) ) {
+            allocBlock = heapIter;
+        }
+    } if( allocBlock == nullptr ) { // create new block
+        LLCE_CHECK_ERROR( partitionHeap + allocLength < partitionStack,
+            "<<P" << pPartitionID << ">> " <<
+            "Cannot allocate an additional heap chunk of size " << pAllocLength << "; " <<
+            "heap has only " << partitionStack - partitionHeap << " remaining bytes available." );
+
+        size_t blockTag = ( static_cast<size_t>(allocLength) << 1 ) & ~0b1;
+        *(size_t*)partitionHeap = blockTag;
+        *(size_t*)(partitionHeap + allocLength - HEAP_TAG_LENGTH) = blockTag;
+
+        allocBlock = partitionHeap;
+        partitionHeap = allocBlock + allocLength;
+    }
+
+    *(size_t*)allocBlock &= 0b1;
+    *(size_t*)(allocBlock + allocLength - HEAP_TAG_LENGTH) &= 0b1;
+
+    return allocBlock + HEAP_TAG_LENGTH;
+}
+
+
+void memory_t::hfree( bit8_t* pAllocBlock, uint64_t pPartitionID ) {
     // TODO(JRC): Implement this function.
 }
 
