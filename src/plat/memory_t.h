@@ -32,6 +32,7 @@ class memory_t {
 
     bit8_t* salloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
     void sfree( uint64_t pPartitionID = 0 );
+
     bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
     void hfree( bit8_t* pAllocBlock, uint64_t pPartitionID = 0 );
 

@@ -135,7 +135,51 @@ bit8_t* memory_t::halloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
 
 
 void memory_t::hfree( bit8_t* pAllocBlock, uint64_t pPartitionID ) {
-    // TODO(JRC): Implement this function.
+    const static auto csIsBoundedBlock = []
+            ( bit8_t* pBlock, const bit8_t* pPartMin, const bit8_t* pPartMax ) {
+        return pPartMin < pBlock && pBlock <pPartMax;
+    };
+    const static auto csIsSoundBlock = [] ( bit8_t* pBlock, bool8_t pIsEnd ) {
+        const size_t cBlockMinTag = *(size_t*)(pBlock - HEAP_TAG_LENGTH);
+        const uint64_t cBlockLength = cBlockMinTag >> 1;
+        const bool8_t cBlockIsOccupied = cBlockMinTag & 0b1;
+        const size_t cBlockMaxTag = *(size_t*)(pBlock + (pIsEnd ?
+            (-cBlockLength + HEAP_TAG_LENGTH) :
+            (cBlockLength - 2 * HEAP_TAG_LENGTH)));
+        return ( cBlockMinTag == cBlockMaxTag ) && cBlockIsOccupied;
+    };
+
+    const bit8_t* cHeapMin = mPartitionBuffers[pPartitionID];
+    const bit8_t* cHeapMax = mPartitionStacks[pPartitionID];
+    LLCE_CHECK_ERROR( csIsBoundedBlock(pAllocBlock, cHeapMin, cHeapMax),
+        "<<P" << pPartitionID << ">> " <<
+        "Cannot deallocate heap memory block at " << pAllocBlock << "; this block " <<
+        "lies outside the heap boundaries [" << cHeapMin << ", " << cHeapMax << "]." );
+    LLCE_CHECK_ERROR( csIsSoundBlock(pAllocBlock, false),
+        "<<P" << pPartitionID << ">> " <<
+        "Cannot deallocate heap memory block at " << pAllocBlock << "; this block " <<
+        "is either unmanaged by the heap, has been freed before, or has been overwritten." );
+
+    const size_t cAllocBlockSize = *(size_t*)(pAllocBlock - HEAP_TAG_LENGTH) >> 1;
+
+    bit8_t* freedBlock = pAllocBlock;
+    size_t freedBlockSize = cAllocBlockSize; {
+        bit8_t* prevBlock = pAllocBlock - HEAP_TAG_LENGTH;
+        if( csIsBoundedBlock(prevBlock, cHeapMin, cHeapMax) && csIsSoundBlock(prevBlock, true) ) {
+            const size_t cPrevBlockSize = *(size_t*)(prevBlock - HEAP_TAG_LENGTH) >> 1;
+            freedBlock = prevBlock - cPrevBlockSize + HEAP_TAG_LENGTH;
+            freedBlockSize += cPrevBlockSize;
+        }
+
+        bit8_t* nextBlock = pAllocBlock + cAllocBlockSize;
+        if( csIsBoundedBlock(nextBlock, cHeapMin, cHeapMax) && csIsSoundBlock(nextBlock, false) ) {
+            freedBlockSize += *(size_t*)(nextBlock - HEAP_TAG_LENGTH) >> 1;
+        }
+    }
+
+    size_t blockTag = ( freedBlockSize << 1 ) & ~0b1;
+    *(size_t*)freedBlock = blockTag;
+    *(size_t*)(freedBlock + freedBlockSize - HEAP_TAG_LENGTH) = blockTag;
 }
 
 
