@@ -76,11 +76,13 @@ int32_t main( const int32_t pArgCount, const char8_t* pArgs[] ) {
     // in the 'doc/static_address.md' documentation file.
     bit8_t* const cSimBufferAddress = LLCE_DEBUG ? (bit8_t*)0x0000100000000000 : nullptr;
     const uint64_t cSimBufferLength = llce::util::bytes<'M'>( 1 );
+    const uint64_t cSimDataLength = sizeof( llsim::state_t ) + sizeof( llsim::input_t ) +
+        sizeof( llsim::output_t ) + 4 * sizeof( size_t );
 
-    llce::memory_t simMemory( cSimBufferLength, cSimBufferAddress );
-    llsim::state_t* simState = (llsim::state_t*)simMemory.salloc( sizeof(llsim::state_t) );
-    llsim::input_t* simInput = (llsim::input_t*)simMemory.salloc( sizeof(llsim::input_t) );
-    llsim::output_t* simOutput = (llsim::output_t*)simMemory.salloc( sizeof(llsim::output_t) );
+    llce::memory_t simMemory( cSimBufferLength, cSimDataLength, cSimBufferAddress );
+    llsim::state_t* simState = (llsim::state_t*)simMemory.dalloc( sizeof(llsim::state_t) );
+    llsim::input_t* simInput = (llsim::input_t*)simMemory.dalloc( sizeof(llsim::input_t) );
+    llsim::output_t* simOutput = (llsim::output_t*)simMemory.dalloc( sizeof(llsim::output_t) );
 
 #if LLCE_DEBUG
     // NOTE(JRC): This workaround for 'allocating' the 'backupStates' and 'backupInputs'

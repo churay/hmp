@@ -15,44 +15,25 @@ inline uint64_t walign( uint64_t pBaseLength, uint64_t pHeaderLength ) {
 
 /// Class Functions ///
 
-memory_t::memory_t( uint64_t pBufferLength, bit8_t* pBufferBase ) :
-        memory_t( &pBufferLength, 1, pBufferBase ) {
-    
-}
-
-
-memory_t::memory_t( const uint64_t* pPartitionLengths, uint64_t pPartitionCount, bit8_t* pBufferBase ) {
-    LLCE_CHECK_ERROR( pPartitionCount <= memory_t::MAX_PARTITIONS,
-        "Couldn't allocate memory chunk with " << pPartitionCount << " partitions; " <<
-        "patition count has a maximum value of " << memory_t::MAX_PARTITIONS << "." );
-
-    // NOTE(JRC): This is a "belt and suspenders" safety precaution that fills unused
-    // buffers with zero/null values to help identify illegal partition access.
-    for( uint64_t partitionIdx = 0; partitionIdx < MAX_PARTITIONS; partitionIdx++ ) {
-        mPartitionBuffers[partitionIdx] = nullptr;
-        mPartitionLengths[partitionIdx] = 0;
-        mPartitionStacks[partitionIdx] = nullptr;
-        mPartitionHeaps[partitionIdx] = nullptr;
-    }
-
-    mPartitionCount = pPartitionCount;
-    mBufferLength = 0;
-    for( uint64_t partitionIdx = 0; partitionIdx < mPartitionCount; partitionIdx++ ) {
-        mPartitionLengths[partitionIdx] = pPartitionLengths[partitionIdx];
-        mBufferLength += pPartitionLengths[partitionIdx];
-    }
+memory_t::memory_t( uint64_t pBufferLength, uint64_t pDataLength, bit8_t* pBufferBase ) :
+        mBuffer( nullptr ), mBufferLength( pBufferLength ),
+        mData( nullptr ), mDataLength( pDataLength ),
+        mHeap( nullptr ), mStack( nullptr ) {
+    LLCE_CHECK_ERROR( pDataLength <= pBufferLength,
+        "Unable to generate a sensible memory buffer; " <<
+        "data segment length " << pDataLength << " exceeds " <<
+        "total buffer length " << pBufferLength << "." );
 
     mBuffer = platform::allocBuffer( mBufferLength, pBufferBase );
     LLCE_CHECK_ERROR( mBuffer != nullptr,
         "Unable to allocate buffer of length " << mBufferLength << " " <<
-        "at base address " << pBufferBase << ".");
+        "at base address " << pBufferBase << "." );
 
-    for( uint64_t partitionIdx = 0; partitionIdx < mPartitionCount; partitionIdx++ ) {
-        mPartitionBuffers[partitionIdx] = mPartitionHeaps[partitionIdx] =
-            ( partitionIdx != 0 ) ? mPartitionStacks[partitionIdx - 1] : mBuffer;
-        mPartitionStacks[partitionIdx] =
-            mPartitionBuffers[partitionIdx] + mPartitionLengths[partitionIdx];
-    }
+    // TODO(JRC): Should attempt to word-align at this point to prevent bad
+    // alignment for all data accesses.
+    mData = mBuffer;
+    mHeap = mBuffer + mDataLength;
+    mStack = mBuffer + mBufferLength;
 }
 
 
@@ -61,70 +42,79 @@ memory_t::~memory_t() {
 }
 
 
-bit8_t* memory_t::salloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
-    bit8_t*& partitionStack = mPartitionStacks[pPartitionID];
-    bit8_t* partitionHeap = mPartitionHeaps[pPartitionID];
-    uint64_t allocLength = walign( pAllocLength, STACK_TAG_LENGTH );
+bit8_t* memory_t::dalloc( uint64_t pAllocLength ) {
+    uint64_t allocLength = walign( pAllocLength, 0 );
+    bit8_t*& allocData = mData;
 
-    LLCE_CHECK_ERROR( pAllocLength <= STACK_MAX_ALLOCATION,
-        "<<P" << pPartitionID << ">> " <<
-        "Cannot allocate an additional stack frame of size " << pAllocLength << "; " <<
-        "stack frames are restricted to sizes <= " << STACK_MAX_ALLOCATION << "." );
-    LLCE_CHECK_ERROR( partitionHeap < partitionStack - allocLength,
-        "<<P" << pPartitionID << ">> " <<
-        "Cannot allocate an additional stack frame of size " << pAllocLength << "; " <<
-        "stack has only " << partitionStack - partitionHeap << " remaining bytes available." );
+    LLCE_CHECK_ERROR( pAllocLength <= DATA_MAX_ALLOCATION,
+        "Cannot allocate a new data segment of size " << pAllocLength << "; " <<
+        "data segments are restricted to sizes <= " << DATA_MAX_ALLOCATION << "." );
+    LLCE_CHECK_ERROR( mData + allocLength <= mHeap,
+        "Cannot allocate an additional data segment of size " << pAllocLength << "; " <<
+        "data has only " << mHeap - mData << " remaining bytes available." );
 
-    partitionStack -= allocLength;
-    *(size_t*)partitionStack = static_cast<size_t>( allocLength );
+    allocData += allocLength;
 
-    return partitionStack + STACK_TAG_LENGTH;
+    return allocData - allocLength;
 }
 
 
-void memory_t::sfree( uint64_t pPartitionID ) {
-    bit8_t*& partitionStack = mPartitionStacks[pPartitionID];
+bit8_t* memory_t::salloc( uint64_t pAllocLength ) {
+    uint64_t allocLength = walign( pAllocLength, STACK_TAG_LENGTH );
+    bit8_t*& allocStack = mStack;
 
-    const bit8_t* cStackMax = ( pPartitionID != mPartitionCount - 1 ) ?
-        mPartitionBuffers[pPartitionID + 1] : mBuffer + mBufferLength;
-    LLCE_CHECK_ERROR( partitionStack != cStackMax,
-        "<<P" << pPartitionID << ">> " <<
+    LLCE_CHECK_ERROR( pAllocLength <= STACK_MAX_ALLOCATION,
+        "Cannot allocate an additional stack frame of size " << pAllocLength << "; " <<
+        "stack frames are restricted to sizes <= " << STACK_MAX_ALLOCATION << "." );
+    LLCE_CHECK_ERROR( mHeap <= mStack - allocLength,
+        "Cannot allocate an additional stack frame of size " << pAllocLength << "; " <<
+        "stack has only " << mStack - mHeap << " remaining bytes available." );
+
+    allocStack -= allocLength;
+    *(size_t*)allocStack = static_cast<size_t>( allocLength );
+
+    return allocStack + STACK_TAG_LENGTH;
+}
+
+
+void memory_t::sfree() {
+    bit8_t*& allocStack = mStack;
+
+    const bit8_t* cStackMax = mBuffer + mBufferLength;
+    LLCE_CHECK_ERROR( allocStack != cStackMax,
         "Cannot deallocate an additional stack frame; there are currently " <<
         "no active stack frames in this partition." );
 
-    partitionStack = partitionStack + *(size_t*)partitionStack;
+    allocStack = allocStack + *(size_t*)allocStack;
 }
 
 
-bit8_t* memory_t::halloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
-    bit8_t*& partitionHeap = mPartitionHeaps[pPartitionID];
-    bit8_t* partitionStack = mPartitionStacks[pPartitionID];
+bit8_t* memory_t::halloc( uint64_t pAllocLength ) {
     uint64_t allocLength = walign( pAllocLength, 2 * HEAP_TAG_LENGTH );
+    bit8_t*& allocHeap = mHeap;
 
     LLCE_CHECK_ERROR( pAllocLength <= HEAP_MAX_ALLOCATION,
-        "<<P" << pPartitionID << ">> " <<
         "Cannot allocate an additional heap chunk of size " << pAllocLength << "; " <<
         "heap chunks are restricted to sizes <= " << HEAP_MAX_ALLOCATION << "." );
 
     bit8_t* allocBlock = nullptr;
-    for( bit8_t* heapIter = mPartitionBuffers[pPartitionID];
-            heapIter != partitionHeap || allocBlock != nullptr;
+    for( bit8_t* heapIter = mHeap;
+            heapIter != allocHeap || allocBlock != nullptr;
             heapIter += (*(size_t*)heapIter >> 1) ) {
         if( (*(size_t*)heapIter & 0b1) && allocLength <= (*(size_t*)heapIter >> 1) ) {
             allocBlock = heapIter;
         }
     } if( allocBlock == nullptr ) { // create new block
-        LLCE_CHECK_ERROR( partitionHeap + allocLength < partitionStack,
-            "<<P" << pPartitionID << ">> " <<
+        LLCE_CHECK_ERROR( mHeap + allocLength <= mStack,
             "Cannot allocate an additional heap chunk of size " << pAllocLength << "; " <<
-            "heap has only " << partitionStack - partitionHeap << " remaining bytes available." );
+            "heap has only " << mStack - mHeap << " remaining bytes available." );
 
         size_t blockTag = ( static_cast<size_t>(allocLength) << 1 ) & ~0b1;
-        *(size_t*)partitionHeap = blockTag;
-        *(size_t*)(partitionHeap + allocLength - HEAP_TAG_LENGTH) = blockTag;
+        *(size_t*)allocHeap = blockTag;
+        *(size_t*)(allocHeap + allocLength - HEAP_TAG_LENGTH) = blockTag;
 
-        allocBlock = partitionHeap;
-        partitionHeap = allocBlock + allocLength;
+        allocBlock = allocHeap;
+        allocHeap = allocBlock + allocLength;
     }
 
     *(size_t*)allocBlock &= 0b1;
@@ -134,7 +124,7 @@ bit8_t* memory_t::halloc( uint64_t pAllocLength, uint64_t pPartitionID ) {
 }
 
 
-void memory_t::hfree( bit8_t* pAllocBlock, uint64_t pPartitionID ) {
+void memory_t::hfree( bit8_t* pAllocBlock ) {
     const static auto csIsBoundedBlock = []
             ( bit8_t* pBlock, const bit8_t* pPartMin, const bit8_t* pPartMax ) {
         return pPartMin < pBlock && pBlock <pPartMax;
@@ -149,14 +139,12 @@ void memory_t::hfree( bit8_t* pAllocBlock, uint64_t pPartitionID ) {
         return ( cBlockMinTag == cBlockMaxTag ) && cBlockIsOccupied;
     };
 
-    const bit8_t* cHeapMin = mPartitionBuffers[pPartitionID];
-    const bit8_t* cHeapMax = mPartitionStacks[pPartitionID];
+    const bit8_t* cHeapMin = mBuffer + mDataLength;
+    const bit8_t* cHeapMax = mStack;
     LLCE_CHECK_ERROR( csIsBoundedBlock(pAllocBlock, cHeapMin, cHeapMax),
-        "<<P" << pPartitionID << ">> " <<
         "Cannot deallocate heap memory block at " << pAllocBlock << "; this block " <<
         "lies outside the heap boundaries [" << cHeapMin << ", " << cHeapMax << "]." );
     LLCE_CHECK_ERROR( csIsSoundBlock(pAllocBlock, false),
-        "<<P" << pPartitionID << ">> " <<
         "Cannot deallocate heap memory block at " << pAllocBlock << "; this block " <<
         "is either unmanaged by the heap, has been freed before, or has been overwritten." );
 
@@ -180,16 +168,6 @@ void memory_t::hfree( bit8_t* pAllocBlock, uint64_t pPartitionID ) {
     size_t blockTag = ( freedBlockSize << 1 ) & ~0b1;
     *(size_t*)freedBlock = blockTag;
     *(size_t*)(freedBlock + freedBlockSize - HEAP_TAG_LENGTH) = blockTag;
-}
-
-
-bit8_t* memory_t::buffer( uint64_t pPartitionID ) const {
-    return mPartitionBuffers[pPartitionID];
-}
-
-
-uint64_t memory_t::length( uint64_t pPartitionID ) const {
-    return mPartitionLengths[pPartitionID];
 }
 
 }

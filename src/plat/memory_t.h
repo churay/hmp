@@ -12,11 +12,11 @@ class memory_t {
 
     /// Class Attributes ///
 
-    const static uint32_t MAX_PARTITIONS = 8;
-    const static uint32_t MAX_ALLOCATION_OFFSET = sizeof(size_t) - 1;
-
     const static uint64_t STACK_TAG_LENGTH = sizeof(size_t);
     const static uint64_t HEAP_TAG_LENGTH = sizeof(size_t);
+
+    const static uint64_t MAX_ALLOCATION_OFFSET = sizeof(size_t) - 1;
+    const static uint64_t DATA_MAX_ALLOCATION = std::numeric_limits<size_t>::max();
     const static uint64_t STACK_MAX_ALLOCATION =
         std::numeric_limits<size_t>::max() - STACK_TAG_LENGTH - MAX_ALLOCATION_OFFSET;
     const static uint64_t HEAP_MAX_ALLOCATION =
@@ -24,20 +24,22 @@ class memory_t {
 
     /// Constructors ///
 
-    memory_t( uint64_t pBufferLength, bit8_t* pBufferBase = nullptr );
-    memory_t( const uint64_t* pPartitionLengths, uint64_t pPartitionCount, bit8_t* pBufferBase = nullptr );
+    memory_t( uint64_t pBufferLength, uint64_t pDataLength, bit8_t* pBufferBase = nullptr );
     ~memory_t();
 
     /// Class Functions ///
 
-    bit8_t* salloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
-    void sfree( uint64_t pPartitionID = 0 );
+    bit8_t* dalloc( uint64_t pAllocLength );
+    // void dfree();
 
-    bit8_t* halloc( uint64_t pAllocLength, uint64_t pPartitionID = 0 );
-    void hfree( bit8_t* pAllocBlock, uint64_t pPartitionID = 0 );
+    bit8_t* salloc( uint64_t pAllocLength );
+    void sfree();
 
-    bit8_t* buffer( uint64_t pPartitionID = 0 ) const;
-    uint64_t length( uint64_t pPartitionID = 0 ) const;
+    bit8_t* halloc( uint64_t pAllocLength );
+    void hfree( bit8_t* pAllocBlock );
+
+    inline bit8_t* buffer() const { return mBuffer; }
+    inline uint64_t length() const { return mBufferLength; }
 
     private:
 
@@ -46,11 +48,11 @@ class memory_t {
     bit8_t* mBuffer;
     uint64_t mBufferLength;
 
-    uint64_t mPartitionCount;
-    bit8_t* mPartitionBuffers[MAX_PARTITIONS];
-    uint64_t mPartitionLengths[MAX_PARTITIONS];
-    bit8_t* mPartitionStacks[MAX_PARTITIONS];
-    bit8_t* mPartitionHeaps[MAX_PARTITIONS];
+    bit8_t* mData;
+    uint64_t mDataLength;
+
+    bit8_t* mHeap;
+    bit8_t* mStack;
 };
 
 }
