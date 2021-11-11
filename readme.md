@@ -1,44 +1,79 @@
-# hmp: Handmade Pong #
+# `hmp`: Handmade Pong #
 
-A proof of concept game application that uses the framework established by the
-[Handmade Hero][hmh] project to create a simulation of the classic [Pong][pong] game.
-The code in this repository breaks a few principles of the "handmade" framework
-by using various libraries (listed below) for better application portability.
+`hmp` is a [Pong][hmp-pong] clone written in C++ that adheres to many of the
+precepts laid out by Casey Muratori in his ["Handmade Hero"][hmp-hmh] project, i.e.
+deliberate hardware usage and minimization of dependence on third-part libraries.
+This implementation breaks many "handmade" principles by incorporating the C++
+standard library and SDL to achieve some level of platform-independence, but
+adheres to the philosophy for most core and platform-independent systems.
 
-## Demo ##
+The main features of that distinguish this implementation are:
 
-!['hmp' demo](https://github.com/churay/hmp/raw/master/doc/demo.gif)
+- Support for loop-live code editing, i.e. testing code updates while a
+  live application input loop is running to dynamically adjust application
+  parameters (including logic!).
+- Robust rendering capabilities, including efficient block-based text rendering
+  and support for aspect ratio-respecting graphical elements.
+- Rudimentary sound support via primitive sound waves (e.g. square, sawtooth)
+  and a basic audio synthesizer.
+- Robust input configuration support, including arbitrary remapping of different
+  input types (e.g. booleans, 1D scales, 2D scales, etc.).
 
-## Libraries ##
+## Demos ##
 
-### Required ###
+### Basic Gameplay ###
 
-- [SDL (v2.0)](https://www.libsdl.org/)
-- [SDL TTF (v2.0)](https://www.libsdl.org/projects/SDL_ttf/)
-- [OpenGL (v3.2)](https://www.opengl.org/)
-- [GLM (v0.9.9.3)](https://glm.g-truc.net)
-- [C++ Standard Library (v3.4)](https://en.cppreference.com/w/cpp/header)
+![`hmp` game demo](https://github.com/churay/hmp/raw/master/doc/demo.gif)
 
-### Optional ###
+### Input Capture/Replay ###
 
-- [ffmpeg (v3.4.4)](https://ffmpeg.org/)
-- [libpng (v1.6.34)](http://www.libpng.org/pub/png/libpng.html)
+![`hmp` replay demo](https://github.com/churay/hmp/raw/master/doc/replay.gif)
 
-## Install ##
+### Basic Loop-live Editing ###
 
-The source code for this application was built and tested on an Ubuntu 16.04/18.04
-Linux machine, and the steps below reflect the installation required for this
-environment. To replicate this process on an alternate distribution, either
-install the libraries and their dependencies from source or by using the
-distro's package management system (a la `apt` for Ubuntu).
+![`hmp` llce demo 1](https://github.com/churay/hmp/raw/master/doc/llce1.gif)
 
-Here are the commands required to install all third-part dependencies:
+### Advanced Loop-live Editing ###
 
-1. `sudo apt-get install clang-3.8 cmake`: Install build tools (i.e. a C++ compiler and a build manager).
-1. `sudo apt-get install libsdl2-2.0-0 libsdl2-dev libsdl2-ttf-2.0-0 libsdl2-ttf-dev`: Install the window management library SDL and its supplemental text library SDL-TTF.
-1. `sudo apt-get install ffmpeg libpng-dev`: (Optional) Install image/video processing libraries to facilitate in-situ application render outputs.
-1. `./etc/build_{platform}.sh`: Build the demo application, which will be deployed to the `./build/install/` directory.
+![`hmp` llce demo 2](https://github.com/churay/hmp/raw/master/doc/llce2.gif)
+
+## Install/Test Instructions ##
+
+To build and run on Ubuntu 16.04/18.04+, execute the following commands:
+
+```
+# Install third-party dependencies.
+$ sudo apt-get install clang-6.0 cmake libsdl2-2.0-0 libsdl2-dev libsdl2-ttf-2.0-0 libsdl2-ttf-dev
+# (Optional) Install image/video capture software.
+$ sudo apt-get install ffmpeg libpng-dev
+
+# Edit the build configuration, then configure/build the code.
+$ vim ./etc/build_$PLATFORM.sh
+$ ./etc/build_$PLATFORM.sh
+
+# (Optional) Disable ASLR to allow for loop-live code editing.
+$ ./etc/debug_env.sh
+
+# Run the application.
+$ ./llce.out
+```
+
+### Dependencies ###
+
+- [C++17-compatible Compiler](https://en.cppreference.com/w/cpp/17)
+- [CMake v3.10](https://cmake.org/)
+- [OpenGL v3.2](https://www.opengl.org/)
+- [GLM v0.9.9.3](https://glm.g-truc.net)
+- [SDL v2.0](https://www.libsdl.org/)
+- [SDL TTF v2.0](https://www.libsdl.org/projects/SDL_ttf/)
+- [(Optional) libpng v1.6.34](http://www.libpng.org/pub/png/libpng.html)
+- [(Optional) ffmpeg v3.4.4](https://ffmpeg.org/)
+
+## License ##
+
+This project is licensed under [the MIT License][hmp-license].
 
 
-[pong]: https://en.wikipedia.org/wiki/Pong
-[hmh]: https://handmadehero.org/
+[hmp-pong]: https://en.wikipedia.org/wiki/Pong
+[hmp-hmh]: https://handmadehero.org/
+[hmp-license]: https://raw.githubusercontent.com/churay/hmp/master/liscense.txt
